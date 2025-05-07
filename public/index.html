@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teacher All in One AI Chat</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.5.1/mammoth.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.1/dist/tesseract.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f5f7fa;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+    .message {
+      display: flex;
+      align-items: flex-end;
+      margin: 8px 0;
+      width: fit-content;
+      max-width: 90%;
+    }
+    .bot {
+      flex-direction: row;
+    }
+    .user {
+      flex-direction: row-reverse;
+      align-self: flex-end;
+    }
+    .bubble {
+      padding: 12px 16px;
+      border-radius: 18px;
+      animation: fadeIn 0.3s ease-in;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 16px;
+      display: inline-block;
+      background-color: #eeeeee;
+    }
+    .user .bubble {
+      background-color: #d2f0ff;
+    }
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background-color: #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      margin: 0 8px;
+    }
+    #input-area {
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      background: white;
+      border-top: 1px solid #ccc;
+    }
+    .input-top-files {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+    .file-item {
+      display: flex;
+      align-items: center;
+      background: #f0f0f0;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 6px;
+      gap: 10px;
+    }
+    .file-item span {
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .file-note {
+      flex: 1;
+      padding: 4px 8px;
+      font-size: 13px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .file-item button {
+      background: none;
+      border: none;
+      color: red;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .input-wrapper {
+      display: flex;
+      align-items: center;
+    }
+    #user-input {
+      flex: 1;
+      min-height: 44px;
+      max-height: 300px;
+      resize: vertical;
+      padding: 10px;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    #file-upload {
+      display: none;
+    }
+    .tooltip-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+    #file-button {
+      background-color: white;
+      border: none;
+      font-size: 20px;
+      margin: 0 10px;
+      cursor: pointer;
+    }
+    .tooltip-text {
+      visibility: hidden;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 12px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      white-space: nowrap;
+    }
+    .tooltip-wrapper:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+    .next-button {
+      padding: 10px 20px;
+      background-color: #10a37f;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+    }
+    h2.centered-heading {
+      font-size: 28px;
+      margin-bottom: 20px;
+      text-align: center;
+      width: 100%;
+    }
+    .select-inline {
+      margin-left: 12px;
+      margin-top: 4px;
+      font-size: 16px;
+      font-family: 'Inter', sans-serif;
+      padding: 6px;
+      border-radius: 6px;
+      width: fit-content;
+      max-width: 400px;
+    }
+    .uploaded-file {
+      color: rgb(41, 96, 198);
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .uploaded-file:hover {
+      text-decoration: none;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 1; }
+    }
+
+    .dot-anim {
+      font-size: 20px;
+      color: #999;
+      animation: blink 1.5s infinite;
+      margin: 0 2px;
+    }
+  </style>
+</head>
+<body>
+  <div id="chat">
+    <h2 class="centered-heading">👋 What do you wanna generate?</h2>
+  </div>
+  <div id="input-area">
+    <div id="file-preview" class="input-top-files"></div>
+    <div class="input-wrapper">
+      <textarea id="user-input" placeholder="Type something..." rows="2"></textarea>
+
+      <div class="tooltip-wrapper">
+        <button id="file-button" onclick="document.getElementById('file-upload').click()">＋</button>
+        <span class="tooltip-text">Upload File</span>
+      </div>
+
+      <input type="file" id="file-upload" multiple />
+      <button class="next-button" onclick="handleUserInput()">Next</button>
+    </div>
+  </div>
+
+
+  <script>
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('user-input');
+    const fileInput = document.getElementById('file-upload');
+    const filePreview = document.getElementById('file-preview');
+    const templateSections = {
+      "Lesson Plan": [
+        "Lesson Title / Subject Area",
+        "Learning Goals & Measurable Objectives",
+        "Prerequisite Knowledge",
+        "Materials / Resources List",
+        "Step‑by‑step Procedure & Timing",
+        "Assessment / Evidence of Learning",
+        "Differentiation / Accommodations",
+        "Anticipated Difficulties/ Challenges → Solution",
+        "Follow‑up / Reflection box"
+      ],
+      "Class Materials (PPT/pictures)": [
+        "Presentation Topic / Focus Question",
+        "Expected Audience (Grade or Course)",
+        "Key Points / Slide Outline",
+        "Desired Visual Assets (images, charts, video links)",
+        "Desired Audio Assets (music, sound clips)",
+        "Branding Elements (school logo, colors, fonts)",
+        "Speaker‑note Depth (none / bullet / full script)"
+      ],
+      "Report Card": [
+        "Student & Class Identifiers",
+        "Term / Grading Period",
+        "Subject List & Grade Scale",
+        "Attendance Figures",
+        "Behavior /Work‑Habit Ratings",
+        "Other Learning Experience/ Extra-curricular activities",
+        "Award",
+        "Teacher Narrative Comments",
+        "Parent signature flag"
+      ],
+      "Student-Work Feedback": [
+        "Student / Assignment ID",
+        "Rubric criteria or \"Glow & Grow\" fields (Strengths, Needs, Next Steps)",
+        "Performance level or score",
+        "Inline examples / Quotes",
+        "Overall Comment",
+        "Next-check-in Date"
+      ],
+      "Subject Question Bank / Assignment": [
+        "Subject & Topic Tags",
+        "Standard Alignment",
+        "Question Type (MCQ, open, etc.)",
+        "Difficulty Level",
+        "Question Text",
+        "Answer Choices & Correct Answer",
+        "Explanation / Feedback",
+        "Time Limit Per Item",
+        "Category Folder"
+      ],
+      "Activity Plan / Extracurricular": [
+        "Activity Name & Purpose",
+        "Date(s) / Time block",
+        "Location & Access notes",
+        "Target Group / # Students",
+        "Required materials & Equipment",
+        "Action plan",
+        "Roles & supervision: resources allocation/ responsibilities",
+        "Risk / safety considerations",
+        "Assessment or reflection Method"
+      ],
+      "Admin Helper (PPT / Word)": [
+        "Document Type (agenda, newsletter, handbook, policy)",
+        "Audience",
+        "Key Sections / Talking Points",
+        "Attachments / Links",
+        "Header-footer Branding",
+        "Distribution Date"
+      ]
+    };
+    const topicTemplates = {
+      "Lesson Plan": `
+    请根据以下模板生成一份 Lesson Plan：
+    • Lesson Title / Subject Area
+    • Learning Goals & Measurable Objectives
+    • Prerequisite Knowledge
+    • Materials / Resources List
+    • Step‑by‑step Procedure & Timing
+    • Assessment / Evidence of Learning
+    • Differentiation / Accommodations
+    • Anticipated Difficulties/ Challenges → Solution 
+    • Follow‑up / Reflection box
+    `,
+
+      "Class Materials (PPT/pictures)": `
+    请根据以下模板生成一份 Class Materials：
+    • Presentation Topic / Focus Question
+    • Expected Audience (Grade or Course)
+    • Key Points / Slide Outline
+    • Desired Visual Assets (images, charts, video links)
+    • Desired Audio Assets (music, sound clips)
+    • Branding Elements (school logo, colors, fonts)
+    • Speaker‑note Depth (none / bullet / full script)
+    `,
+
+      "Report Card": `
+    请根据以下模板生成一份 Report Card：
+    • Student & Class Identifiers
+    • Term / Grading Period
+    • Subject List & Grade Scale
+    • Attendance Figures
+    • Behavior /Work‑Habit Ratings
+    • Other Learning Experience/ Extra-curricular activities (jumping class/ drama class/ competition) 
+    • Award
+    • Teacher Narrative Comments
+    • Parent signature flag
+    `,
+
+      "Student-Work Feedback": `
+    请根据以下模板生成一份 Student Work Feedback：
+    • Student / Assignment ID
+    • Rubric criteria or "Glow & Grow" fields (Strengths, Needs, Next Steps)
+    • Performance level or score
+    • Inline examples / Quotes
+    • Overall Comment
+    • Next-check-in Date
+    `,
+
+      "Subject Question Bank / Assignment": `
+    请根据以下模板生成一份 Subject Question Bank / Assignment：
+    • Subject & Topic Tags
+    • Standard Alignment
+    • Question Type (MCQ, open, etc.)
+    • Difficulty Level
+    • Question Text
+    • Answer Choices & Correct Answer
+    • Explanation / Feedback
+    • Time Limit Per Item
+    • Category Folder
+    `,
+
+      "Activity Plan / Extracurricular": `
+    请根据以下模板生成一份 Activity Plan：
+    • Activity Name & Purpose
+    • Date(s) / Time block
+    • Location & Access notes
+    • Target Group / # Students
+    • Required materials & Equipment
+    • Action plan
+    • Roles & supervision: resources allocation/ responsibilities
+    • Risk / safety considerations
+    • Assessment or reflection Method
+    `,
+
+      "Admin Helper (PPT / Word)": `
+    请根据以下模板生成一份 Admin Helper 文档：
+    • Document Type (agenda, newsletter, handbook, policy)
+    • Audience
+    • Key Sections / Talking Points
+    • Attachments / Links
+    • Header-footer Branding
+    • Distribution Date
+    `
+    };
+
+    let lastGeneratedForm = null;
+    let lastUserMoreMessage = null;
+    let uploadedFiles = [];
+    let answers = {};
+    let currentStage = 0;
+
+    const stages = [
+      { prompt: ' Question 1/5: 👇 Please select a type:', key: 'type', type: 'dropdown', options: [
+        'Lesson Plan', 'Class Materials (PPT/pictures)', 'Report Card',
+        'Student-Work Feedback', 'Subject Question Bank / Assignment',
+        'Activity Plan / Extracurricular', 'Admin Helper (PPT / Word)'
+      ]},
+      { prompt: 'Question 2/5: 💭 Why do you want this?', key: 'why', type: 'text' },
+      { prompt: 'Question 3/5: 📎 What do you have on hand? (You can upload files, or describe)', key: 'have', type: 'text' },
+      { prompt: 'Question 4/5: ✏️ Add more details: Comment, Grade, Number of Students, Duration, Length', key: 'more', type: 'text' },
+      { prompt: 'Question 5/5:  🔍 Do you want to make any part more specific?', key: 'refine', type: 'yesno' }
+    ];
+
+    const inputArea = document.getElementById('input-area');
+
+    // ✅ 拖拽高亮样式
+    inputArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      inputArea.style.border = '2px dashed #10a37f';
+      inputArea.style.backgroundColor = '#f3fffa';
+    });
+
+    inputArea.addEventListener('dragleave', () => {
+      inputArea.style.border = '';
+      inputArea.style.backgroundColor = '';
+    });
+
+    inputArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      inputArea.style.border = '';
+      inputArea.style.backgroundColor = '';
+      const files = e.dataTransfer.files;
+      if (files.length) handleDroppedFiles(files);
+    });
+
+    function handleDroppedFiles(fileList) {
+      [...fileList].forEach(file => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+
+        const span = document.createElement('span');
+        span.textContent = file.name;
+
+        const note = document.createElement('input');
+        note.className = 'file-note';
+        note.placeholder = 'Add note...';
+
+        const delBtn = document.createElement('button');
+        delBtn.textContent = '✕';
+        delBtn.onclick = () => fileItem.remove();
+
+        fileItem.append(span, note, delBtn);
+        document.getElementById('file-preview').appendChild(fileItem);
+      });
+    }
+
+    function appendMessage(content, sender, stageIndex = null) {
+      content = content || '';
+      const container = document.createElement('div');
+      container.className = `message ${sender}`;
+      container.dataset.stageIndex = stageIndex;
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = sender === 'bot' ? '🤖' : '🧑‍🏫';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.textContent = content;
+
+      if (sender === 'user') {
+        bubble.style.cursor = 'pointer';
+        bubble.title = 'Click to edit';
+        bubble.addEventListener('click', () => {
+          const newValue = prompt('Edit your response:', bubble.textContent);
+          if (newValue !== null && newValue.trim() !== '') {
+            const confirmed = confirm('This will delete all responses after this point. Continue?');
+            if (!confirmed) return;
+
+            bubble.textContent = newValue.trim();
+            const stageIdx = Number(container.dataset.stageIndex);
+            
+            //update answers and remove all after that
+            const stageKey = stages[stageIdx].key;
+            answers[stageKey] = newValue.trim();
+            currentStage = stageIdx + 1;
+            if (stageKey === 'type') {
+              const dropdown = document.querySelector('select.select-inline');
+              if (dropdown) dropdown.value = newValue.trim();
+            }
+
+            for (let i = stageIdx + 1; i < stages.length; i++) {
+            delete answers[stages[i].key];
+            }
+
+            // remove chat from curr and after container all elements
+            let next = container.nextSibling;
+            while (next) {
+            const toRemove = next;
+            next = next.nextSibling;
+            toRemove.remove();
+            }
+
+        showStage(); 
+        }
+        });
+      }
+      container.appendChild(avatar);
+      container.appendChild(bubble);
+      chat.appendChild(container);
+      chat.scrollTop = chat.scrollHeight;
+      return container
+
+    }
+    
+    async function callDeepSeek(promptText) {
+    const apiKey = 'sk-816d9a802e5f4c8ab73459a40791d7db'; 
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat', 
+        messages: [
+          { role: 'system', content: 'You are an experienced AI education specialist, skilled at explaining complex concepts in a clear and engaging manner while providing personalized guidance tailored to students at different learning levels. Provide details plan for user(teacher)' },
+          { role: 'user', content: promptText }
+        ],
+        temperature: 0.7
+      }),
+    });
+
+    const data = await response.json();
+    if (data.choices && data.choices.length > 0) {
+    return data.choices[0].message.content;
+  } else {
+    throw new Error('No response from DeepSeek API');
+  }
+}
+
+    function showStage() {
+      const stage = stages[currentStage];
+      if (!stage) return;
+
+      if (stage.type === 'dropdown') {
+        appendMessage(stage.prompt, 'bot');
+        
+        const container = document.createElement('div');
+        container.className = 'message bot';
+
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar';
+        avatar.textContent = '🤖';
+
+        const buttonGroup = document.createElement('div');
+        buttonGroup.style.display = 'flex';
+        buttonGroup.style.flexDirection = 'column';
+        buttonGroup.style.gap = '8px';
+        buttonGroup.style.marginLeft = '44px';
+
+        let alreadyAnswered = false;
+        let existingUserMsg = null;
+
+        stage.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.textContent = opt;
+        btn.style.padding = '10px 16px';
+        btn.style.border = '1px solid #ccc';
+        btn.style.borderRadius = '6px';
+        btn.style.background = '#fff';
+        btn.style.cursor = 'pointer';
+        btn.style.fontFamily = 'Inter';
+        btn.style.transition = '0.2s';
+
+        btn.onmouseover = () => {
+          if (!btn.classList.contains('selected')) {
+            btn.style.background = '#f0f0f0';
+          }
+        };
+        btn.onmouseout = () => {
+          if (!btn.classList.contains('selected')) {
+            btn.style.background = '#fff';
+          }
+        };
+
+        btn.onclick = () => {
+          if (alreadyAnswered) {
+            const confirmReplace = confirm(`You already selected “${answers[stage.key]}”.\nDo you want to change it to “${opt}”?`);
+            if (!confirmReplace) return;
+
+            // 删除旧的 user message
+            if (existingUserMsg) existingUserMsg.remove();
+          }
+
+          // 清除按钮高亮
+          const allButtons = buttonGroup.querySelectorAll('button');
+          allButtons.forEach(b => {
+            b.classList.remove('selected');
+            b.style.background = '#fff';
+            b.style.color = '#000';
+          });
+
+          // 设置当前按钮高亮
+          btn.classList.add('selected');
+          btn.style.background = '#10a37f';
+          btn.style.color = '#fff';
+
+          // 记录答案并添加 user message
+          answers[stage.key] = opt;
+          existingUserMsg = appendMessage(opt, 'user', 0);
+          alreadyAnswered = true;
+
+          // 清理之后的所有阶段内容
+          for (let i = 1; i < stages.length; i++) delete answers[stages[i].key];
+          const messages = Array.from(chat.children);
+          for (let i = messages.length - 1; i >= 0; i--) {
+            const el = messages[i];
+            const idx = Number(el.dataset?.stageIndex);
+            if (!isNaN(idx) && idx > 0) el.remove();
+          }
+
+          currentStage = 1;
+          showStage();
+        };
+      
+        buttonGroup.appendChild(btn);
+      });
+
+
+
+        container.appendChild(avatar);
+        container.appendChild(buttonGroup);
+        chat.appendChild(container);
+      
+      } 
+      
+      else if (stage.type === 'yesno') {
+      appendMessage(stage.prompt, 'bot');
+
+      const container = document.createElement('div');
+      container.className = 'message bot';
+      container.dataset.stageIndex = currentStage;
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = '🤖';
+
+      const buttonGroup = document.createElement('div');
+      buttonGroup.style.display = 'flex';
+      buttonGroup.style.flexDirection = 'column';
+      buttonGroup.style.gap = '8px';
+      buttonGroup.style.marginLeft = '44px';
+
+      ['Yes', 'No'].forEach(text => {
+        const btn = document.createElement('button');
+        btn.textContent = text;
+        btn.style.padding = '10px 16px';
+        btn.style.border = '1px solid #ccc';
+        btn.style.borderRadius = '6px';
+        btn.style.background = '#fff';
+        btn.style.cursor = 'pointer';
+        btn.style.fontFamily = 'Inter';
+
+        btn.onclick = () => {
+          appendMessage(text, 'user', currentStage);
+          answers[stage.key] = text;
+          currentStage++;
+
+          if (text === 'Yes') {
+            showSpecificOptions(); 
+          } else {
+            appendMessage('✅ Great! We’re done.', 'bot');
+          }
+        };
+
+        buttonGroup.appendChild(btn);
+      });
+
+      container.appendChild(avatar);
+      container.appendChild(buttonGroup);
+      chat.appendChild(container);
+    }
+      
+      
+      else {
+        appendMessage(stage.prompt, 'bot', currentStage);
+      }
+    }
+
+    
+
+  //   function renderRefinementOptions(type) {
+  //   const options = templateSections[type];
+  //   if (!options) return;
+
+  //   appendMessage("🧩 Which part(s) would you like to be more specific?", "bot");
+
+  //   const container = document.createElement("div");
+  //   container.className = "message bot";
+  //   const avatar = document.createElement("div");
+  //   avatar.className = "avatar";
+  //   avatar.textContent = "🤖";
+
+  //   const checkboxGroup = document.createElement("div");
+  //   checkboxGroup.style.display = "flex";
+  //   checkboxGroup.style.flexDirection = "column";
+  //   checkboxGroup.style.gap = "4px";
+  //   checkboxGroup.style.marginLeft = "44px";
+
+  //   const checkboxes = [];
+
+  //   options.forEach((opt) => {
+  //     const label = document.createElement("label");
+  //     label.style.display = "flex";
+  //     label.style.alignItems = "center";
+  //     label.style.gap = "8px";
+
+  //     const checkbox = document.createElement("input");
+  //     checkbox.type = "checkbox";
+  //     checkbox.value = opt;
+  //     checkboxes.push(checkbox);
+
+  //     label.appendChild(checkbox);
+  //     label.appendChild(document.createTextNode(opt));
+  //     checkboxGroup.appendChild(label);
+  //   });
+
+  //   const submitBtn = document.createElement("button");
+  //   submitBtn.textContent = "🔍 Refine";
+  //   submitBtn.style.marginTop = "6px";
+  //   submitBtn.style.padding = "6px 12px";
+  //   submitBtn.style.background = "#10a37f";
+  //   submitBtn.style.color = "#fff";
+  //   submitBtn.style.border = "none";
+  //   submitBtn.style.borderRadius = "6px";
+  //   submitBtn.style.cursor = "pointer";
+
+  //   submitBtn.onclick = async () => {
+  //     const selected = checkboxes.filter(c => c.checked).map(c => c.value);
+  //     if (selected.length === 0) {
+  //       alert("Please select at least one part to refine.");
+  //       return;
+  //     }
+
+  //     const refinePrompt = `${basePrompt}\n\nPlease rewrite the following sections with **more detail**:\n- ${selected.join("\n- ")}`;
+  //     const loadingMsg = appendMessage("🔄 Refining selected parts...", "bot");
+  //     const loadingBubble = loadingMsg.querySelector('.bubble');
+  //     loadingBubble.innerHTML = `<span class="dot-anim">●</span><span class="dot-anim">●</span><span class="dot-anim">●</span>`;
+
+  //     try {
+  //       const refined = await callDeepSeek(refinePrompt);
+  //       loadingBubble.innerHTML = marked.parse(refined);
+  //     } catch (err) {
+  //       loadingBubble.innerText = '❌ Refinement failed.';
+  //     }
+
+  //     container.remove();
+  //   };
+
+  //   container.appendChild(avatar);
+  //   container.appendChild(checkboxGroup);
+  //   container.appendChild(submitBtn);
+  //   chat.appendChild(container);
+  // }
+
+    let reviewTableContainer = null;
+    let lastGeneratedResult = null;   
+    let refineOptionsContainer = null;   
+    let refineChoiceContainer = null;
+
+    function removeNodesAfter(node) {
+      if (!node) return;
+      let nxt = node.nextSibling;
+      while (nxt) {
+        const tmp = nxt;
+        nxt = nxt.nextSibling;
+        tmp.remove();
+      }
+    }
+
+    function renderMoreForm() {
+
+      lastGeneratedForm?.remove();
+      lastUserMoreMessage?.remove();
+
+
+      const container = document.createElement('div');
+      container.className = 'message bot';
+      container.dataset.stageIndex = currentStage;
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = '🤖';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+
+
+      const promptText = document.createElement('div');
+      promptText.textContent =
+        'Question 4/5: ✏️  Add more details: Comment, Grade, Number of Students, Duration, Length';
+      promptText.style.marginBottom = '8px';
+
+
+      const form = document.createElement('div');
+      Object.assign(form.style, {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+      });
+
+      const promptInput        = makeInput('Comment (optional)');
+      const gradeInput         = makeInput('Grade (optional)');
+      const studentCountInput  = makeInput('Number of Students');
+      const durationInput      = makeInput('Duration (e.g., 45 mins)');
+      const lengthInput        = makeInput('Length (Short / Medium / Long)');
+
+      [promptInput, gradeInput, studentCountInput, durationInput, lengthInput]
+        .forEach(inp => form.appendChild(inp));
+
+      /* --- 4. Save 按钮 --- */
+      const submitBtn = document.createElement('button');
+      submitBtn.textContent = 'Save';
+      Object.assign(submitBtn.style, {
+        marginTop: '6px',
+        padding: '6px 12px',
+        background: '#10a37f',
+        color: '#fff',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+      });
+
+      submitBtn.onclick = () => {
+        removeNodesAfter(container);
+        const prompt   = promptInput.value.trim();
+        const grade    = gradeInput.value.trim();
+        const students = studentCountInput.value.trim();
+        const duration = durationInput.value.trim();
+        const length   = lengthInput.value.trim();
+
+        if (!prompt && !grade && !students && !duration && !length) {
+          alert('Please fill in at least one field.');
+          return;
+        }
+
+        // remove old user bot info
+        //lastUserMoreMessage?.remove();
+        lastUserMoreMessage = null;
+
+        // remove " all inf collected "
+        // [...chat.querySelectorAll('.message.bot')].forEach(msg => {
+        //   if (msg.innerText?.includes('All info collected')) msg.remove();
+        // });
+
+        // remove ai generator results like review，refine， loading
+        // lastGeneratedResult?.remove();
+        lastGeneratedResult = null;
+        reviewTableContainer = null;
+        
+        // if (reviewTableContainer) {
+        //   removeNodesAfter(reviewTableContainer); // 💥 核心
+        //   reviewTableContainer.remove();
+        //   reviewTableContainer = null;
+        // }
+      
+
+        // refineOptionsContainer?.remove();
+        refineOptionsContainer = null;
+        // refineChoiceContainer?.remove();
+        refineChoiceContainer = null;
+
+        // [...chat.querySelectorAll('.message.bot')]
+        // .filter(m => m.querySelector('.dot-anim'))
+        // .forEach(m => m.remove());
+
+        const userInfo =
+          `📌 Details:\n` +
+          `- Comment: ${prompt || 'N/A'}\n` +
+          `- Grade: ${grade || 'N/A'}\n` +
+          `- Number of Students: ${students || 'N/A'}\n` +
+          `- Duration: ${duration || 'N/A'}\n` +
+          `- Length: ${length || 'N/A'}`;
+        lastUserMoreMessage = appendMessage(userInfo, 'user');
+
+        answers['more'] = { prompt, grade, students, duration, length };
+        answers['studentsGrade'] = `${students || 'N/A'} / ${grade || 'N/A'}`;
+        
+        appendMessage('✅ All info collected. Ready to generate!', 'bot');
+
+        generateContent()
+      };
+
+      form.appendChild(submitBtn);
+      bubble.append(promptText, form);
+      container.append(avatar, bubble);
+      chat.appendChild(container);
+      lastGeneratedForm = container;
+      chat.scrollTop = chat.scrollHeight;
+
+      function makeInput(placeholder) {
+        const inp = document.createElement('input');
+        inp.placeholder = placeholder;
+        Object.assign(inp.style, {
+          padding: '6px',
+          border: '1px solid #ccc',
+          borderRadius: '6px',
+          fontFamily: 'Inter',
+        });
+        return inp;
+      }
+    }
+
+
+    
+
+
+    async function generateContent() {
+      const selectedType = answers['type']; 
+      const basePrompt = topicTemplates[selectedType];
+
+      if (!basePrompt) {
+        alert('⚠️ No corresponding template was found to generate content!!!');
+        return;
+      }
+      
+      const more = answers['more'] || {};
+      const extraDetail =
+          `Context Information:\n` +
+          `- Comment: ${more.prompt || 'N/A'}\n` +
+          `- Grade: ${more.grade || 'N/A'}\n` +
+          `- Number of Students: ${more.students || 'N/A'}\n` +
+          `- Duration: ${more.duration || 'N/A'}\n` +
+          `- Length: ${more.length || 'N/A'}`;
+
+      const fullPrompt = `${basePrompt}\n\n${extraDetail}`;
+
+
+      let extraDetails = '';
+      if (answers['more']) {
+        extraDetails = `\n\nAdditional Info:\n${answers['more']}`;
+      }
+
+      // Loading 
+      const loadingMessage = appendMessage('🔄 Generating...', 'bot');
+      const loadingBubble = loadingMessage.querySelector('.bubble');
+      loadingBubble.innerHTML = `<span class="dot-anim">●</span><span class="dot-anim">●</span><span class="dot-anim">●</span>`;
+      lastGeneratedResult = loadingMessage;
+      
+      try {
+        const generated = await callDeepSeek(fullPrompt);
+        loadingBubble.innerHTML = marked.parse(generated);
+        setTimeout(() => {
+          askIfRefineNeeded();
+        }, 500);
+      } catch (error) {
+        console.error(error);
+        loadingBubble.innerText = '❌ Generation failed. Please try again.';
+      }
+    }
+
+    
+    const refineState = {
+      choiceContainer: null,
+      optionsContainer: null,
+      promptMsg: null,
+      botPromptMsg: null,
+      userAnswerMsg: null,
+      gotItMsg: null,
+      lastSelectedBtn: null,
+    };
+
+    function cleanupRefineUI() {
+      const s = refineState;
+      [s.choiceContainer, s.optionsContainer, s.promptMsg,
+      s.botPromptMsg, s.userAnswerMsg, s.gotItMsg].forEach(node => node?.remove());
+      Object.keys(s).forEach(k => (s[k] = null));    
+    }
+
+
+    function askIfRefineNeeded() {
+      cleanupRefineUI();                         
+
+      const s = refineState;
+      s.promptMsg = appendMessage(
+        'Question 5/5: 🔍 Do you want to make any part more specific?',
+        'bot'
+      );
+
+
+      const container = document.createElement('div');
+      container.className = 'message bot flex';
+      container.style.gap = '12px';
+      s.choiceContainer = container;
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = '🤖';
+
+      const btnGroup = document.createElement('div');
+      btnGroup.style.display = 'flex';
+      btnGroup.style.gap = '12px';
+      btnGroup.style.marginLeft = '44px';
+
+      const yesBtn = createChoiceBtn('✅ Yes');
+      const noBtn  = createChoiceBtn('❌ No');
+
+      yesBtn.onclick = () => {
+        updateSelection(yesBtn);
+        refineState.gotItMsg?.remove(), refineState.gotItMsg = null;
+        s.userAnswerMsg?.remove();
+
+        s.userAnswerMsg = appendMessage('✅ Yes, please refine.', 'user');
+
+        s.optionsContainer?.remove();
+        s.optionsContainer = askRefineSections();
+      };
+
+      noBtn.onclick = () => {
+        updateSelection(noBtn);
+        s.userAnswerMsg?.remove();
+        s.userAnswerMsg = appendMessage('❌ No, that’s enough.', 'user');
+
+        s.optionsContainer?.remove();
+        s.botPromptMsg?.remove();
+        s.optionsContainer = s.botPromptMsg = null;
+
+
+        s.gotItMsg?.remove();
+        s.gotItMsg = appendMessage('🎉 Got it! Let me know if you need anything else.', 'bot');
+      };
+
+      btnGroup.append(yesBtn, noBtn);
+      container.append(avatar, btnGroup);
+      chat.appendChild(container);
+      chat.scrollTop = chat.scrollHeight;
+
+
+      function createChoiceBtn(text) {
+        const btn = document.createElement('button');
+        Object.assign(btn.style, {
+          padding: '8px 14px',
+          borderRadius: '6px',
+          background: 'white',
+          color: 'black',
+          border: '1px solid #ccc',
+          cursor: 'pointer',
+          transition: '0.2s',
+        });
+        btn.textContent = text;
+        return btn;
+      }
+      function updateSelection(btn) {
+        const s = refineState;
+        if (s.lastSelectedBtn) {
+          s.lastSelectedBtn.style.background = 'white';
+          s.lastSelectedBtn.style.color = 'black';
+        }
+        btn.style.background = '#10a37f';
+        btn.style.color = 'white';
+        s.lastSelectedBtn = btn;
+      }
+    }
+
+
+    function askRefineSections() {
+      const type   = answers['type'];
+      const fields = templateSections[type];
+      if (!fields?.length) return;
+
+      const s = refineState;
+      s.botPromptMsg = appendMessage('🧩 Which part(s) would you like to be more specific?', 'bot');
+
+
+      const container = document.createElement('div');
+      container.className = 'message bot';
+      container.style.flexDirection = 'column';
+      container.style.marginLeft = '44px';
+      container.style.display = 'flex';
+
+      container.style.gap = '8px';
+      s.optionsContainer = container;
+
+
+
+      const cbGroup = document.createElement('div');
+      Object.assign(cbGroup.style, {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '6px',
+        marginLeft: '44px',
+        marginTop: '4px',
+      });
+
+      const selected = new Set();
+      fields.forEach(f => {
+        const label = document.createElement('label');
+        label.style.display = 'flex';
+        label.style.alignItems = 'center';
+        label.style.gap = '6px';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.onchange = () => cb.checked ? selected.add(f) : selected.delete(f);
+
+        const span = document.createElement('span');
+        span.textContent = f;
+
+        label.append(cb, span);
+        cbGroup.appendChild(label);
+      });
+
+
+      const confirmBtn = document.createElement('button');
+      confirmBtn.textContent = '🔍 Regenerate with More Detail';
+      Object.assign(confirmBtn.style, {
+        alignSelf: 'flex-start',
+        marginLeft: '44px',
+        padding: '8px 14px',
+        borderRadius: '6px',
+        background: '#10a37f',
+        color: 'white',
+        border: 'none',
+        cursor: 'pointer',
+      });
+
+      confirmBtn.onclick = async () => {
+        if (!selected.size) {
+          alert('Please select at least one part to refine.');
+          return;
+        }
+
+        const detailList = [...selected].join('\n- ');
+        appendMessage(`📌 Please make the following part(s) more detailed:\n- ${detailList}`, 'user');
+        appendMessage('🔄 Regenerating with more detail...', 'bot');
+
+        const more = answers['more'] || {};
+        const extraDetail =
+          `Context Information:\n` +
+          `- Comment: ${more.prompt || 'N/A'}\n` +
+          `- Grade: ${more.grade || 'N/A'}\n` +
+          `- Number of Students: ${more.students || 'N/A'}\n` +
+          `- Duration: ${more.duration || 'N/A'}\n` +
+          `- Length: ${more.length || 'N/A'}`;
+
+        const fullPrompt = `${topicTemplates[type]}\n\n${extraDetail}\n\nAdditional Instruction:\nPlease make the following part(s) more detailed:\n- ${detailList}`;
+
+        const loadingMsg   = appendMessage('...', 'bot');
+        const loadingBubble = loadingMsg.querySelector('.bubble');
+        loadingBubble.innerHTML =
+          '<span class="dot-anim">●</span><span class="dot-anim">●</span><span class="dot-anim">●</span>';
+
+        try {
+          const generated = await callDeepSeek(fullPrompt);
+          loadingBubble.innerHTML = marked.parse(generated);
+          askIfRefineNeeded();                     
+        } catch (e) {
+          loadingBubble.textContent = '❌ Generation failed.';
+        }
+      };
+
+      container.append(cbGroup, confirmBtn);
+      chat.appendChild(container);
+      chat.scrollTop = chat.scrollHeight;
+      return container;
+    }
+
+    function handleUserInput() {
+      const stageKey = stages[currentStage]?.key;
+      const value = input.value.trim();
+      let advanced = false;
+
+
+      if (stageKey === 'have') {
+        const fileRows = document.querySelectorAll('.file-item');
+        const hasFiles = fileRows.length > 0;
+        const hasText = value.length > 0;
+
+        if (!hasFiles && !hasText) return;
+
+        answers[stageKey] = [];
+
+        if (hasFiles) {
+          fileRows.forEach(row => {
+            const name = row.querySelector('span')?.textContent;
+            const note = row.querySelector('.file-note')?.value || '';
+            if (name) {
+              answers[stageKey].push({ name, note });
+            }
+          });
+        }
+
+        if (hasText) {
+          answers[stageKey].push({ description: value });
+        }
+
+
+    const container = document.createElement('div');
+    container.className = 'message user';
+    container.dataset.stageIndex = currentStage;
+
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    avatar.textContent = '🧑‍🏫';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+
+    answers[stageKey].forEach(fileObj => {
+
+      if (fileObj.description) {
+        const descDiv = document.createElement('div');
+        descDiv.textContent = `📝 ${fileObj.description}`;
+        descDiv.style.marginBottom = '4px';
+        bubble.appendChild(descDiv);
+        return;
+      }
+
+      const link = document.createElement('a');
+      link.href = '#';
+      link.textContent = `📎 ${fileObj.name}`;
+      link.className = 'uploaded-file';
+      link.style.display = 'block';
+      link.style.marginBottom = '4px';
+
+      link.onclick = () => {
+        const tempInput = document.createElement('input');
+        tempInput.type = 'file';
+        tempInput.accept = '*/*';
+        tempInput.onchange = () => {
+          const newFile = tempInput.files[0];
+          if (newFile) {
+            fileObj.name = newFile.name;
+            link.textContent = `📎 ${newFile.name}`;
+            const stageIdx = Number(container.dataset.stageIndex);
+            for (let i = stageIdx + 1; i < stages.length; i++) {
+              delete answers[stages[i].key];
+            }
+            const messages = Array.from(chat.children);
+            for (let i = messages.length - 1; i >= 0; i--) {
+              const el = messages[i];
+              const idx = Number(el.dataset?.stageIndex);
+              if (!isNaN(idx) && idx > stageIdx) {
+                el.remove();
+              }
+            }
+
+            currentStage = stageIdx + 1;
+            showStage();
+          }
+        };
+        tempInput.click();
+      };
+
+      bubble.appendChild(link);
+    });
+
+      container.appendChild(avatar);
+      container.appendChild(bubble);
+      chat.appendChild(container);
+      chat.scrollTop = chat.scrollHeight;
+
+
+      filePreview.innerHTML = '';
+      uploadedFiles = [];
+      input.value = '';
+      advanced = true;
+    }
+
+
+    else if (value) {
+      answers[stageKey] = value;
+      appendMessage(value, 'user', currentStage);
+      input.value = '';
+      advanced = true;
+    }
+
+
+    if (advanced) {
+      currentStage++;
+      if (currentStage < stages.length) {
+        if (stages[currentStage].key === 'more'){
+          renderMoreForm();
+        }else{
+          showStage();
+        }
+      } else {
+        generateContent();
+      }
+    }
+  }
+
+  input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault(); 
+    handleUserInput();
+  }
+});
+
+
+
+
+    fileInput.addEventListener('change', async () => {
+      const stageKey = stages[currentStage]?.key;
+
+      if (!answers[stageKey]) answers[stageKey] = [];
+
+      for (let file of fileInput.files) {
+
+        const alreadyExists = answers[stageKey].some(f => f.name === file.name);
+        if (alreadyExists) continue;
+
+        const fileRecord = {
+          name: file.name,
+          note: ''
+        };
+        answers[stageKey].push(fileRecord);
+
+        const fileRow = document.createElement('div');
+        fileRow.className = 'file-item';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = file.name;
+
+        const noteInput = document.createElement('input');
+        noteInput.className = 'file-note';
+        noteInput.placeholder = 'Add notes...';
+        noteInput.oninput = (e) => {
+          fileRecord.note = e.target.value;
+        };
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '❌';
+        deleteBtn.onclick = () => {
+          fileRow.remove();
+          answers[stageKey] = answers[stageKey].filter(f => f.name !== file.name);
+        };
+
+        fileRow.appendChild(nameSpan);
+        fileRow.appendChild(noteInput);
+        fileRow.appendChild(deleteBtn);
+        filePreview.appendChild(fileRow);
+      }
+
+      fileInput.value = '';
+
+ 
+      if (stageKey === 'have') {
+
+        for (let file of fileInput.files) {
+          uploadedFiles.push(file);
+          const fileRecord = {
+            name: file.name,
+            note: ''
+          };
+
+
+          const fileRow = document.createElement('div');
+          fileRow.className = 'file-item';
+
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = file.name;
+
+          const noteInput = document.createElement('input');
+          noteInput.className = 'file-note';
+          noteInput.placeholder = 'Add notes...';
+          noteInput.oninput = (e) => {
+            fileRecord.note = e.target.value;
+            fileRecord.name = file.name;
+            fileRecord.file = file;
+            fileRow.dataset.note = e.target.value;
+          };
+
+          const deleteBtn = document.createElement('button');
+          deleteBtn.innerHTML = '❌';
+          deleteBtn.onclick = () => {
+            fileRow.remove();
+            uploadedFiles = uploadedFiles.filter(f => f.name !== file.name);
+          };
+
+          fileRow.appendChild(nameSpan);
+          fileRow.appendChild(noteInput);
+          fileRow.appendChild(deleteBtn);
+          filePreview.appendChild(fileRow);
+        }
+
+        fileInput.value = '';
+      }
+
+    });
+
+    async function extractTextFromPDF(file) {
+      const pdfData = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+      let text = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const pageText = content.items.map(item => item.str).join(' ');
+        text += pageText + '\n';
+      }
+      return text;
+    }
+
+    async function extractTextFromDocx(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer });
+      return result.value;
+    }
+
+    async function extractTextFromImage(file) {
+      const result = await Tesseract.recognize(file, 'eng', {
+        logger: m => console.log(m.status, m.progress)
+      });
+      return result.data.text;
+    }
+
+    async function extractTextFromFile(file) {
+      const name = file.name.toLowerCase();
+      if (name.endsWith('.pdf')) {
+        return await extractTextFromPDF(file);
+      } else if (name.endsWith('.docx')) {
+        return await extractTextFromDocx(file);
+      } else if (/\.(png|jpg|jpeg)$/i.test(name)) {
+        return await extractTextFromImage(file);
+      } else {
+        return `⚠️ Unsupported file type: ${file.name}`;
+      }
+    }
+
+    showStage();
+
+  </script>
+</body>
+</html>

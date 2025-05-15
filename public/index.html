@@ -5,7 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Teacher All in One AI Chat</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.5.1/mammoth.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.1/dist/tesseract.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -206,8 +210,19 @@
       animation: blink 1.5s infinite;
       margin: 0 2px;
     }
+    button.selected {
+      background: #2eb84e !important; /* light green */
+      border-color: #28a745;
+      color: #155724;
+    }
+
   </style>
 </head>
+<select id="ocr-lang" style="margin-left: 12px; font-size: 14px; padding: 4px 8px; border-radius: 6px;">
+  <option value="eng">English</option>
+  <option value="chi_sim">简体中文</option>
+  <option value="chi_tra">繁體中文</option>
+</select>
 <body>
   <div id="chat">
     <h2 class="centered-heading">👋 What do you wanna generate?</h2>
@@ -234,75 +249,231 @@
     const fileInput = document.getElementById('file-upload');
     const filePreview = document.getElementById('file-preview');
     const templateSections = {
-      "Lesson Plan": [
-        "Lesson Title / Subject Area",
-        "Learning Goals & Measurable Objectives",
-        "Prerequisite Knowledge",
-        "Materials / Resources List",
-        "Step‑by‑step Procedure & Timing",
-        "Assessment / Evidence of Learning",
-        "Differentiation / Accommodations",
-        "Anticipated Difficulties/ Challenges → Solution",
-        "Follow‑up / Reflection box"
-      ],
-      "Class Materials (PPT/pictures)": [
-        "Presentation Topic / Focus Question",
-        "Expected Audience (Grade or Course)",
-        "Key Points / Slide Outline",
-        "Desired Visual Assets (images, charts, video links)",
-        "Desired Audio Assets (music, sound clips)",
-        "Branding Elements (school logo, colors, fonts)",
-        "Speaker‑note Depth (none / bullet / full script)"
-      ],
-      "Report Card": [
-        "Student & Class Identifiers",
-        "Term / Grading Period",
-        "Subject List & Grade Scale",
-        "Attendance Figures",
-        "Behavior /Work‑Habit Ratings",
-        "Other Learning Experience/ Extra-curricular activities",
-        "Award",
-        "Teacher Narrative Comments",
-        "Parent signature flag"
-      ],
-      "Student-Work Feedback": [
-        "Student / Assignment ID",
-        "Rubric criteria or \"Glow & Grow\" fields (Strengths, Needs, Next Steps)",
-        "Performance level or score",
-        "Inline examples / Quotes",
-        "Overall Comment",
-        "Next-check-in Date"
-      ],
-      "Subject Question Bank / Assignment": [
-        "Subject & Topic Tags",
-        "Standard Alignment",
-        "Question Type (MCQ, open, etc.)",
-        "Difficulty Level",
-        "Question Text",
-        "Answer Choices & Correct Answer",
-        "Explanation / Feedback",
-        "Time Limit Per Item",
-        "Category Folder"
-      ],
-      "Activity Plan / Extracurricular": [
-        "Activity Name & Purpose",
-        "Date(s) / Time block",
-        "Location & Access notes",
-        "Target Group / # Students",
-        "Required materials & Equipment",
-        "Action plan",
-        "Roles & supervision: resources allocation/ responsibilities",
-        "Risk / safety considerations",
-        "Assessment or reflection Method"
-      ],
-      "Admin Helper (PPT / Word)": [
-        "Document Type (agenda, newsletter, handbook, policy)",
-        "Audience",
-        "Key Sections / Talking Points",
-        "Attachments / Links",
-        "Header-footer Branding",
-        "Distribution Date"
-      ]
+      "Lesson Plan": {
+        eng: [
+          "Lesson Title / Subject Area",
+          "Learning Goals & Measurable Objectives",
+          "Prerequisite Knowledge",
+          "Materials / Resources List",
+          "Step‑by‑step Procedure & Timing",
+          "Assessment / Evidence of Learning",
+          "Differentiation / Accommodations",
+          "Anticipated Difficulties/ Challenges → Solution",
+          "Follow‑up / Reflection box"
+        ],
+        chi_sim: [
+          "课题 / 学科领域",
+          "学习目标 & 可测量指标",
+          "先备知识",
+          "材料 / 资源清单",
+          "课堂步骤 & 时间分配",
+          "评估方式 / 学习证据",
+          "差异化教学 / 适应策略",
+          "预判难点 / 挑战 → 解决方案",
+          "课后跟进 / 反思"
+        ],
+        chi_tra: [
+          "課程標題 / 科目領域",
+          "學習目標 & 可衡量指標",
+          "先備知識",
+          "材料 / 資源清單",
+          "步驟流程 & 時間配置",
+          "評量方式 / 學習證據",
+          "差異化教學 / 調整方案",
+          "預期困難 / 挑戰 → 解決策略",
+          "後續追蹤 / 反思"
+        ]
+      },
+      "Class Materials (PPT/pictures)": {
+        eng: [
+          "Presentation Topic / Focus Question",
+          "Expected Audience (Grade or Course)",
+          "Key Points / Slide Outline",
+          "Desired Visual Assets (images, charts, video links)",
+          "Desired Audio Assets (music, sound clips)",
+          "Branding Elements (school logo, colors, fonts)",
+          "Speaker‑note Depth (none / bullet / full script)"
+        ],
+        chi_sim: [
+          "演示主题 / 关注问题",
+          "目标受众（年级或课程）",
+          "关键要点 / 幻灯片大纲",
+          "视觉素材需求（图片、图表、视频链接）",
+          "音频素材需求（音乐、音效）",
+          "品牌元素（校徽、色彩、字体）",
+          "演讲者备注深度（无 / 要点 / 全脚本）"
+        ],
+        chi_tra: [
+          "簡報主題 / 焦點問題",
+          "預期受眾（年級或課程）",
+          "重點 / 投影片大綱",
+          "視覺素材需求（圖片、圖表、影片鏈接）",
+          "音訊素材需求（音樂、音效）",
+          "品牌元素（校徽、色彩、字體）",
+          "講者備註深度（無 / 要點 / 完整稿）"
+        ]
+      },
+      "Report Card": {
+        eng: [
+          "Student & Class Identifiers",
+          "Term / Grading Period",
+          "Subject List & Grade Scale",
+          "Attendance Figures",
+          "Behavior /Work‑Habit Ratings",
+          "Other Learning Experience/ Extra-curricular activities",
+          "Award",
+          "Teacher Narrative Comments",
+          "Parent signature flag"
+        ],
+        chi_sim: [
+          "学生与班级信息",
+          "学期 / 成绩周期",
+          "科目列表与评分标准",
+          "出勤数据",
+          "行为 / 学习习惯评分",
+          "其他学习经历 / 课外活动",
+          "奖励",
+          "教师评语",
+          "家长签名项"
+        ],
+        chi_tra: [
+          "學生與班級資訊",
+          "學期 / 成績週期",
+          "科目清單與評分標準",
+          "出勤數據",
+          "行為 / 學習習慣評分",
+          "其他學習經驗 / 課外活動",
+          "獎勵",
+          "教師評語",
+          "家長簽名項"
+        ]
+      },
+
+      "Student-Work Feedback": {
+        eng: [
+          "Student / Assignment ID",
+          "Rubric criteria or \"Glow & Grow\" fields (Strengths, Needs, Next Steps)",
+          "Performance level or score",
+          "Inline examples / Quotes",
+          "Overall Comment",
+          "Next-check-in Date"
+        ],
+        chi_sim: [
+          "学生 / 作业编号",
+          "评分标准或“优点与改进”字段（优势、需改进、下一步）",
+          "表现等级或分数",
+          "文中示例 / 引语",
+          "整体评语",
+          "下次回顾日期"
+        ],
+        chi_tra: [
+          "學生 / 作業編號",
+          "評分標準或「亮點與改進」欄位（優勢、需改善、後續步驟）",
+          "表現等級或分數",
+          "內文示例 / 引語",
+          "整體評論",
+          "下次檢視日期"
+        ]
+      },
+
+      "Subject Question Bank / Assignment": {
+        eng: [
+          "Subject & Topic Tags",
+          "Standard Alignment",
+          "Question Type (MCQ, open, etc.)",
+          "Difficulty Level",
+          "Question Text",
+          "Answer Choices & Correct Answer",
+          "Explanation / Feedback",
+          "Time Limit Per Item",
+          "Category Folder"
+        ],
+        chi_sim: [
+          "学科与主题标签",
+          "课程标准对齐",
+          "题型（选择题、开放题等）",
+          "难度等级",
+          "题干",
+          "选项与正确答案",
+          "解析 / 反馈",
+          "每题时间限制",
+          "分类文件夹"
+        ],
+        chi_tra: [
+          "學科與主題標籤",
+          "課綱對應",
+          "題型（選擇題、開放題等）",
+          "難度等級",
+          "題目內容",
+          "選項與正確答案",
+          "解析 / 回饋",
+          "每題時間限制",
+          "分類資料夾"
+        ]
+      },
+
+      "Activity Plan / Extracurricular": {
+        eng: [
+          "Activity Name & Purpose",
+          "Date(s) / Time block",
+          "Location & Access notes",
+          "Target Group / # Students",
+          "Required materials & Equipment",
+          "Action plan",
+          "Roles & supervision: resources allocation/ responsibilities",
+          "Risk / safety considerations",
+          "Assessment or reflection Method"
+        ],
+        chi_sim: [
+          "活动名称与目的",
+          "日期 / 时间段",
+          "地点与进入说明",
+          "目标群体 / 学生人数",
+          "所需材料与设备",
+          "行动计划",
+          "职责与监督：资源配置 / 分工",
+          "风险 / 安全考量",
+          "评估或反思方式"
+        ],
+        chi_tra: [
+          "活動名稱與目的",
+          "日期 / 時段",
+          "地點與進出說明",
+          "目標對象 / 學生人數",
+          "所需材料與設備",
+          "行動計畫",
+          "職責與監督：資源分配 / 任務分工",
+          "風險 / 安全考量",
+          "評估或反思方式"
+        ]
+      },
+
+      "Admin Helper (PPT / Word)": {
+        eng: [
+          "Document Type (agenda, newsletter, handbook, policy)",
+          "Audience",
+          "Key Sections / Talking Points",
+          "Attachments / Links",
+          "Header-footer Branding",
+          "Distribution Date"
+        ],
+        chi_sim: [
+          "文档类型（议程、简报、手册、政策等）",
+          "目标读者",
+          "重点部分 / 要点",
+          "附件 / 链接",
+          "页眉页脚品牌标识",
+          "发布日期"
+        ],
+        chi_tra: [
+          "文件類型（議程、簡報、手冊、政策等）",
+          "目標讀者",
+          "重點內容 / 討論要點",
+          "附件 / 鏈結",
+          "頁首頁尾品牌標誌",
+          "發布日期"
+        ]
+      }
     };
     const topicTemplates = {
       "Lesson Plan": `
@@ -392,24 +563,175 @@
     let lastGeneratedForm = null;
     let lastUserMoreMessage = null;
     let uploadedFiles = [];
-    let answers = {};
+    const answers = { have: [] };
+    const pendingExtractions = new Set();
     let currentStage = 0;
 
     const stages = [
-      { prompt: ' Question 1/5: 👇 Please select a type:', key: 'type', type: 'dropdown', options: [
-        'Lesson Plan', 'Class Materials (PPT/pictures)', 'Report Card',
-        'Student-Work Feedback', 'Subject Question Bank / Assignment',
-        'Activity Plan / Extracurricular', 'Admin Helper (PPT / Word)'
-      ]},
-      { prompt: 'Question 2/5: 💭 Why do you want this?', key: 'why', type: 'text' },
-      { prompt: 'Question 3/5: 📎 What do you have on hand? (You can upload files, or describe)', key: 'have', type: 'text' },
-      { prompt: 'Question 4/5: ✏️ Add more details: Comment, Grade, Number of Students, Duration, Length', key: 'more', type: 'text' },
-      { prompt: 'Question 5/5:  🔍 Do you want to make any part more specific?', key: 'refine', type: 'yesno' }
-    ];
+    {
+      promptKey: 'question1', key: 'type', type: 'dropdown',
+      options: [
+        'Lesson Plan',
+        'Class Materials (PPT/pictures)',
+        'Report Card',
+        'Student-Work Feedback',
+        'Subject Question Bank / Assignment',
+        'Activity Plan / Extracurricular',
+        'Admin Helper (PPT / Word)'
+      ]
+    },
+    { promptKey: 'question2', key: 'why',   type: 'text' },
+    { promptKey: 'question3', key: 'have',  type: 'text' },
+    { promptKey: 'question4', key: 'more',  type: 'text' },
+    { promptKey: 'question5', key: 'refine',type: 'yesno' }
+  ];
 
     const inputArea = document.getElementById('input-area');
+    const translations = {
+  eng: {
+    /* global */
+    title: "👋 What do you wanna generate?",
+    next: "Next",
+    upload: "Upload File",
+    yes: "Yes",
+    no: "No",
+    saveBtn: "Save",
+    regenerateBtn: "🔍 Regenerate with More Detail",
+    morePrompt: "Question 4/5: ✏️  Add more details: Comment, Grade, Number of Students, Duration, Length",
+    refineWhich: "🧩 Which part(s) would you like to be more specific?",
+    done: "🎉 Got it! Let me know if you need anything else.",
 
-    // ✅ 拖拽高亮样式
+    question1: "Question 1/5: 👇 Please select a type:",
+    question2: "Question 2/5: 💭 Why do you need this? (e.g. for student of grade 2 to have maths class, for parents meeting next week)",
+    question3: "Question 3/5: 📎 What do you have on hand? (You can upload files(PDF or Word only), or describe)",
+    question4: "Question 4/5: ✏️ Add more details: Comment, Grade, Number of Students, Duration, Length",
+    question5: "Question 5/5: 🔍 Do you want to make any part more specific?",
+
+
+    pleaseFill: "Please fill in at least one field.",
+    noExtractedText: "No extracted text found – please upload a PDF / Word / image first.",
+    noTemplateFound: "⚠️ No corresponding template was found to generate content!",
+    atLeastOnePart: "Please select at least one part to refine.",
+    generationFailed: "❌ Generation failed. Please try again.",
+    pleaseRefine: "✅ Yes, please refine.",
+    noThanks: "❌ No, that’s enough.",
+    replacedMsg: "🔄 \"{filename}\" replaced.",
+    replaceConfirm: "Replace previously uploaded \"{filename}\"?",
+    infoCollected: "✅ All info collected. Ready to generate!",
+
+    type_lesson: "Lesson Plan",
+    type_materials: "Class Materials (PPT/pictures)",
+    type_report: "Report Card",
+    type_feedback: "Student‑Work Feedback",
+    type_bank: "Subject Question Bank / Assignment",
+    type_activity: "Activity Plan / Extracurricular",
+    type_admin: "Admin Helper (PPT / Word)",
+
+    ph_comment : "Comment (optional)",
+    ph_grade   : "Grade (optional)",
+    ph_students: "Number of Students",
+    ph_duration: "Duration (e.g., 45 mins)",
+    ph_length  : "Length (Short / Medium / Long)",
+    pleaseWait : "Please wait for 1 minute…"
+
+  },
+  chi_sim: {
+    title: "👋 你想生成什么？",
+    next: "下一步",
+    upload: "上传文件",
+    yes: "是",
+    no: "否",
+    saveBtn: "保存",
+    regenerateBtn: "🔍 重新生成并丰富细节",
+    morePrompt: "问题 4/5：✏️  请补充更多信息：注释、年级、学生人数、时长、长度",
+    refineWhich: "🧩 你想让哪些部分更具体？",
+    done: "🎉 明白了！如有其他需求请告诉我。",
+
+    question1: "问题 1/5：👇 请选择一个类型：",
+    question2: "问题 2/5：💭 你为什么需要这个？（例如：为二年级学生上的数学课，或是下周的家长会）",
+    question3: "问题 3/5：📎 你现在手上有什么资料？（你可以上传文件，仅限 PDF 或 Word 文档，或是简单描述一下）",
+    question4: "问题 4/5：✏️ 请补充更多信息：注释、年级、学生人数、时长、长度",
+    question5: "问题 5/5：🔍 是否希望某些部分更具体？",
+
+    pleaseFill: "请至少填写一个字段。",
+    noExtractedText: "未找到提取的文本 – 请上传 PDF / Word / 图片文件。",
+    noTemplateFound: "⚠️ 找不到对应的生成模板！",
+    atLeastOnePart: "请至少选择一个要细化的部分。",
+    generationFailed: "❌ 生成失败。请重试。",
+    pleaseRefine: "✅ 是的，请细化。",
+    noThanks: "❌ 不用了。",
+    replacedMsg: "🔄 已替换\"{filename}\"。",
+    replaceConfirm: "是否替换之前上传的\"{filename}\"？",
+    infoCollected: "✅ 所有信息已收集，准备生成！",
+
+    type_lesson: "课程教案",
+    type_materials: "课堂素材 (PPT/图片)",
+    type_report: "成绩单",
+    type_feedback: "作品反馈",
+    type_bank: "题库 / 作业",
+    type_activity: "活动方案",
+    type_admin: "行政文档 (PPT/Word)",
+
+    ph_comment : "注释（可选）",
+    ph_grade   : "年级（可选）",
+    ph_students: "学生人数",
+    ph_duration: "时长（例如 45 分钟）",
+    ph_length  : "长度（短 / 中 / 长）",
+    pleaseWait : "请等待 1 分钟…"
+
+  },
+  chi_tra: {
+    title: "👋 你想要生成什麼？",
+    next: "下一步",
+    upload: "上傳檔案",
+    yes: "是",
+    no: "否",
+    saveBtn: "儲存",
+    regenerateBtn: "🔍 重新生成並豐富細節",
+    morePrompt: "問題 4/5：✏️  請補充更多細節：註解、年級、學生人數、時長、長度",
+    refineWhich: "🧩 你想讓哪些部分更具體？",
+    done: "🎉 明白！如有其他需要請告訴我。",
+
+    question1: "問題 1/5：👇 請選擇一個類型：",
+    question2: "問題 2/5：💭 你為什麼需要這個？（例如：為二年級學生上的數學課，或是下週的家長會）",
+    question3: "問題 3/5：📎 你現在手上有什麼資料 (你可以上傳檔案，僅限 PDF 或 Word 文件，或簡單描述一下)",
+    question4: "問題 4/5：✏️ 請補充更多細節：註解、年級、學生數量、時間、長度",
+    question5: "問題 5/5：🔍 是否需要更具體的部分？",
+
+    pleaseFill: "請至少填寫一項內容。",
+    noExtractedText: "未找到提取內容 – 請先上傳 PDF / Word / 圖片。",
+    noTemplateFound: "⚠️ 找不到對應的生成模板！",
+    atLeastOnePart: "請至少選擇一個需要細化的部分。",
+    generationFailed: "❌ 生成失敗。請再試一次。",
+    pleaseRefine: "✅ 是的，請細化。",
+    noThanks: "❌ 不用了。",
+    replacedMsg: "🔄 已替換\"{filename}\"。",
+    replaceConfirm: "是否替換之前上傳的\"{filename}\"？",
+    infoCollected: "✅ 所有資訊已收集，準備生成！",
+
+    type_lesson: "課程教案",
+    type_materials: "課堂素材 (PPT/圖片)",
+    type_report: "成績單",
+    type_feedback: "作品回饋",
+    type_bank: "題庫 / 作業",
+    type_activity: "活動計畫",
+    type_admin: "行政文件 (PPT/Word)",
+
+    ph_comment : "註解（可選）",
+    ph_grade   : "年級（可選）",
+    ph_students: "學生人數",
+    ph_duration: "時長（例如 45 分鐘）",
+    ph_length  : "長度（短 / 中 / 長）",
+    pleaseWait : "請等待 1 分鐘…"
+
+  }
+};
+
+
+  document.getElementById('ocr-lang').dispatchEvent(new Event('change'));
+
+
+  
     inputArea.addEventListener('dragover', (e) => {
       e.preventDefault();
       inputArea.style.border = '2px dashed #10a37f';
@@ -431,6 +753,19 @@
 
     function handleDroppedFiles(fileList) {
       [...fileList].forEach(file => {
+        if (!answers.have) answers.have = []; 
+
+        const fileRecord = {
+          id: crypto.randomUUID(),
+          name: file.name,
+          note: '',
+          text: ''
+        };
+
+        extractAndStore(fileRecord, file);
+        answers.have.push(fileRecord);
+
+
         const fileItem = document.createElement('div');
         fileItem.className = 'file-item';
 
@@ -440,15 +775,27 @@
         const note = document.createElement('input');
         note.className = 'file-note';
         note.placeholder = 'Add note...';
+        note.oninput = (e) => fileRecord.note = e.target.value;
 
         const delBtn = document.createElement('button');
         delBtn.textContent = '✕';
-        delBtn.onclick = () => fileItem.remove();
+        delBtn.onclick = () => {
+          fileItem.remove();
+          answers.have = answers.have.filter(f => f.id !== fileRecord.id);
+        };
 
         fileItem.append(span, note, delBtn);
         document.getElementById('file-preview').appendChild(fileItem);
+
+
+
+        if (currentStage === 2) {
+          currentStage++;
+          renderMoreForm();
+        }
       });
     }
+
 
     function appendMessage(content, sender, stageIndex = null) {
       content = content || '';
@@ -518,7 +865,7 @@
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'deepseek-chat', 
+        model: 'deepseek-reasoner', 
         messages: [
           { role: 'system', content: 'You are an experienced AI education specialist, skilled at explaining complex concepts in a clear and engaging manner while providing personalized guidance tailored to students at different learning levels. Provide details plan for user(teacher)' },
           { role: 'user', content: promptText }
@@ -539,226 +886,123 @@
       const stage = stages[currentStage];
       if (!stage) return;
 
+      const promptTxt = t(stage.promptKey);
+
+
       if (stage.type === 'dropdown') {
-        appendMessage(stage.prompt, 'bot');
-        
+        appendMessage(promptTxt, 'bot', currentStage);
+
+        // build button list container
         const container = document.createElement('div');
         container.className = 'message bot';
+        container.style.display = 'flex';
 
         const avatar = document.createElement('div');
         avatar.className = 'avatar';
         avatar.textContent = '🤖';
 
-        const buttonGroup = document.createElement('div');
-        buttonGroup.style.display = 'flex';
-        buttonGroup.style.flexDirection = 'column';
-        buttonGroup.style.gap = '8px';
-        buttonGroup.style.marginLeft = '44px';
+        const btnGroup = document.createElement('div');
+        Object.assign(btnGroup.style, {
+          display: 'flex', flexDirection: 'column', gap: '8px', marginLeft: '44px'
+        });
 
-        let alreadyAnswered = false;
-        let existingUserMsg = null;
+        stage.options.forEach(optConst => {
+          const btn = document.createElement('button');
+          btn.dataset.optKey = optConst;
+          btn.textContent = trType(optConst);
 
-        stage.options.forEach(opt => {
-        const btn = document.createElement('button');
-        btn.textContent = opt;
-        btn.style.padding = '10px 16px';
-        btn.style.border = '1px solid #ccc';
-        btn.style.borderRadius = '6px';
-        btn.style.background = '#fff';
-        btn.style.cursor = 'pointer';
-        btn.style.fontFamily = 'Inter';
-        btn.style.transition = '0.2s';
-
-        btn.onmouseover = () => {
-          if (!btn.classList.contains('selected')) {
-            btn.style.background = '#f0f0f0';
-          }
-        };
-        btn.onmouseout = () => {
-          if (!btn.classList.contains('selected')) {
-            btn.style.background = '#fff';
-          }
-        };
-
-        btn.onclick = () => {
-          if (alreadyAnswered) {
-            const confirmReplace = confirm(`You already selected “${answers[stage.key]}”.\nDo you want to change it to “${opt}”?`);
-            if (!confirmReplace) return;
-
-            // 删除旧的 user message
-            if (existingUserMsg) existingUserMsg.remove();
-          }
-
-          // 清除按钮高亮
-          const allButtons = buttonGroup.querySelectorAll('button');
-          allButtons.forEach(b => {
-            b.classList.remove('selected');
-            b.style.background = '#fff';
-            b.style.color = '#000';
+          Object.assign(btn.style, {
+            padding: '10px 16px',
+            border: '1px solid #ccc',
+            borderRadius: '6px',
+            background: 'white',
+            cursor: 'pointer',
+            fontFamily: 'Inter',
+            transition: '0.2s'
           });
 
-          // 设置当前按钮高亮
-          btn.classList.add('selected');
-          btn.style.background = '#10a37f';
-          btn.style.color = '#fff';
+          btn.onmouseover = () => {
+            if (!btn.classList.contains('selected')) {
+              btn.style.background = '#f0f0f0';
+            }
+          };
+          btn.onmouseout = () => {
+            if (!btn.classList.contains('selected')) {
+              btn.style.background = 'white';
+            }
+          };
 
-          // 记录答案并添加 user message
-          answers[stage.key] = opt;
-          existingUserMsg = appendMessage(opt, 'user', 0);
-          alreadyAnswered = true;
+          btn.onclick = () => {
+            // Remove previous selections
+            btnGroup.querySelectorAll('button').forEach(b => {
+              b.classList.remove('selected');
+              b.style.background = 'white';
+            });
 
-          // 清理之后的所有阶段内容
-          for (let i = 1; i < stages.length; i++) delete answers[stages[i].key];
-          const messages = Array.from(chat.children);
-          for (let i = messages.length - 1; i >= 0; i--) {
-            const el = messages[i];
-            const idx = Number(el.dataset?.stageIndex);
-            if (!isNaN(idx) && idx > 0) el.remove();
-          }
+            // Add selection styling
+            btn.classList.add('selected');
+            btn.style.background = '#d4edda'; // light green
 
-          currentStage = 1;
-          showStage();
-        };
-      
-        buttonGroup.appendChild(btn);
-      });
+            handleChooseType(btn, optConst);
+          };
 
+          btnGroup.appendChild(btn);
+        });
 
-
-        container.appendChild(avatar);
-        container.appendChild(buttonGroup);
+        container.append(avatar, btnGroup);
         chat.appendChild(container);
-      
-      } 
-      
-      else if (stage.type === 'yesno') {
-      appendMessage(stage.prompt, 'bot');
-
-      const container = document.createElement('div');
-      container.className = 'message bot';
-      container.dataset.stageIndex = currentStage;
-
-      const avatar = document.createElement('div');
-      avatar.className = 'avatar';
-      avatar.textContent = '🤖';
-
-      const buttonGroup = document.createElement('div');
-      buttonGroup.style.display = 'flex';
-      buttonGroup.style.flexDirection = 'column';
-      buttonGroup.style.gap = '8px';
-      buttonGroup.style.marginLeft = '44px';
-
-      ['Yes', 'No'].forEach(text => {
-        const btn = document.createElement('button');
-        btn.textContent = text;
-        btn.style.padding = '10px 16px';
-        btn.style.border = '1px solid #ccc';
-        btn.style.borderRadius = '6px';
-        btn.style.background = '#fff';
-        btn.style.cursor = 'pointer';
-        btn.style.fontFamily = 'Inter';
-
-        btn.onclick = () => {
-          appendMessage(text, 'user', currentStage);
-          answers[stage.key] = text;
-          currentStage++;
-
-          if (text === 'Yes') {
-            showSpecificOptions(); 
-          } else {
-            appendMessage('✅ Great! We’re done.', 'bot');
-          }
-        };
-
-        buttonGroup.appendChild(btn);
-      });
-
-      container.appendChild(avatar);
-      container.appendChild(buttonGroup);
-      chat.appendChild(container);
-    }
-      
-      
-      else {
-        appendMessage(stage.prompt, 'bot', currentStage);
+        chat.scrollTop = chat.scrollHeight;
+        return;
       }
+
+
+      if (stage.type === 'yesno') {
+        appendMessage(promptTxt, 'bot', currentStage);
+
+        const container = document.createElement('div');
+        container.className = 'message bot';
+        container.dataset.stageIndex = currentStage;
+
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar';
+        avatar.textContent = '🤖';
+
+        const btnGroup = document.createElement('div');
+        Object.assign(btnGroup.style, {
+          display: 'flex', gap: '12px', marginLeft: '44px'
+        });
+
+        ['yes', 'no'].forEach(key => {
+          const btn = document.createElement('button');
+          btn.textContent = t(key);
+          Object.assign(btn.style, {
+            padding: '8px 14px',
+            borderRadius: '6px',
+            background: 'white',
+            border: '1px solid #ccc',
+            cursor: 'pointer'
+          });
+
+          btn.onclick = () => {
+            appendMessage(t(key === 'yes' ? 'pleaseRefine' : 'noThanks'), 'user', currentStage);
+            answers[stage.key] = key;
+            currentStage++;
+            if (key === 'yes') askRefineSections();
+            else appendMessage(t('done'), 'bot');
+          };
+
+          btnGroup.appendChild(btn);
+        });
+
+        container.append(avatar, btnGroup);
+        chat.appendChild(container);
+        chat.scrollTop = chat.scrollHeight;
+        return;
+      }
+
+
+      appendMessage(promptTxt, 'bot', currentStage);
     }
-
-    
-
-  //   function renderRefinementOptions(type) {
-  //   const options = templateSections[type];
-  //   if (!options) return;
-
-  //   appendMessage("🧩 Which part(s) would you like to be more specific?", "bot");
-
-  //   const container = document.createElement("div");
-  //   container.className = "message bot";
-  //   const avatar = document.createElement("div");
-  //   avatar.className = "avatar";
-  //   avatar.textContent = "🤖";
-
-  //   const checkboxGroup = document.createElement("div");
-  //   checkboxGroup.style.display = "flex";
-  //   checkboxGroup.style.flexDirection = "column";
-  //   checkboxGroup.style.gap = "4px";
-  //   checkboxGroup.style.marginLeft = "44px";
-
-  //   const checkboxes = [];
-
-  //   options.forEach((opt) => {
-  //     const label = document.createElement("label");
-  //     label.style.display = "flex";
-  //     label.style.alignItems = "center";
-  //     label.style.gap = "8px";
-
-  //     const checkbox = document.createElement("input");
-  //     checkbox.type = "checkbox";
-  //     checkbox.value = opt;
-  //     checkboxes.push(checkbox);
-
-  //     label.appendChild(checkbox);
-  //     label.appendChild(document.createTextNode(opt));
-  //     checkboxGroup.appendChild(label);
-  //   });
-
-  //   const submitBtn = document.createElement("button");
-  //   submitBtn.textContent = "🔍 Refine";
-  //   submitBtn.style.marginTop = "6px";
-  //   submitBtn.style.padding = "6px 12px";
-  //   submitBtn.style.background = "#10a37f";
-  //   submitBtn.style.color = "#fff";
-  //   submitBtn.style.border = "none";
-  //   submitBtn.style.borderRadius = "6px";
-  //   submitBtn.style.cursor = "pointer";
-
-  //   submitBtn.onclick = async () => {
-  //     const selected = checkboxes.filter(c => c.checked).map(c => c.value);
-  //     if (selected.length === 0) {
-  //       alert("Please select at least one part to refine.");
-  //       return;
-  //     }
-
-  //     const refinePrompt = `${basePrompt}\n\nPlease rewrite the following sections with **more detail**:\n- ${selected.join("\n- ")}`;
-  //     const loadingMsg = appendMessage("🔄 Refining selected parts...", "bot");
-  //     const loadingBubble = loadingMsg.querySelector('.bubble');
-  //     loadingBubble.innerHTML = `<span class="dot-anim">●</span><span class="dot-anim">●</span><span class="dot-anim">●</span>`;
-
-  //     try {
-  //       const refined = await callDeepSeek(refinePrompt);
-  //       loadingBubble.innerHTML = marked.parse(refined);
-  //     } catch (err) {
-  //       loadingBubble.innerText = '❌ Refinement failed.';
-  //     }
-
-  //     container.remove();
-  //   };
-
-  //   container.appendChild(avatar);
-  //   container.appendChild(checkboxGroup);
-  //   container.appendChild(submitBtn);
-  //   chat.appendChild(container);
-  // }
 
     let reviewTableContainer = null;
     let lastGeneratedResult = null;   
@@ -794,8 +1038,7 @@
 
 
       const promptText = document.createElement('div');
-      promptText.textContent =
-        'Question 4/5: ✏️  Add more details: Comment, Grade, Number of Students, Duration, Length';
+      promptText.textContent = t('morePrompt');
       promptText.style.marginBottom = '8px';
 
 
@@ -806,18 +1049,19 @@
         gap: '8px',
       });
 
-      const promptInput        = makeInput('Comment (optional)');
-      const gradeInput         = makeInput('Grade (optional)');
-      const studentCountInput  = makeInput('Number of Students');
-      const durationInput      = makeInput('Duration (e.g., 45 mins)');
-      const lengthInput        = makeInput('Length (Short / Medium / Long)');
+      const promptInput        = makeInput(t('ph_comment'));
+      const gradeInput         = makeInput(t('ph_grade'));
+      const studentCountInput  = makeInput(t('ph_students'));
+      const durationInput      = makeInput(t('ph_duration'));
+      const lengthInput        = makeInput(t('ph_length'));
+
 
       [promptInput, gradeInput, studentCountInput, durationInput, lengthInput]
         .forEach(inp => form.appendChild(inp));
 
-      /* --- 4. Save 按钮 --- */
+
       const submitBtn = document.createElement('button');
-      submitBtn.textContent = 'Save';
+      submitBtn.textContent = t('saveBtn');
       Object.assign(submitBtn.style, {
         marginTop: '6px',
         padding: '6px 12px',
@@ -841,35 +1085,12 @@
           return;
         }
 
-        // remove old user bot info
-        //lastUserMoreMessage?.remove();
+
         lastUserMoreMessage = null;
-
-        // remove " all inf collected "
-        // [...chat.querySelectorAll('.message.bot')].forEach(msg => {
-        //   if (msg.innerText?.includes('All info collected')) msg.remove();
-        // });
-
-        // remove ai generator results like review，refine， loading
-        // lastGeneratedResult?.remove();
         lastGeneratedResult = null;
         reviewTableContainer = null;
-        
-        // if (reviewTableContainer) {
-        //   removeNodesAfter(reviewTableContainer); // 💥 核心
-        //   reviewTableContainer.remove();
-        //   reviewTableContainer = null;
-        // }
-      
-
-        // refineOptionsContainer?.remove();
         refineOptionsContainer = null;
-        // refineChoiceContainer?.remove();
         refineChoiceContainer = null;
-
-        // [...chat.querySelectorAll('.message.bot')]
-        // .filter(m => m.querySelector('.dot-anim'))
-        // .forEach(m => m.remove());
 
         const userInfo =
           `📌 Details:\n` +
@@ -883,7 +1104,7 @@
         answers['more'] = { prompt, grade, students, duration, length };
         answers['studentsGrade'] = `${students || 'N/A'} / ${grade || 'N/A'}`;
         
-        appendMessage('✅ All info collected. Ready to generate!', 'bot');
+        appendMessage(t('infoCollected'), 'bot');
 
         generateContent()
       };
@@ -908,53 +1129,130 @@
       }
     }
 
+    const langSelector = document.getElementById('ocr-lang');
+    let currentLang = langSelector.value;
 
-    
+    function t(key, vars = {}) {
+      let s = translations[currentLang]?.[key] || translations.eng[key] || key;
+      for (const [k, v] of Object.entries(vars)) s = s.replace(`{${k}}`, v);
+      return s;
+    }
 
+    langSelector.addEventListener('change', () => {
+      currentLang = langSelector.value;
+      updateUIText(); 
+      refreshStage0UI();    
+    });
+
+    function updateUIText() {
+      document.querySelector('h2.centered-heading').textContent = t('title');
+      document.querySelector('.next-button').textContent          = t('next');
+      const tooltip = document.querySelector('.tooltip-text');
+      if (tooltip) tooltip.textContent = t('upload');
+
+      // update stage prompts already created (optional)
+      stages.forEach((s, i) => s.prompt = t(`question${i + 1}`));
+      document
+        .querySelectorAll('[data-stage-index] .bubble')
+        .forEach(b => {
+          const idx = Number(b.parentElement.dataset.stageIndex);
+          if (!isNaN(idx) && idx < 5) b.textContent = t(`question${idx + 1}`);
+        });
+    }
+
+    langSelector.addEventListener('change', () => {
+      currentLang = langSelector.value;
+      updateUIText();
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      updateUIText();
+
+    document.querySelectorAll('input[placeholder]').forEach(inp => {
+      switch (inp.placeholder) {
+        case translations.eng.ph_comment:   inp.placeholder = t('ph_comment'); break;
+        case translations.eng.ph_grade:     inp.placeholder = t('ph_grade'); break;
+        case translations.eng.ph_students:  inp.placeholder = t('ph_students'); break;
+        case translations.eng.ph_duration:  inp.placeholder = t('ph_duration'); break;
+        case translations.eng.ph_length:    inp.placeholder = t('ph_length'); break;
+      }
+    });
+
+    });
+
+
+
+    function trType(opt) {
+      switch (opt) {
+        case 'Lesson Plan': return t('type_lesson');
+        case 'Class Materials (PPT/pictures)': return t('type_materials');
+        case 'Report Card': return t('type_report');
+        case 'Student-Work Feedback': return t('type_feedback');
+        case 'Subject Question Bank / Assignment': return t('type_bank');
+        case 'Activity Plan / Extracurricular': return t('type_activity');
+        case 'Admin Helper (PPT / Word)': return t('type_admin');
+        default: return opt;
+      }
+    }
 
     async function generateContent() {
-      const selectedType = answers['type']; 
-      const basePrompt = topicTemplates[selectedType];
+      await Promise.all([...pendingExtractions]);
 
+      const uploads = answers['have'] || [];
+      const fileTexts = uploads
+        .map(f => (f.text ?? '').trim().slice(0, 4096)) 
+        .filter(Boolean)
+        .join('\n\n---\n\n');
+
+      // if (!fileTexts) {
+      //   alert('No extracted text found – please upload a PDF / Word / image first.');
+      //   return;
+      // }
+
+
+      const selectedType = answers['type'];
+      const basePrompt   = topicTemplates[selectedType] || '';
       if (!basePrompt) {
-        alert('⚠️ No corresponding template was found to generate content!!!');
+        alert('⚠️ No corresponding template was found to generate content!');
         return;
       }
-      
+
       const more = answers['more'] || {};
-      const extraDetail =
-          `Context Information:\n` +
-          `- Comment: ${more.prompt || 'N/A'}\n` +
-          `- Grade: ${more.grade || 'N/A'}\n` +
-          `- Number of Students: ${more.students || 'N/A'}\n` +
-          `- Duration: ${more.duration || 'N/A'}\n` +
-          `- Length: ${more.length || 'N/A'}`;
+      const extraDetails =
+    `Context Information:
+    - Comment: ${more.prompt   || 'N/A'}
+    - Grade:   ${more.grade    || 'N/A'}
+    - Students:${more.students || 'N/A'}
+    - Duration:${more.duration || 'N/A'}
+    - Length:  ${more.length   || 'N/A'}`;
 
-      const fullPrompt = `${basePrompt}\n\n${extraDetail}`;
+      const docSection = `📄 Source Document:\n\`\`\`\n${fileTexts}\n\`\`\``;
+
+      const fullPrompt = [docSection, extraDetails, basePrompt]
+        .filter(Boolean)
+        .join('\n\n');
+
+      console.log('📝 Prompt sent to DeepSeek:\n', fullPrompt);   // debug
 
 
-      let extraDetails = '';
-      if (answers['more']) {
-        extraDetails = `\n\nAdditional Info:\n${answers['more']}`;
-      }
+      const loadingMsg    = appendMessage('🔄 Generating...', 'bot');
+      const loadingBubble = loadingMsg.querySelector('.bubble');
+      loadingBubble.innerHTML =
+  `<img src="boywalking.gif" style="width:48px;height:48px;margin-right:6px;vertical-align:middle;" alt="loading">` +
+  `<span>${t('pleaseWait')}</span>`;
 
-      // Loading 
-      const loadingMessage = appendMessage('🔄 Generating...', 'bot');
-      const loadingBubble = loadingMessage.querySelector('.bubble');
-      loadingBubble.innerHTML = `<span class="dot-anim">●</span><span class="dot-anim">●</span><span class="dot-anim">●</span>`;
-      lastGeneratedResult = loadingMessage;
-      
+      lastGeneratedResult = loadingMsg;
+
       try {
         const generated = await callDeepSeek(fullPrompt);
         loadingBubble.innerHTML = marked.parse(generated);
-        setTimeout(() => {
-          askIfRefineNeeded();
-        }, 500);
-      } catch (error) {
-        console.error(error);
-        loadingBubble.innerText = '❌ Generation failed. Please try again.';
+        setTimeout(askIfRefineNeeded, 500);
+      } catch (err) {
+        console.error(err);
+        loadingBubble.textContent = '❌ Generation failed. Please try again.';
       }
     }
+
 
     
     const refineState = {
@@ -979,10 +1277,7 @@
       cleanupRefineUI();                         
 
       const s = refineState;
-      s.promptMsg = appendMessage(
-        'Question 5/5: 🔍 Do you want to make any part more specific?',
-        'bot'
-      );
+      s.promptMsg = appendMessage(t('question5'), 'bot');
 
 
       const container = document.createElement('div');
@@ -998,36 +1293,70 @@
       btnGroup.style.display = 'flex';
       btnGroup.style.gap = '12px';
       btnGroup.style.marginLeft = '44px';
+    }
 
-      const yesBtn = createChoiceBtn('✅ Yes');
-      const noBtn  = createChoiceBtn('❌ No');
+    function askIfRefineNeeded() {
 
-      yesBtn.onclick = () => {
-        updateSelection(yesBtn);
-        refineState.gotItMsg?.remove(), refineState.gotItMsg = null;
-        s.userAnswerMsg?.remove();
+      cleanupRefineUI();                     // ← helper defined earlier
 
-        s.userAnswerMsg = appendMessage('✅ Yes, please refine.', 'user');
-
-        s.optionsContainer?.remove();
-        s.optionsContainer = askRefineSections();
-      };
-
-      noBtn.onclick = () => {
-        updateSelection(noBtn);
-        s.userAnswerMsg?.remove();
-        s.userAnswerMsg = appendMessage('❌ No, that’s enough.', 'user');
-
-        s.optionsContainer?.remove();
-        s.botPromptMsg?.remove();
-        s.optionsContainer = s.botPromptMsg = null;
+      const s = refineState;                 // shorthand
 
 
-        s.gotItMsg?.remove();
-        s.gotItMsg = appendMessage('🎉 Got it! Let me know if you need anything else.', 'bot');
-      };
+      s.promptMsg = appendMessage(t('question5'), 'bot');
 
-      btnGroup.append(yesBtn, noBtn);
+
+      const container = document.createElement('div');
+      container.className = 'message bot flex';
+      container.style.gap = '12px';
+      s.choiceContainer = container;         // keep a reference for later clean‑up
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = '🤖';
+
+
+      const btnGroup = document.createElement('div');
+      Object.assign(btnGroup.style, {
+        display:       'flex',
+        gap:           '12px',
+        marginLeft:    '44px',   // indented under the avatar
+      });
+
+  
+      ['yes', 'no'].forEach(key => {
+        const btn = createChoiceBtn(t(key));   // small helper, see below
+
+        btn.onclick = () => {
+          /* 5a)  Highlight the button the user picked */
+          updateSelection(btn);                // toggles CSS fill
+
+          /* 5b)  Remove any previous user answer bubble & write a new one */
+          s.userAnswerMsg?.remove();
+          s.userAnswerMsg = appendMessage(
+            key === 'yes' ? t('pleaseRefine') : t('noThanks'),
+            'user'
+          );
+
+          /* 5c)  If they chose “Yes”, show the checkbox list */
+          if (key === 'yes') {
+            s.gotItMsg?.remove();              // in case user switched from “No”
+            s.optionsContainer?.remove();
+            s.optionsContainer = askRefineSections();   // creates the list
+          } else {
+            /* 5d)  If “No”, hide the options list (if any) and show final message */
+            s.optionsContainer?.remove();
+            s.botPromptMsg?.remove();
+            s.botPromptMsg   = null;
+            s.optionsContainer = null;      
+            s.gotItMsg?.remove();
+            s.gotItMsg = appendMessage(t('done'), 'bot');
+          }
+        };
+
+        btnGroup.appendChild(btn);
+      });
+
+
       container.append(avatar, btnGroup);
       chat.appendChild(container);
       chat.scrollTop = chat.scrollHeight;
@@ -1036,37 +1365,147 @@
       function createChoiceBtn(text) {
         const btn = document.createElement('button');
         Object.assign(btn.style, {
-          padding: '8px 14px',
-          borderRadius: '6px',
+          padding:    '8px 14px',
+          borderRadius:'6px',
           background: 'white',
-          color: 'black',
-          border: '1px solid #ccc',
-          cursor: 'pointer',
+          color:      'black',
+          border:     '1px solid #ccc',
+          cursor:     'pointer',
           transition: '0.2s',
         });
         btn.textContent = text;
         return btn;
       }
+
+
       function updateSelection(btn) {
-        const s = refineState;
         if (s.lastSelectedBtn) {
           s.lastSelectedBtn.style.background = 'white';
-          s.lastSelectedBtn.style.color = 'black';
+          s.lastSelectedBtn.style.color      = 'black';
         }
         btn.style.background = '#10a37f';
-        btn.style.color = 'white';
-        s.lastSelectedBtn = btn;
+        btn.style.color      = 'white';
+        s.lastSelectedBtn    = btn;
       }
     }
+
+    function refreshStage0UI() {
+      const promptBubble = document.querySelector('[data-stage-index="0"] .bubble');
+      if (promptBubble) promptBubble.textContent = t('question1');
+
+      document.querySelectorAll('button[data-opt-key]').forEach(btn => {
+        btn.textContent = trType(btn.dataset.optKey);
+      });
+    }
+
+
+    function handleChooseType(btn, optConst) {
+      const stageKey  = 'type';       // first question key
+      const oldChoice = answers[stageKey];
+      const newLabel  = trType(optConst);
+
+      /* 7.1  If user already chose a type, confirm replacement */
+      if (oldChoice && oldChoice !== optConst) {
+        const ok = confirm(`${t('replaceConfirm', { filename: oldChoice })}\n→ ${newLabel}`);
+        if (!ok) return;
+      }
+
+      /* 7.2  Visually highlight current button, un‑highlight others */
+      document.querySelectorAll('button[data-opt-key]').forEach(b => {
+        b.style.background = 'white';
+        b.style.color      = 'black';
+      });
+      btn.style.background = '#10a37f';
+      btn.style.color      = 'white';
+
+      /* 7.3  Store the answer */
+      answers[stageKey] = optConst;      // keep constant key for later logic
+
+      /* 7.4  Remove any previous user bubble for stage 0 */
+      const oldBubble = document.querySelector('.message.user[data-stage-index="0"]');
+      if (oldBubble) oldBubble.remove();
+
+      /* 7.5  Append new user bubble showing the choice (translated label) */
+      appendMessage(newLabel, 'user', 0);
+
+      /* 7.6  Reset downstream answers & chat messages (stages 1‑4) */
+      for (let i = 1; i < stages.length; i++) delete answers[stages[i].key];
+      const messages = Array.from(chat.children);
+      messages.forEach(el => {
+        const idx = Number(el.dataset?.stageIndex);
+        if (!isNaN(idx) && idx > 0) el.remove();
+      });
+
+      /* 7.7  Advance to next stage */
+      currentStage = 1;
+      showStage();
+    }
+
+      // yesBtn.onclick = () => {
+      //   updateSelection(yesBtn);
+      //   refineState.gotItMsg?.remove(), refineState.gotItMsg = null;
+      //   s.userAnswerMsg?.remove();
+
+      //   s.userAnswerMsg = appendMessage('✅ Yes, please refine.', 'user');
+
+      //   s.optionsContainer?.remove();
+      //   s.optionsContainer = askRefineSections();
+      // };
+
+      // noBtn.onclick = () => {
+      //   updateSelection(noBtn);
+      //   s.userAnswerMsg?.remove();
+      //   s.userAnswerMsg = appendMessage('❌ No, that’s enough.', 'user');
+
+      //   s.optionsContainer?.remove();
+      //   s.botPromptMsg?.remove();
+      //   s.optionsContainer = s.botPromptMsg = null;
+
+
+      //   s.gotItMsg?.remove();
+      //   s.gotItMsg = appendMessage('🎉 Got it! Let me know if you need anything else.', 'bot');
+      // };
+
+      // btnGroup.append(yesBtn, noBtn);
+      // container.append(avatar, btnGroup);
+      // chat.appendChild(container);
+      // chat.scrollTop = chat.scrollHeight;
+
+
+    //   function createChoiceBtn(text) {
+    //     const btn = document.createElement('button');
+    //     Object.assign(btn.style, {
+    //       padding: '8px 14px',
+    //       borderRadius: '6px',
+    //       background: 'white',
+    //       color: 'black',
+    //       border: '1px solid #ccc',
+    //       cursor: 'pointer',
+    //       transition: '0.2s',
+    //     });
+    //     btn.textContent = text;
+    //     return btn;
+    //   }
+    //   function updateSelection(btn) {
+    //     const s = refineState;
+    //     if (s.lastSelectedBtn) {
+    //       s.lastSelectedBtn.style.background = 'white';
+    //       s.lastSelectedBtn.style.color = 'black';
+    //     }
+    //     btn.style.background = '#10a37f';
+    //     btn.style.color = 'white';
+    //     s.lastSelectedBtn = btn;
+    //   }
+    // }
 
 
     function askRefineSections() {
       const type   = answers['type'];
-      const fields = templateSections[type];
+      const fields = (templateSections[type] || {})[currentLang] || templateSections[type].eng;
       if (!fields?.length) return;
 
       const s = refineState;
-      s.botPromptMsg = appendMessage('🧩 Which part(s) would you like to be more specific?', 'bot');
+      s.botPromptMsg = appendMessage(t('refineWhich'), 'bot');
 
 
       const container = document.createElement('div');
@@ -1109,7 +1548,7 @@
 
 
       const confirmBtn = document.createElement('button');
-      confirmBtn.textContent = '🔍 Regenerate with More Detail';
+      confirmBtn.textContent =  t('regenerateBtn');
       Object.assign(confirmBtn.style, {
         alignSelf: 'flex-start',
         marginLeft: '44px',
@@ -1162,6 +1601,26 @@
       return container;
     }
 
+    function extractAndStore(fileRecord, file) {
+      fileRecord.text = '⌛ extracting…';
+
+    /* create + start extraction */
+    const promise = extractTextFromFile(file)
+      .then(txt => {
+        fileRecord.text = (txt || '').trim() || '(empty file)';
+      })
+      .catch(err => {
+        console.error('Extraction error →', err);      // full stack
+        fileRecord.text = `❌ Failed: ${err.message || err}`;
+      })
+      .finally(() => pendingExtractions.delete(promise));  // clean up
+
+    /* track it so generateContent() can await */
+    pendingExtractions.add(promise);
+
+
+    }
+
     function handleUserInput() {
       const stageKey = stages[currentStage]?.key;
       const value = input.value.trim();
@@ -1175,17 +1634,16 @@
 
         if (!hasFiles && !hasText) return;
 
-        answers[stageKey] = [];
+        if (!answers[stageKey]) answers[stageKey] = [];
 
         if (hasFiles) {
-          fileRows.forEach(row => {
-            const name = row.querySelector('span')?.textContent;
-            const note = row.querySelector('.file-note')?.value || '';
-            if (name) {
-              answers[stageKey].push({ name, note });
-            }
-          });
+        fileRows.forEach(row => {
+          const name = row.querySelector('span')?.textContent;
+          const note = row.querySelector('.file-note')?.value || '';
+          if (name) answers[stageKey].push({ name, note });
+        });
         }
+       
 
         if (hasText) {
           answers[stageKey].push({ description: value });
@@ -1297,123 +1755,103 @@
 
 
 
-    fileInput.addEventListener('change', async () => {
-      const stageKey = stages[currentStage]?.key;
+fileInput.addEventListener('change', () => {
+  if (!answers.have) answers.have = [];
 
-      if (!answers[stageKey]) answers[stageKey] = [];
+  for (const file of fileInput.files) {
+    /* Find existing record by name */
+    let rec = answers.have.find(r => r.name === file.name);
 
-      for (let file of fileInput.files) {
+    if (rec) {
+      // File with same name already uploaded – ask if replace
+      const ok = confirm(`Replace previously uploaded "${file.name}"?`);
+      if (!ok) continue;
 
-        const alreadyExists = answers[stageKey].some(f => f.name === file.name);
-        if (alreadyExists) continue;
-
-        const fileRecord = {
-          name: file.name,
-          note: ''
-        };
-        answers[stageKey].push(fileRecord);
-
-        const fileRow = document.createElement('div');
-        fileRow.className = 'file-item';
-
-        const nameSpan = document.createElement('span');
-        nameSpan.textContent = file.name;
-
-        const noteInput = document.createElement('input');
-        noteInput.className = 'file-note';
-        noteInput.placeholder = 'Add notes...';
-        noteInput.oninput = (e) => {
-          fileRecord.note = e.target.value;
-        };
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.innerHTML = '❌';
-        deleteBtn.onclick = () => {
-          fileRow.remove();
-          answers[stageKey] = answers[stageKey].filter(f => f.name !== file.name);
-        };
-
-        fileRow.appendChild(nameSpan);
-        fileRow.appendChild(noteInput);
-        fileRow.appendChild(deleteBtn);
-        filePreview.appendChild(fileRow);
-      }
-
-      fileInput.value = '';
-
- 
-      if (stageKey === 'have') {
-
-        for (let file of fileInput.files) {
-          uploadedFiles.push(file);
-          const fileRecord = {
-            name: file.name,
-            note: ''
-          };
+      // If confirmed, wipe old text and re‑extract
+      rec.note = '';
+      extractAndStore(rec, file);
+      appendMessage(`🔄 "${file.name}" replaced.`, 'user');
+    } else {
+      // New upload
+      rec = { id: crypto.randomUUID(), name: file.name, note: '', text: '' };
+      answers.have.push(rec);
+      extractAndStore(rec, file);
+      const msg   = appendMessage('', 'user');           // empty user message
+      const link  = document.createElement('a');
+      link.href   = '#';
+      link.textContent = `📎 ${file.name}`;
+      link.style.color = '#0b82ff';
+      link.onclick = () => triggerReplace(rec);          // see helper below
+      msg.querySelector('.bubble').appendChild(link);
+    }
+  }
+  if (currentStage === 2) {              // 0,1,**2**,3,4…
+  // skip the Enter step and show Question 4 immediately
+  currentStage++;                      // now == 3
+  renderMoreForm();                    // Question 4 UI
+}
+  fileInput.value = '';
+});
 
 
-          const fileRow = document.createElement('div');
-          fileRow.className = 'file-item';
 
-          const nameSpan = document.createElement('span');
-          nameSpan.textContent = file.name;
 
-          const noteInput = document.createElement('input');
-          noteInput.className = 'file-note';
-          noteInput.placeholder = 'Add notes...';
-          noteInput.oninput = (e) => {
-            fileRecord.note = e.target.value;
-            fileRecord.name = file.name;
-            fileRecord.file = file;
-            fileRow.dataset.note = e.target.value;
-          };
 
-          const deleteBtn = document.createElement('button');
-          deleteBtn.innerHTML = '❌';
-          deleteBtn.onclick = () => {
-            fileRow.remove();
-            uploadedFiles = uploadedFiles.filter(f => f.name !== file.name);
-          };
+  async function extractTextFromDocx(file) {
+    const { value } = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+    return value;
+  }
 
-          fileRow.appendChild(nameSpan);
-          fileRow.appendChild(noteInput);
-          fileRow.appendChild(deleteBtn);
-          filePreview.appendChild(fileRow);
-        }
+  async function extractTextFromImage(file) {
+  const result = await Tesseract.recognize(file, 'chi_sim+chi_tra+eng', {
+    logger: m => console.log(m.status, m.progress)
+  });
+  return result.data.text;
+}
 
-        fileInput.value = '';
-      }
-
-    });
-
-    async function extractTextFromPDF(file) {
-      const pdfData = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+  async function extractTextFromPDF(file) {
+    try {
+      const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
       let text = '';
+
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
         const pageText = content.items.map(item => item.str).join(' ');
         text += pageText + '\n';
       }
-      return text;
-    }
 
-    async function extractTextFromDocx(file) {
-      const arrayBuffer = await file.arrayBuffer();
-      const result = await mammoth.extractRawText({ arrayBuffer });
-      return result.value;
-    }
+      if (text.trim()) return text.trim();
 
-    async function extractTextFromImage(file) {
-      const result = await Tesseract.recognize(file, 'eng', {
-        logger: m => console.log(m.status, m.progress)
-      });
-      return result.data.text;
+      throw new Error('empty text layer');
+    } catch (err) {
+      console.warn('Text extraction failed, switching to OCR →', err.message);
+
+      // OCR fallback
+      const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+      let ocrText = '';
+
+      for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 2 });
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        await page.render({ canvasContext: context, viewport }).promise;
+
+        const { data } = await Tesseract.recognize(canvas, 'chi_sim+chi_tra+eng');
+        ocrText += data.text + '\n';
+      }
+
+      return ocrText.trim() || '⚠️ OCR produced no text.';
     }
+  }
 
     async function extractTextFromFile(file) {
       const name = file.name.toLowerCase();
+
       if (name.endsWith('.pdf')) {
         return await extractTextFromPDF(file);
       } else if (name.endsWith('.docx')) {
@@ -1425,6 +1863,47 @@
       }
     }
 
+
+      // hidden input reused for every replacement
+    const replaceInput = document.createElement('input');
+    replaceInput.type = 'file';
+    replaceInput.style.display = 'none';
+    document.body.appendChild(replaceInput);
+
+    function triggerReplace(fileRecord) {
+      replaceInput.onchange = () => {
+        const newFile = replaceInput.files[0];
+        if (!newFile) return;                       // user hit cancel
+
+        // wipe old text and restart extraction
+        fileRecord.name = newFile.name;
+        extractAndStore(fileRecord, newFile);
+
+        // update link text 
+        this.textContent = `📎 ${newFile.name}`;
+
+        // remove ALL chat messages that come after Q3 
+        pruneMessagesAfterStage(2);                
+
+        // delete answers for stages 3‑4‑5 so user must re‑fill 
+        ['more', 'refine'].forEach(k => delete answers[k]);
+
+        currentStage = 3;                           // back to Question 4
+        renderMoreForm();                           // re‑show Q4 form
+      };
+      replaceInput.value = '';                      // reset for next use
+      replaceInput.click();
+    }
+
+    function pruneMessagesAfterStage(stageIdx) {
+      const msgs = Array.from(chat.children);
+      for (let i = msgs.length - 1; i >= 0; i--) {
+        const idx = Number(msgs[i].dataset.stageIndex);
+        if (!isNaN(idx) && idx > stageIdx) msgs[i].remove();
+      }
+    }
+
+    updateUIText();
     showStage();
 
   </script>

@@ -261,7 +261,7 @@
           "Anticipated Difficulties/ Challenges → Solution",
           "Follow‑up / Reflection box"
         ],
-        chi_sim: [
+        zh: [
           "课题 / 学科领域",
           "学习目标 & 可测量指标",
           "先备知识",
@@ -272,7 +272,7 @@
           "预判难点 / 挑战 → 解决方案",
           "课后跟进 / 反思"
         ],
-        chi_tra: [
+        "zh-HK": [
           "課程標題 / 科目領域",
           "學習目標 & 可衡量指標",
           "先備知識",
@@ -294,7 +294,7 @@
           "Branding Elements (school logo, colors, fonts)",
           "Speaker‑note Depth (none / bullet / full script)"
         ],
-        chi_sim: [
+        zh: [
           "演示主题 / 关注问题",
           "目标受众（年级或课程）",
           "关键要点 / 幻灯片大纲",
@@ -303,7 +303,7 @@
           "品牌元素（校徽、色彩、字体）",
           "演讲者备注深度（无 / 要点 / 全脚本）"
         ],
-        chi_tra: [
+        "zh-HK": [
           "簡報主題 / 焦點問題",
           "預期受眾（年級或課程）",
           "重點 / 投影片大綱",
@@ -325,7 +325,7 @@
           "Teacher Narrative Comments",
           "Parent signature flag"
         ],
-        chi_sim: [
+        zh: [
           "学生与班级信息",
           "学期 / 成绩周期",
           "科目列表与评分标准",
@@ -336,7 +336,7 @@
           "教师评语",
           "家长签名项"
         ],
-        chi_tra: [
+        "zh-HK": [
           "學生與班級資訊",
           "學期 / 成績週期",
           "科目清單與評分標準",
@@ -358,7 +358,7 @@
           "Overall Comment",
           "Next-check-in Date"
         ],
-        chi_sim: [
+        zh: [
           "学生 / 作业编号",
           "评分标准或“优点与改进”字段（优势、需改进、下一步）",
           "表现等级或分数",
@@ -366,7 +366,7 @@
           "整体评语",
           "下次回顾日期"
         ],
-        chi_tra: [
+        "zh-HK": [
           "學生 / 作業編號",
           "評分標準或「亮點與改進」欄位（優勢、需改善、後續步驟）",
           "表現等級或分數",
@@ -388,7 +388,7 @@
           "Time Limit Per Item",
           "Category Folder"
         ],
-        chi_sim: [
+        zh: [
           "学科与主题标签",
           "课程标准对齐",
           "题型（选择题、开放题等）",
@@ -399,7 +399,7 @@
           "每题时间限制",
           "分类文件夹"
         ],
-        chi_tra: [
+        "zh-HK": [
           "學科與主題標籤",
           "課綱對應",
           "題型（選擇題、開放題等）",
@@ -424,7 +424,7 @@
           "Risk / safety considerations",
           "Assessment or reflection Method"
         ],
-        chi_sim: [
+        zh: [
           "活动名称与目的",
           "日期 / 时间段",
           "地点与进入说明",
@@ -435,7 +435,7 @@
           "风险 / 安全考量",
           "评估或反思方式"
         ],
-        chi_tra: [
+        "zh-HK": [
           "活動名稱與目的",
           "日期 / 時段",
           "地點與進出說明",
@@ -457,7 +457,7 @@
           "Header-footer Branding",
           "Distribution Date"
         ],
-        chi_sim: [
+        zh: [
           "文档类型（议程、简报、手册、政策等）",
           "目标读者",
           "重点部分 / 要点",
@@ -465,7 +465,7 @@
           "页眉页脚品牌标识",
           "发布日期"
         ],
-        chi_tra: [
+        "zh-HK": [
           "文件類型（議程、簡報、手冊、政策等）",
           "目標讀者",
           "重點內容 / 討論要點",
@@ -635,7 +635,7 @@
     pleaseWait : "Please wait for 1 minute…"
 
   },
-  chi_sim: {
+  zh: {
     title: "👋 你想生成什么？",
     next: "下一步",
     upload: "上传文件",
@@ -680,7 +680,7 @@
     pleaseWait : "请等待 1 分钟…"
 
   },
-  chi_tra: {
+  "zh-HK": {
     title: "👋 你想要生成什麼？",
     next: "下一步",
     upload: "上傳檔案",
@@ -728,7 +728,7 @@
 };
 
 
-  document.getElementById('ocr-lang').dispatchEvent(new Event('change'));
+  //document.getElementById('ocr-lang').dispatchEvent(new Event('change'));
 
 
   
@@ -856,31 +856,70 @@
 
     }
     
-    async function callDeepSeek(promptText) {
-    const apiKey = 'sk-816d9a802e5f4c8ab73459a40791d7db'; 
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'deepseek-reasoner', 
-        messages: [
-          { role: 'system', content: 'You are an experienced AI education specialist, skilled at explaining complex concepts in a clear and engaging manner while providing personalized guidance tailored to students at different learning levels. Provide details plan for user(teacher)' },
-          { role: 'user', content: promptText }
-        ],
-        temperature: 0.7
-      }),
-    });
-
-    const data = await response.json();
-    if (data.choices && data.choices.length > 0) {
-    return data.choices[0].message.content;
-  } else {
-    throw new Error('No response from DeepSeek API');
-  }
-}
+    
+    async function callDeepSeek(promptText, onChunkReceived) {
+        const locale = currentLang;
+        const params = new URLSearchParams({ promptText, locale });
+        const eventSource = new EventSource(`https://backend.canpaniongroup.com/aigc/aio-generation?${params.toString()}`);
+        
+        return new Promise((resolve, reject) => {
+            let completeContent = '';
+            let isCompleted = false;
+            
+            // Handle incoming message chunks
+            eventSource.addEventListener('message', (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.content) {
+                        completeContent += data.content;
+                        if (onChunkReceived) {
+                            onChunkReceived(data.content);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error parsing message data:', e);
+                    reject(e);
+                }
+            });
+            
+            // Handle stream completion
+            eventSource.addEventListener('end', (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.status === 'completed') {
+                        isCompleted = true;
+                        resolve(completeContent);
+                    }
+                } catch (e) {
+                    console.error('Error parsing end data:', e);
+                    reject(e);
+                } finally {
+                    eventSource.close();
+                }
+            });
+            
+            // Handle server-sent errors
+            eventSource.addEventListener('error', (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    reject(new Error(data.error || 'Server error'));
+                } catch (e) {
+                    console.error('Error parsing server error data:', e);
+                    reject(e);
+                } finally {
+                    eventSource.close();
+                }
+            });
+            
+            // Handle connection errors
+            eventSource.onerror = () => {
+                if (!isCompleted) {
+                    reject(new Error('Connection error'));
+                }
+                eventSource.close();
+            };
+        });
+    }
 
     function showStage() {
       const stage = stages[currentStage];
@@ -1129,20 +1168,24 @@
       }
     }
 
-    const langSelector = document.getElementById('ocr-lang');
-    let currentLang = langSelector.value;
+    //const langSelector = document.getElementById('ocr-lang');
+    //let currentLang = langSelector.value;
+    let currentLang = document.documentElement.lang;
+    updateUIText(); 
+    refreshStage0UI();  
 
     function t(key, vars = {}) {
       let s = translations[currentLang]?.[key] || translations.eng[key] || key;
       for (const [k, v] of Object.entries(vars)) s = s.replace(`{${k}}`, v);
       return s;
     }
-
+		
+    /*
     langSelector.addEventListener('change', () => {
       currentLang = langSelector.value;
       updateUIText(); 
       refreshStage0UI();    
-    });
+    });*/
 
     function updateUIText() {
       document.querySelector('h2.centered-heading').textContent = t('title');
@@ -1160,10 +1203,10 @@
         });
     }
 
-    langSelector.addEventListener('change', () => {
+    /*langSelector.addEventListener('change', () => {
       currentLang = langSelector.value;
       updateUIText();
-    });
+    });*/
 
     window.addEventListener('DOMContentLoaded', () => {
       updateUIText();
@@ -1233,18 +1276,43 @@
         .join('\n\n');
 
       console.log('📝 Prompt sent to DeepSeek:\n', fullPrompt);   // debug
-
-
       const loadingMsg    = appendMessage('🔄 Generating...', 'bot');
       const loadingBubble = loadingMsg.querySelector('.bubble');
       loadingBubble.innerHTML =
-  `<img src="boywalking.gif" style="width:48px;height:48px;margin-right:6px;vertical-align:middle;" alt="loading">` +
+  `<img src="https://cdn.prod.website-files.com/67af0a7f5730375704f96216/682588f940a6776a7f6c138a_boywalkingg.gif" style="height:120px;margin-right:6px;vertical-align:middle;" alt="loading">` +
   `<span>${t('pleaseWait')}</span>`;
 
       lastGeneratedResult = loadingMsg;
+      const exportT = {
+      	en: "export to .docx",
+        zh: "导出到 .docx",
+        "zh-HK": "導出至 .docx"
+      }
 
       try {
-        const generated = await callDeepSeek(fullPrompt);
+        let result = '';
+        const generated = await callDeepSeek(fullPrompt, (chunk) => {
+            // Update your UI here, e.g., append to a div or textarea
+            result += chunk;
+            loadingBubble.innerHTML = marked.parse(result);
+        }).then((completeContent) => {
+        		const exportMsg = appendMessage('', 'bot');
+            exportMsg.querySelector('.bubble').innerHTML = `<a id="exportbtn" href="#" class="btn-secondary w-inline-block" style="display: block;"><div class="flex-horizontal gap-column-6px"><div>${exportT[currentLang]}</div></div></a>`;
+            const exportBtn = document.getElementById('exportbtn');
+            exportBtn.addEventListener('click', function() {
+                const htmltext = marked.parse(completeContent);
+                if (htmltext) {
+                    const docxBlob = htmlDocx.asBlob(htmltext);
+                    saveAs(docxBlob, 'plan.docx');
+                } else {
+                    alert('No plan to export.');
+                }
+            });
+            return completeContent;
+        }).catch((error) => {
+            console.error('Error:', error);
+            return error;
+        });
         loadingBubble.innerHTML = marked.parse(generated);
         setTimeout(askIfRefineNeeded, 500);
       } catch (err) {
@@ -1441,62 +1509,6 @@
       showStage();
     }
 
-      // yesBtn.onclick = () => {
-      //   updateSelection(yesBtn);
-      //   refineState.gotItMsg?.remove(), refineState.gotItMsg = null;
-      //   s.userAnswerMsg?.remove();
-
-      //   s.userAnswerMsg = appendMessage('✅ Yes, please refine.', 'user');
-
-      //   s.optionsContainer?.remove();
-      //   s.optionsContainer = askRefineSections();
-      // };
-
-      // noBtn.onclick = () => {
-      //   updateSelection(noBtn);
-      //   s.userAnswerMsg?.remove();
-      //   s.userAnswerMsg = appendMessage('❌ No, that’s enough.', 'user');
-
-      //   s.optionsContainer?.remove();
-      //   s.botPromptMsg?.remove();
-      //   s.optionsContainer = s.botPromptMsg = null;
-
-
-      //   s.gotItMsg?.remove();
-      //   s.gotItMsg = appendMessage('🎉 Got it! Let me know if you need anything else.', 'bot');
-      // };
-
-      // btnGroup.append(yesBtn, noBtn);
-      // container.append(avatar, btnGroup);
-      // chat.appendChild(container);
-      // chat.scrollTop = chat.scrollHeight;
-
-
-    //   function createChoiceBtn(text) {
-    //     const btn = document.createElement('button');
-    //     Object.assign(btn.style, {
-    //       padding: '8px 14px',
-    //       borderRadius: '6px',
-    //       background: 'white',
-    //       color: 'black',
-    //       border: '1px solid #ccc',
-    //       cursor: 'pointer',
-    //       transition: '0.2s',
-    //     });
-    //     btn.textContent = text;
-    //     return btn;
-    //   }
-    //   function updateSelection(btn) {
-    //     const s = refineState;
-    //     if (s.lastSelectedBtn) {
-    //       s.lastSelectedBtn.style.background = 'white';
-    //       s.lastSelectedBtn.style.color = 'black';
-    //     }
-    //     btn.style.background = '#10a37f';
-    //     btn.style.color = 'white';
-    //     s.lastSelectedBtn = btn;
-    //   }
-    // }
 
 
     function askRefineSections() {

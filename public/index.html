@@ -230,8 +230,7 @@
   <div id="input-area">
     <div id="file-preview" class="input-top-files"></div>
     <div class="input-wrapper">
-      <textarea id="user-input" placeholder="Type something..." rows="2"></textarea>
-
+      <textarea id="user-input" rows="2"></textarea>
       <div class="tooltip-wrapper">
         <button id="file-button" onclick="document.getElementById('file-upload').click()">＋</button>
         <span class="tooltip-text">Upload File</span>
@@ -248,6 +247,8 @@
     const input = document.getElementById('user-input');
     const fileInput = document.getElementById('file-upload');
     const filePreview = document.getElementById('file-preview');
+    let fullMarkdown = ''; 
+    const escapeRegExp = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const templateSections = {
       "Lesson Plan": {
         eng: [
@@ -632,8 +633,16 @@
     ph_students: "Number of Students",
     ph_duration: "Duration (e.g., 45 mins)",
     ph_length  : "Length (Short / Medium / Long)",
-    pleaseWait : "Please wait for 1 minute…"
+    pleaseWait : "Please wait for 1 minute…",
+    ph_input : "Type something...",
 
+    details      : "Details",
+    label_comment: "Comment",
+    label_grade  : "Grade",
+    label_students:"Number of Students",
+    label_duration:"Duration",
+    label_length : "Length",
+    na           : "N/A"
   },
   chi_sim: {
     title: "👋 你想生成什么？",
@@ -677,7 +686,17 @@
     ph_students: "学生人数",
     ph_duration: "时长（例如 45 分钟）",
     ph_length  : "长度（短 / 中 / 长）",
-    pleaseWait : "请等待 1 分钟…"
+    pleaseWait : "请等待 1 分钟…",
+    ph_input : "请输入内容…",
+
+    details      : "详情",
+    label_comment: "注释",
+    label_grade  : "年级",
+    label_students:"学生人数",
+    label_duration:"时长",
+    label_length : "长度",
+    na           : "未填写"
+
 
   },
   chi_tra: {
@@ -722,7 +741,16 @@
     ph_students: "學生人數",
     ph_duration: "時長（例如 45 分鐘）",
     ph_length  : "長度（短 / 中 / 長）",
-    pleaseWait : "請等待 1 分鐘…"
+    pleaseWait : "請等待 1 分鐘…",
+    ph_input : "請輸入內容…",
+
+    details      : "詳情",
+    label_comment: "註解",
+    label_grade  : "年級",
+    label_students:"學生人數",
+    label_duration:"時長",
+    label_length : "長度",
+    na           : "未填寫"
 
   }
 };
@@ -787,17 +815,11 @@
         fileItem.append(span, note, delBtn);
         document.getElementById('file-preview').appendChild(fileItem);
 
-
-
-        if (currentStage === 2) {
-          currentStage++;
-          renderMoreForm();
-        }
       });
     }
 
 
-    function appendMessage(content, sender, stageIndex = null) {
+    function appendMessage(content, sender, stageIndex = null, asMarkdown = false) {
       content = content || '';
       const container = document.createElement('div');
       container.className = `message ${sender}`;
@@ -809,7 +831,11 @@
 
       const bubble = document.createElement('div');
       bubble.className = 'bubble';
-      bubble.textContent = content;
+      if (asMarkdown) {
+        bubble.innerHTML = marked.parse(content);   // 解析并渲染
+      } else {
+      bubble.textContent = content;               // 纯文本
+      }
 
       if (sender === 'user') {
         bubble.style.cursor = 'pointer';
@@ -855,7 +881,8 @@
       return container
 
     }
-    
+
+
     async function callDeepSeek(promptText) {
     const apiKey = 'sk-816d9a802e5f4c8ab73459a40791d7db'; 
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -1092,14 +1119,19 @@
         refineOptionsContainer = null;
         refineChoiceContainer = null;
 
-        const userInfo =
-          `📌 Details:\n` +
-          `- Comment: ${prompt || 'N/A'}\n` +
-          `- Grade: ${grade || 'N/A'}\n` +
-          `- Number of Students: ${students || 'N/A'}\n` +
-          `- Duration: ${duration || 'N/A'}\n` +
-          `- Length: ${length || 'N/A'}`;
-        lastUserMoreMessage = appendMessage(userInfo, 'user');
+        const na = t('na');    
+
+        
+        const userInfo = [
+          `📌 ${t('details')}:`,
+          `- **${t('label_comment')}**: ${prompt   || na}`,
+          `- **${t('label_grade')}**:   ${grade    || na}`,
+          `- **${t('label_students')}**: ${students || na}`,
+          `- **${t('label_duration')}**: ${duration || na}`,
+          `- **${t('label_length')}**:   ${length   || na}`
+        ].join('\n');
+
+        lastUserMoreMessage = appendMessage(userInfo, 'user', null, true); // ← 渲染 Markdown
 
         answers['more'] = { prompt, grade, students, duration, length };
         answers['studentsGrade'] = `${students || 'N/A'} / ${grade || 'N/A'}`;
@@ -1150,6 +1182,8 @@
       const tooltip = document.querySelector('.tooltip-text');
       if (tooltip) tooltip.textContent = t('upload');
 
+      document.getElementById('user-input').placeholder = t('ph_input');
+
       // update stage prompts already created (optional)
       stages.forEach((s, i) => s.prompt = t(`question${i + 1}`));
       document
@@ -1195,6 +1229,30 @@
       }
     }
 
+    function addFilePreviewRow(fileRecord) {
+      const fileItem = document.createElement('div');
+      fileItem.className = 'file-item';
+
+      const span = document.createElement('span');
+      span.textContent = fileRecord.name;
+
+      const note = document.createElement('input');
+      note.className = 'file-note';
+      note.placeholder = 'Add note...';
+      note.oninput = e => fileRecord.note = e.target.value;
+
+      const del = document.createElement('button');
+      del.textContent = '✕';
+      del.onclick = () => {
+        fileItem.remove();
+        answers.have = answers.have.filter(f => f.id !== fileRecord.id);
+      };
+
+      fileItem.append(span, note, del);
+      filePreview.appendChild(fileItem);
+    }
+
+
     async function generateContent() {
       await Promise.all([...pendingExtractions]);
 
@@ -1218,13 +1276,16 @@
       }
 
       const more = answers['more'] || {};
-      const extraDetails =
-    `Context Information:
-    - Comment: ${more.prompt   || 'N/A'}
-    - Grade:   ${more.grade    || 'N/A'}
-    - Students:${more.students || 'N/A'}
-    - Duration:${more.duration || 'N/A'}
-    - Length:  ${more.length   || 'N/A'}`;
+      const na = t('na');  
+      const extraDetails = `
+      Context Information:
+
+      - **${t('label_comment')}**: ${more.prompt   || na}
+      - **${t('label_grade')}**:   ${more.grade    || na}
+      - **${t('label_students')}**: ${more.students || na}
+      - **${t('label_duration')}**: ${more.duration || na}
+      - **${t('label_length')}**:   ${more.length   || na}
+      `.trim();
 
       const docSection = `📄 Source Document:\n\`\`\`\n${fileTexts}\n\`\`\``;
 
@@ -1245,6 +1306,7 @@
 
       try {
         const generated = await callDeepSeek(fullPrompt);
+        fullMarkdown = generated; 
         loadingBubble.innerHTML = marked.parse(generated);
         setTimeout(askIfRefineNeeded, 500);
       } catch (err) {
@@ -1327,23 +1389,23 @@
         const btn = createChoiceBtn(t(key));   // small helper, see below
 
         btn.onclick = () => {
-          /* 5a)  Highlight the button the user picked */
+          // 5a)  Highlight the button the user picked 
           updateSelection(btn);                // toggles CSS fill
 
-          /* 5b)  Remove any previous user answer bubble & write a new one */
+          //5b)  Remove any previous user answer bubble & write a new one */
           s.userAnswerMsg?.remove();
           s.userAnswerMsg = appendMessage(
             key === 'yes' ? t('pleaseRefine') : t('noThanks'),
             'user'
           );
 
-          /* 5c)  If they chose “Yes”, show the checkbox list */
+          // 5c  If they chose “Yes”, show the checkbox list 
           if (key === 'yes') {
             s.gotItMsg?.remove();              // in case user switched from “No”
             s.optionsContainer?.remove();
             s.optionsContainer = askRefineSections();   // creates the list
           } else {
-            /* 5d)  If “No”, hide the options list (if any) and show final message */
+            // 5d)  If “No”, hide the options list (if any) and show final message */
             s.optionsContainer?.remove();
             s.botPromptMsg?.remove();
             s.botPromptMsg   = null;
@@ -1404,13 +1466,13 @@
       const oldChoice = answers[stageKey];
       const newLabel  = trType(optConst);
 
-      /* 7.1  If user already chose a type, confirm replacement */
+
       if (oldChoice && oldChoice !== optConst) {
         const ok = confirm(`${t('replaceConfirm', { filename: oldChoice })}\n→ ${newLabel}`);
         if (!ok) return;
       }
 
-      /* 7.2  Visually highlight current button, un‑highlight others */
+
       document.querySelectorAll('button[data-opt-key]').forEach(b => {
         b.style.background = 'white';
         b.style.color      = 'black';
@@ -1418,17 +1480,16 @@
       btn.style.background = '#10a37f';
       btn.style.color      = 'white';
 
-      /* 7.3  Store the answer */
-      answers[stageKey] = optConst;      // keep constant key for later logic
 
-      /* 7.4  Remove any previous user bubble for stage 0 */
+      answers[stageKey] = optConst;      
+
       const oldBubble = document.querySelector('.message.user[data-stage-index="0"]');
       if (oldBubble) oldBubble.remove();
 
-      /* 7.5  Append new user bubble showing the choice (translated label) */
+
       appendMessage(newLabel, 'user', 0);
 
-      /* 7.6  Reset downstream answers & chat messages (stages 1‑4) */
+
       for (let i = 1; i < stages.length; i++) delete answers[stages[i].key];
       const messages = Array.from(chat.children);
       messages.forEach(el => {
@@ -1436,104 +1497,40 @@
         if (!isNaN(idx) && idx > 0) el.remove();
       });
 
-      /* 7.7  Advance to next stage */
+
       currentStage = 1;
       showStage();
     }
 
-      // yesBtn.onclick = () => {
-      //   updateSelection(yesBtn);
-      //   refineState.gotItMsg?.remove(), refineState.gotItMsg = null;
-      //   s.userAnswerMsg?.remove();
-
-      //   s.userAnswerMsg = appendMessage('✅ Yes, please refine.', 'user');
-
-      //   s.optionsContainer?.remove();
-      //   s.optionsContainer = askRefineSections();
-      // };
-
-      // noBtn.onclick = () => {
-      //   updateSelection(noBtn);
-      //   s.userAnswerMsg?.remove();
-      //   s.userAnswerMsg = appendMessage('❌ No, that’s enough.', 'user');
-
-      //   s.optionsContainer?.remove();
-      //   s.botPromptMsg?.remove();
-      //   s.optionsContainer = s.botPromptMsg = null;
-
-
-      //   s.gotItMsg?.remove();
-      //   s.gotItMsg = appendMessage('🎉 Got it! Let me know if you need anything else.', 'bot');
-      // };
-
-      // btnGroup.append(yesBtn, noBtn);
-      // container.append(avatar, btnGroup);
-      // chat.appendChild(container);
-      // chat.scrollTop = chat.scrollHeight;
-
-
-    //   function createChoiceBtn(text) {
-    //     const btn = document.createElement('button');
-    //     Object.assign(btn.style, {
-    //       padding: '8px 14px',
-    //       borderRadius: '6px',
-    //       background: 'white',
-    //       color: 'black',
-    //       border: '1px solid #ccc',
-    //       cursor: 'pointer',
-    //       transition: '0.2s',
-    //     });
-    //     btn.textContent = text;
-    //     return btn;
-    //   }
-    //   function updateSelection(btn) {
-    //     const s = refineState;
-    //     if (s.lastSelectedBtn) {
-    //       s.lastSelectedBtn.style.background = 'white';
-    //       s.lastSelectedBtn.style.color = 'black';
-    //     }
-    //     btn.style.background = '#10a37f';
-    //     btn.style.color = 'white';
-    //     s.lastSelectedBtn = btn;
-    //   }
-    // }
-
-
+    
     function askRefineSections() {
       const type   = answers['type'];
-      const fields = (templateSections[type] || {})[currentLang] || templateSections[type].eng;
+      const fields = (templateSections[type] || {})[currentLang] ||
+                    templateSections[type].eng;
       if (!fields?.length) return;
 
       const s = refineState;
       s.botPromptMsg = appendMessage(t('refineWhich'), 'bot');
 
 
-      const container = document.createElement('div');
-      container.className = 'message bot';
-      container.style.flexDirection = 'column';
-      container.style.marginLeft = '44px';
-      container.style.display = 'flex';
-
-      container.style.gap = '8px';
-      s.optionsContainer = container;
-
-
+      const wrap = document.createElement('div');
+      wrap.className = 'message bot';
+      wrap.style.flexDirection = 'column';
+      wrap.style.marginLeft = '44px';
+      wrap.style.gap = '8px';
+      s.optionsContainer = wrap;
 
       const cbGroup = document.createElement('div');
       Object.assign(cbGroup.style, {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '6px',
-        marginLeft: '44px',
-        marginTop: '4px',
+        display: 'flex', flexDirection: 'column',
+        gap: '6px', marginLeft: '44px'
       });
 
       const selected = new Set();
       fields.forEach(f => {
-        const label = document.createElement('label');
-        label.style.display = 'flex';
-        label.style.alignItems = 'center';
-        label.style.gap = '6px';
+        const lab = document.createElement('label');
+        lab.style.display = 'flex';
+        lab.style.alignItems = 'center'; lab.style.gap = '6px';
 
         const cb = document.createElement('input');
         cb.type = 'checkbox';
@@ -1542,69 +1539,100 @@
         const span = document.createElement('span');
         span.textContent = f;
 
-        label.append(cb, span);
-        cbGroup.appendChild(label);
+        lab.append(cb, span);
+        cbGroup.appendChild(lab);
       });
 
-
-      const confirmBtn = document.createElement('button');
-      confirmBtn.textContent =  t('regenerateBtn');
-      Object.assign(confirmBtn.style, {
-        alignSelf: 'flex-start',
-        marginLeft: '44px',
-        padding: '8px 14px',
-        borderRadius: '6px',
-        background: '#10a37f',
-        color: 'white',
-        border: 'none',
-        cursor: 'pointer',
+ 
+      const okBtn = document.createElement('button');
+      okBtn.textContent = t('regenerateBtn');
+      Object.assign(okBtn.style, {
+        alignSelf: 'flex-start', marginLeft: '44px',
+        padding: '8px 14px', borderRadius: '6px',
+        background: '#10a37f', color: 'white',
+        border: 'none', cursor: 'pointer'
       });
 
-      confirmBtn.onclick = async () => {
+      okBtn.onclick = async () => {
         if (!selected.size) {
-          alert('Please select at least one part to refine.');
+          alert(t('atLeastOnePart'));
           return;
         }
 
-        const detailList = [...selected].join('\n- ');
-        appendMessage(`📌 Please make the following part(s) more detailed:\n- ${detailList}`, 'user');
-        appendMessage('🔄 Regenerating with more detail...', 'bot');
 
-        const more = answers['more'] || {};
-        const extraDetail =
-          `Context Information:\n` +
-          `- Comment: ${more.prompt || 'N/A'}\n` +
-          `- Grade: ${more.grade || 'N/A'}\n` +
-          `- Number of Students: ${more.students || 'N/A'}\n` +
-          `- Duration: ${more.duration || 'N/A'}\n` +
-          `- Length: ${more.length || 'N/A'}`;
+        const partList = [...selected];
+        appendMessage(
+          `${t('pleaseRefine')}\n- ${partList.join('\n- ')}`,
+          'user'
+        );
 
-        const fullPrompt = `${topicTemplates[type]}\n\n${extraDetail}\n\nAdditional Instruction:\nPlease make the following part(s) more detailed:\n- ${detailList}`;
 
-        const loadingMsg   = appendMessage('...', 'bot');
+        const loadingMsg    = appendMessage('⏳ Regenerating…', 'bot');
         const loadingBubble = loadingMsg.querySelector('.bubble');
         loadingBubble.innerHTML =
-          '<span class="dot-anim">●</span><span class="dot-anim">●</span><span class="dot-anim">●</span>';
+  `<img src="boywalking.gif" style="width:48px;height:48px;margin-right:6px;vertical-align:middle;" alt="loading">` +
+  `<span>${t('pleaseWait')}</span>`;
+
+        const prompt = `
+    You are revising a teacher document.
+
+    ### Previous draft (markdown)
+    \`\`\`
+    ${fullMarkdown}
+    \`\`\`
+
+    ### Task
+    Rewrite **only** the following section(s) with richer detail, leaving everything else unchanged:
+
+    ${partList.map(p => '- ' + p).join('\n')}
+
+    Return **only those rewritten sections** in markdown,
+    starting with their original headings.
+    `;
 
         try {
-          const generated = await callDeepSeek(fullPrompt);
-          loadingBubble.innerHTML = marked.parse(generated);
-          askIfRefineNeeded();                     
+          const refined = await callDeepSeek(prompt);
+          loadingBubble.innerHTML = marked.parse(refined);
+          refined
+          .split(/^###\s+/m)          // 按 “### ” 切片
+          .filter(b => b.trim())      // 去空块
+          .forEach(block => {
+            const title = block.split('\n')[0].trim();      // ① 原标题行，含 **
+            const body  = block.replace(title, '').trimStart();
+            const titleEsc = escapeRegExp(title);           // ② 转义 * / + 等元字符
+
+            // ③ 用 titleEsc 构造正则！
+            const regex = new RegExp(`###\\s+${titleEsc}[\\s\\S]*?(?=\\n###|$)`, 'm');
+
+            if (regex.test(fullMarkdown)) {
+              fullMarkdown = fullMarkdown.replace(
+                regex,
+                `### ${title}\n${body}`
+              );
+            } else {
+              fullMarkdown += `\n\n### ${title}\n${body}`;
+            }
+          });
+          askIfRefineNeeded();
         } catch (e) {
-          loadingBubble.textContent = '❌ Generation failed.';
+          console.error(e);
+          loadingBubble.textContent = t('generationFailed');
         }
       };
 
-      container.append(cbGroup, confirmBtn);
-      chat.appendChild(container);
+      wrap.append(cbGroup, okBtn);
+      chat.appendChild(wrap);
       chat.scrollTop = chat.scrollHeight;
-      return container;
+      return wrap;
     }
+
+
+
 
     function extractAndStore(fileRecord, file) {
       fileRecord.text = '⌛ extracting…';
 
-    /* create + start extraction */
+    // create + start extraction
     const promise = extractTextFromFile(file)
       .then(txt => {
         fileRecord.text = (txt || '').trim() || '(empty file)';
@@ -1615,7 +1643,6 @@
       })
       .finally(() => pendingExtractions.delete(promise));  // clean up
 
-    /* track it so generateContent() can await */
     pendingExtractions.add(promise);
 
 
@@ -1637,10 +1664,16 @@
         if (!answers[stageKey]) answers[stageKey] = [];
 
         if (hasFiles) {
+        // fileRows.forEach(row => {
+        //   const name = row.querySelector('span')?.textContent;
+        //   const note = row.querySelector('.file-note')?.value || '';
+        //   if (name) answers[stageKey].push({ name, note });
+        // });
         fileRows.forEach(row => {
           const name = row.querySelector('span')?.textContent;
           const note = row.querySelector('.file-note')?.value || '';
-          if (name) answers[stageKey].push({ name, note });
+          const rec  = answers.have.find(r => r.name === name);
+          if (rec) rec.note = note;
         });
         }
        
@@ -1776,20 +1809,21 @@ fileInput.addEventListener('change', () => {
       rec = { id: crypto.randomUUID(), name: file.name, note: '', text: '' };
       answers.have.push(rec);
       extractAndStore(rec, file);
-      const msg   = appendMessage('', 'user');           // empty user message
-      const link  = document.createElement('a');
-      link.href   = '#';
-      link.textContent = `📎 ${file.name}`;
-      link.style.color = '#0b82ff';
-      link.onclick = () => triggerReplace(rec);          // see helper below
-      msg.querySelector('.bubble').appendChild(link);
+      addFilePreviewRow(rec);
+      // const msg   = appendMessage('', 'user');           // empty user message
+      // const link  = document.createElement('a');
+      // link.href   = '#';
+      // link.textContent = `📎 ${file.name}`;
+      // link.style.color = '#0b82ff';
+      // link.onclick = () => triggerReplace(rec);          // see helper below
+      // msg.querySelector('.bubble').appendChild(link);
     }
   }
-  if (currentStage === 2) {              // 0,1,**2**,3,4…
-  // skip the Enter step and show Question 4 immediately
-  currentStage++;                      // now == 3
-  renderMoreForm();                    // Question 4 UI
-}
+  // if (currentStage === 2) {              // 0,1,**2**,3,4…
+  // // skip the Enter step and show Question 4 immediately
+  // currentStage++;                      // now == 3
+  // renderMoreForm();                    // Question 4 UI
+//}
   fileInput.value = '';
 });
 

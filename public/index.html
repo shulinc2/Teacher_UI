@@ -860,6 +860,7 @@
     async function callDeepSeek(promptText, onChunkReceived) {
         const locale = currentLang;
         const params = new URLSearchParams({ promptText, locale });
+        //const eventSource = new EventSource(`http://localhost:3140/aigc/aio-generation?${params.toString()}`);
         const eventSource = new EventSource(`https://backend.canpaniongroup.com/aigc/aio-generation?${params.toString()}`);
         
         return new Promise((resolve, reject) => {
@@ -1237,6 +1238,12 @@
         default: return opt;
       }
     }
+    
+    const exportT = {
+      	en: "export to .docx",
+        zh: "导出到 .docx",
+        "zh-HK": "導出至 .docx"
+      }
 
     async function generateContent() {
       await Promise.all([...pendingExtractions]);
@@ -1283,11 +1290,7 @@
   `<span>${t('pleaseWait')}</span>`;
 
       lastGeneratedResult = loadingMsg;
-      const exportT = {
-      	en: "export to .docx",
-        zh: "导出到 .docx",
-        "zh-HK": "導出至 .docx"
-      }
+      
 
       try {
         let result = '';
@@ -1510,7 +1513,7 @@
     }
 
 
-
+		let askcount = 0;
     function askRefineSections() {
       const type   = answers['type'];
       const fields = (templateSections[type] || {})[currentLang] || templateSections[type].eng;
@@ -1601,11 +1604,25 @@
         try {
           const generated = await callDeepSeek(fullPrompt);
           loadingBubble.innerHTML = marked.parse(generated);
+          const exportMsg = appendMessage('', 'bot');
+          exportMsg.querySelector('.bubble').innerHTML = `<a id="exportbtn${askcount}" href="#" class="btn-secondary w-inline-block" style="display: block;"><div class="flex-horizontal gap-column-6px"><div>${exportT[currentLang]}</div></div></a>`;
+          const exportBtn = document.getElementById(`exportbtn${askcount}`);
+          exportBtn.addEventListener('click', function() {
+            const htmltext = loadingBubble.innerHTML;
+            if (htmltext) {
+              const docxBlob = htmlDocx.asBlob(htmltext);
+              saveAs(docxBlob, 'plan.docx');
+            } else {
+              alert('No plan to export.');
+            }
+          });
           askIfRefineNeeded();                     
         } catch (e) {
+        	console.log(e);
           loadingBubble.textContent = '❌ Generation failed.';
         }
       };
+      askcount++;
 
       container.append(cbGroup, confirmBtn);
       chat.appendChild(container);

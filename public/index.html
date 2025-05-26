@@ -13,6 +13,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.5.1/mammoth.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.1/dist/tesseract.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
+
   <style>
     * { box-sizing: border-box; }
     body {
@@ -478,7 +480,7 @@
     };
     const topicTemplates = {
       "Lesson Plan": `
-    请根据以下模板生成一份 Lesson Plan：
+    请根据以下模板生成一份具体的 Lesson Plan：
     • Lesson Title / Subject Area
     • Learning Goals & Measurable Objectives
     • Prerequisite Knowledge
@@ -491,7 +493,7 @@
     `,
 
       "Class Materials (PPT/pictures)": `
-    请根据以下模板生成一份 Class Materials：
+    请根据以下模板生成一份具体的 Class Materials：
     • Presentation Topic / Focus Question
     • Expected Audience (Grade or Course)
     • Key Points / Slide Outline
@@ -499,10 +501,13 @@
     • Desired Audio Assets (music, sound clips)
     • Branding Elements (school logo, colors, fonts)
     • Speaker‑note Depth (none / bullet / full script)
+     列举每一页的slides，以及slides需要有相对的解释图片（帮助学生更好的理解）
+
+
     `,
 
       "Report Card": `
-    请根据以下模板生成一份 Report Card：
+    请根据以下模板生成一份具体的 Report Card：
     • Student & Class Identifiers
     • Term / Grading Period
     • Subject List & Grade Scale
@@ -515,7 +520,7 @@
     `,
 
       "Student-Work Feedback": `
-    请根据以下模板生成一份 Student Work Feedback：
+    请根据以下模板生成一份具体的 Student Work Feedback：
     • Student / Assignment ID
     • Rubric criteria or "Glow & Grow" fields (Strengths, Needs, Next Steps)
     • Performance level or score
@@ -832,7 +837,8 @@
       const bubble = document.createElement('div');
       bubble.className = 'bubble';
       if (asMarkdown) {
-        bubble.innerHTML = marked.parse(content);   // 解析并渲染
+        //bubble.innerHTML = marked.parse(content);   // 解析并渲染
+        renderMarkdown(bubble, content);
       } else {
       bubble.textContent = content;               // 纯文本
       }
@@ -884,30 +890,52 @@
 
 
     async function callDeepSeek(promptText) {
-    const apiKey = 'sk-816d9a802e5f4c8ab73459a40791d7db'; 
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'deepseek-reasoner', 
-        messages: [
-          { role: 'system', content: 'You are an experienced AI education specialist, skilled at explaining complex concepts in a clear and engaging manner while providing personalized guidance tailored to students at different learning levels. Provide details plan for user(teacher)' },
-          { role: 'user', content: promptText }
-        ],
-        temperature: 0.7
-      }),
-    });
+      const apiKey = 'sk-816d9a802e5f4c8ab73459a40791d7db'; 
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'deepseek-reasoner', 
+          messages: [
+            { role: 'system', content: 'You are an experienced AI education specialist, skilled at explaining complex concepts in a clear and engaging manner while providing personalized guidance tailored to students at different learning levels. Provide details plan for user(teacher)' },
+            { role: 'user', content: promptText }
+          ],
+          temperature: 0.7
+        }),
+      });
 
-    const data = await response.json();
-    if (data.choices && data.choices.length > 0) {
-    return data.choices[0].message.content;
-  } else {
-    throw new Error('No response from DeepSeek API');
+      const data = await response.json();
+      if (data.choices && data.choices.length > 0) {
+      return data.choices[0].message.content;
+    } else {
+      throw new Error('No response from DeepSeek API');
+    }
   }
-}
+    
+      async function generateImageSearchLinksViaLLM(fullPrompt) {
+    const imagePrompt = `
+  你是一个教育类图像建议助手。请从下面这段文本中，提取 2-5 个最适合用于搜索教学相关图片的关键词或短语。它们应准确反映内容主题，适合用于 Google 图片搜索。仅返回关键词列表，不需要解释或引号。
+
+  【教学内容】：
+  ${fullPrompt}
+
+  【输出格式】：
+  - ...
+  - ...
+  - ...
+    `.trim();
+
+    const result = await callDeepSeek(imagePrompt);
+    return result
+      .split('\n')
+      .map(line => line.replace(/^[-•*]\s*/, '').trim())
+      .filter(Boolean)
+      .map(p => `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(p)}`);
+  }
+
 
     function showStage() {
       const stage = stages[currentStage];
@@ -1252,62 +1280,81 @@
       filePreview.appendChild(fileItem);
     }
 
+    function validateUrls(arr) {
+      const uniq = [...new Set(arr.filter(u => /^https?:\/\/.+/i.test(u)))];
+      return uniq.filter(u =>
+        /^https:\/\/(www\.)?(google|duckduckgo)\./i.test(u)
+      );
+    }
+
 
     async function generateContent() {
       await Promise.all([...pendingExtractions]);
 
       const uploads = answers['have'] || [];
       const fileTexts = uploads
-        .map(f => (f.text ?? '').trim().slice(0, 4096)) 
+        .map(f => (f.text ?? '').trim().slice(0, 4096))
         .filter(Boolean)
         .join('\n\n---\n\n');
 
-      // if (!fileTexts) {
-      //   alert('No extracted text found – please upload a PDF / Word / image first.');
-      //   return;
-      // }
-
+      const descTexts = uploads
+        .filter(f => f.description)
+        .map(f => '• ' + f.description)
+        .join('\n');
 
       const selectedType = answers['type'];
-      const basePrompt   = topicTemplates[selectedType] || '';
+      const basePrompt = topicTemplates[selectedType] || '';
       if (!basePrompt) {
         alert('⚠️ No corresponding template was found to generate content!');
         return;
       }
 
       const more = answers['more'] || {};
-      const na = t('na');  
+      const purpose = answers['why'] ? `- **Purpose / Rationale**: ${answers['why']}` : '';
+      const na = t('na');
       const extraDetails = `
-      Context Information:
+    Context Information:
+    ${purpose}
+    - **${t('label_comment')}**: ${more.prompt || na}
+    - **${t('label_grade')}**: ${more.grade || na}
+    - **${t('label_students')}**: ${more.students || na}
+    - **${t('label_duration')}**: ${more.duration || na}
+    - **${t('label_length')}**: ${more.length || na}
+    `.trim();
 
-      - **${t('label_comment')}**: ${more.prompt   || na}
-      - **${t('label_grade')}**:   ${more.grade    || na}
-      - **${t('label_students')}**: ${more.students || na}
-      - **${t('label_duration')}**: ${more.duration || na}
-      - **${t('label_length')}**:   ${more.length   || na}
-      `.trim();
-
-      const docSection = `📄 Source Document:\n\`\`\`\n${fileTexts}\n\`\`\``;
+      const docPayload = [fileTexts, descTexts].filter(Boolean).join('\n');
+      const docSection = docPayload
+        ? `📄 Source Document:\n\`\`\`\n${docPayload}\n\`\`\`` : '';
 
       const fullPrompt = [docSection, extraDetails, basePrompt]
         .filter(Boolean)
         .join('\n\n');
 
-      console.log('📝 Prompt sent to DeepSeek:\n', fullPrompt);   // debug
+      console.log('📝 Prompt sent to DeepSeek:\n', fullPrompt);
 
-
-      const loadingMsg    = appendMessage('🔄 Generating...', 'bot');
+      const loadingMsg = appendMessage('🔄 Generating...', 'bot');
       const loadingBubble = loadingMsg.querySelector('.bubble');
       loadingBubble.innerHTML =
-  `<img src="boywalking.gif" style="width:48px;height:48px;margin-right:6px;vertical-align:middle;" alt="loading">` +
-  `<span>${t('pleaseWait')}</span>`;
+        `<img src="boywalking.gif" style="width:48px;height:48px;margin-right:6px;vertical-align:middle;" alt="loading">` +
+        `<span>${t('pleaseWait')}</span>`;
 
       lastGeneratedResult = loadingMsg;
 
       try {
         const generated = await callDeepSeek(fullPrompt);
-        fullMarkdown = generated; 
-        loadingBubble.innerHTML = marked.parse(generated);
+        let finalMd = generated;
+
+        const imageLinks = await generateImageSearchLinksViaLLM(fullPrompt);
+        if (imageLinks.length) {
+          finalMd += '\n\n---\n### Suggested Visual Assets\n' +
+                    imageLinks.map(u => `- <${u}>`).join('\n');
+        }
+
+
+
+        renderMarkdown(loadingBubble, finalMd);
+        fullMarkdown = finalMd;
+
         setTimeout(askIfRefineNeeded, 500);
       } catch (err) {
         console.error(err);
@@ -1315,8 +1362,6 @@
       }
     }
 
-
-    
     const refineState = {
       choiceContainer: null,
       optionsContainer: null,
@@ -1326,6 +1371,29 @@
       gotItMsg: null,
       lastSelectedBtn: null,
     };
+
+    function generateImageLinksFromText(text, maxLinks = 6) {
+      const words = text
+        .replace(/[^\w\u4e00-\u9fa5\s]/g, '')  
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(w => w.length >= 3);         
+
+      const freqMap = new Map();
+      words.forEach(w => freqMap.set(w, (freqMap.get(w) || 0) + 1));
+
+      const topKeywords = [...freqMap.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, maxLinks)
+        .map(([w]) => w);
+
+      const links = topKeywords.map(w =>
+        `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(w)}`
+      );
+
+      return links;
+    }
+
 
     function cleanupRefineUI() {
       const s = refineState;
@@ -1461,6 +1529,41 @@
     }
 
 
+    function renderMarkdown(bubble, md) {
+      md = md.trim().replace(/^```(markdown)?\n?/i, '').replace(/```$/, '');
+      md = md
+        .replace(/“|”/g, '"')
+        .replace(/‘|’/g, "'")
+        .replace(/【/g, '[').replace(/】/g, ']')
+        .replace(/＊/g, '*')
+        .replace(/^[\s\t]*[•▪◦‣]\s+/gm, '* ')
+        .replace(/^[\s\t]*·\s+/gm, '* ')
+        .replace(
+          /(^|\n)(\s*[*-]\s+)(Slide|Round|Scenario|Step|Phase|Station)\s+([\dA-Za-z]+:)/g,
+          (_, brk, bullet, kw, rest) => `${brk}${bullet}**${kw} ${rest}**`
+        )
+        .replace(
+          /(^|\n)(\s{4,}[*-]\s+)([A-Za-z\u4e00-\u9fa5][^:\n]{1,40}?):/g,
+          (_, brk, bullet, heading) => `${brk}${bullet}**${heading}:**`
+        );
+              
+
+      bubble.innerHTML = DOMPurify.sanitize(marked.parse(md));
+
+      const openInNewTab = true;   
+
+      bubble.querySelectorAll('a').forEach(a => {
+        if (openInNewTab) {
+          a.target = '_blank';             
+          a.rel = 'noopener noreferrer';      
+        } else {
+          a.removeAttribute('target');     
+          a.rel = 'noopener';             
+        }
+      });
+
+    }
+
     function handleChooseType(btn, optConst) {
       const stageKey  = 'type';       // first question key
       const oldChoice = answers[stageKey];
@@ -1574,45 +1677,28 @@
   `<span>${t('pleaseWait')}</span>`;
 
         const prompt = `
-    You are revising a teacher document.
+        You are revising a teacher document.
 
-    ### Previous draft (markdown)
-    \`\`\`
-    ${fullMarkdown}
-    \`\`\`
+        ### Previous draft (markdown)
+        \`\`\`
+        ${fullMarkdown}
+        \`\`\`
 
-    ### Task
-    Rewrite **only** the following section(s) with richer detail, leaving everything else unchanged:
+        ### Task
+        Rewrite **only** the following section(s) with richer detail, leaving everything else unchanged:
 
-    ${partList.map(p => '- ' + p).join('\n')}
+        ${partList.map(p => '- ' + p).join('\n')}
 
-    Return **only those rewritten sections** in markdown,
-    starting with their original headings.
-    `;
+        Return **only those rewritten sections** in markdown, starting with their original headings.  
+        **Do not include triple backticks (\`\`\`) or any code blocks in your response.**
+        `;
+
 
         try {
           const refined = await callDeepSeek(prompt);
-          loadingBubble.innerHTML = marked.parse(refined);
-          refined
-          .split(/^###\s+/m)          // 按 “### ” 切片
-          .filter(b => b.trim())      // 去空块
-          .forEach(block => {
-            const title = block.split('\n')[0].trim();      // ① 原标题行，含 **
-            const body  = block.replace(title, '').trimStart();
-            const titleEsc = escapeRegExp(title);           // ② 转义 * / + 等元字符
-
-            // ③ 用 titleEsc 构造正则！
-            const regex = new RegExp(`###\\s+${titleEsc}[\\s\\S]*?(?=\\n###|$)`, 'm');
-
-            if (regex.test(fullMarkdown)) {
-              fullMarkdown = fullMarkdown.replace(
-                regex,
-                `### ${title}\n${body}`
-              );
-            } else {
-              fullMarkdown += `\n\n### ${title}\n${body}`;
-            }
-          });
+          renderMarkdown(loadingBubble, refined); 
+          //loadingBubble.innerHTML = marked.parse(refined);
+          fullMarkdown = mergeSections(fullMarkdown, refined);
           askIfRefineNeeded();
         } catch (e) {
           console.error(e);
@@ -1810,20 +1896,8 @@ fileInput.addEventListener('change', () => {
       answers.have.push(rec);
       extractAndStore(rec, file);
       addFilePreviewRow(rec);
-      // const msg   = appendMessage('', 'user');           // empty user message
-      // const link  = document.createElement('a');
-      // link.href   = '#';
-      // link.textContent = `📎 ${file.name}`;
-      // link.style.color = '#0b82ff';
-      // link.onclick = () => triggerReplace(rec);          // see helper below
-      // msg.querySelector('.bubble').appendChild(link);
     }
   }
-  // if (currentStage === 2) {              // 0,1,**2**,3,4…
-  // // skip the Enter step and show Question 4 immediately
-  // currentStage++;                      // now == 3
-  // renderMoreForm();                    // Question 4 UI
-//}
   fileInput.value = '';
 });
 
@@ -1896,6 +1970,26 @@ fileInput.addEventListener('change', () => {
         return `⚠️ Unsupported file type: ${file.name}`;
       }
     }
+
+    function mergeSections(oldDoc, patchDoc) {
+
+      const blocks = patchDoc.split(/^###\s+/m).filter(b => b.trim());
+
+      blocks.forEach(block => {
+        const heading = block.split('\n')[0].trim();
+        const body    = block.replace(heading, '').trimStart();
+        const hEsc    = escapeRegExp(heading);
+        const re = new RegExp(`###\\s+${hEsc}[\\s\\S]*?(?=\\n###|$)`, 'm');
+
+        if (re.test(oldDoc)) {
+          oldDoc = oldDoc.replace(re, `### ${heading}\n${body}`);
+        } else {
+          oldDoc += `\n\n### ${heading}\n${body}`;
+        }
+      });
+      return oldDoc;
+    }
+
 
 
       // hidden input reused for every replacement

@@ -13,6 +13,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.5.1/mammoth.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.1/dist/tesseract.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://unpkg.com/file-saver/dist/FileSaver.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
 
   <style>
@@ -639,6 +640,7 @@
     ph_duration: "Duration (e.g., 45 mins)",
     ph_length  : "Length (Short / Medium / Long)",
     pleaseWait : "Please wait for 1 minute…",
+    pleaseWaitVA: "Your Visual Assets is delivering…",
     ph_input : "Type something...",
 
     details      : "Details",
@@ -692,6 +694,7 @@
     ph_duration: "时长（例如 45 分钟）",
     ph_length  : "长度（短 / 中 / 长）",
     pleaseWait : "请等待 1 分钟…",
+    pleaseWaitVA: "您的教材正在送上...",
     ph_input : "请输入内容…",
 
     details      : "详情",
@@ -747,6 +750,7 @@
     ph_duration: "時長（例如 45 分鐘）",
     ph_length  : "長度（短 / 中 / 長）",
     pleaseWait : "請等待 1 分鐘…",
+    pleaseWaitVA: "您的教材正在送上...",
     ph_input : "請輸入內容…",
 
     details      : "詳情",
@@ -1464,7 +1468,7 @@
             loadingBubble.innerHTML = marked.parse(result);
         }).then((completeContent) => {
         		const exportMsg = appendMessage('', 'bot');
-            exportMsg.querySelector('.bubble').innerHTML = `<a id="exportbtn" href="#" class="btn-secondary w-inline-block" style="display: block;"><div class="flex-horizontal gap-column-6px"><div>${exportT[currentLang]}</div></div></a>`;
+            exportMsg.querySelector('.bubble').innerHTML = `<a id="exportbtn" href="#" class="btn-secondary w-inline-block" style="display: none;"><div class="flex-horizontal gap-column-6px"><div>${exportT[currentLang]}</div></div></a>`;
             const exportBtn = document.getElementById('exportbtn');
             exportBtn.addEventListener('click', function() {
                 const htmltext = marked.parse(completeContent);
@@ -1481,6 +1485,8 @@
             return error;
         });
         let finalMd = generated;
+        loadingBubble.innerHTML += `<img src="https://cdn.prod.website-files.com/67af0a7f5730375704f96216/682588f940a6776a7f6c138a_boywalkingg.gif" style="width:96px;height:96px;margin-right:6px;vertical-align:middle;" alt="loading">` +
+  `<span>${t('pleaseWaitVA')}</span>`;
 
         const imageLinks = await generateImageSearchLinksViaLLM(fullPrompt);
         if (imageLinks.length) {
@@ -1492,7 +1498,7 @@
 
         renderMarkdown(loadingBubble, finalMd);
         fullMarkdown = finalMd;
-
+        document.getElementById('exportbtn').style.display = 'block';
         setTimeout(askIfRefineNeeded, 500);
       } catch (err) {
         console.error(err);
@@ -1812,7 +1818,7 @@
         const loadingMsg    = appendMessage('⏳ Regenerating…', 'bot');
         const loadingBubble = loadingMsg.querySelector('.bubble');
         loadingBubble.innerHTML =
-  `<img src="boywalking.gif" style="width:48px;height:48px;margin-right:6px;vertical-align:middle;" alt="loading">` +
+  `<img src="https://cdn.prod.website-files.com/67af0a7f5730375704f96216/682588f940a6776a7f6c138a_boywalkingg.gif" style="width:48px;height:48px;margin-right:6px;vertical-align:middle;" alt="loading">` +
   `<span>${t('pleaseWait')}</span>`;
 
         const prompt = `

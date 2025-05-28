@@ -1467,18 +1467,7 @@
             result += chunk;
             loadingBubble.innerHTML = marked.parse(result);
         }).then((completeContent) => {
-        		const exportMsg = appendMessage('', 'bot');
-            exportMsg.querySelector('.bubble').innerHTML = `<a id="exportbtn" href="#" class="btn-secondary w-inline-block" style="display: none;"><div class="flex-horizontal gap-column-6px"><div>${exportT[currentLang]}</div></div></a>`;
-            const exportBtn = document.getElementById('exportbtn');
-            exportBtn.addEventListener('click', function() {
-                const htmltext = marked.parse(completeContent);
-                if (htmltext) {
-                    const docxBlob = htmlDocx.asBlob(htmltext);
-                    saveAs(docxBlob, 'plan.docx');
-                } else {
-                    alert('No plan to export.');
-                }
-            });
+        		
             return completeContent;
         }).catch((error) => {
             console.error('Error:', error);
@@ -1490,7 +1479,7 @@
 
         const imageLinks = await generateImageSearchLinksViaLLM(fullPrompt);
         if (imageLinks.length) {
-          finalMd += '\n\n---\n### Suggested Visual Assets\n' +
+          finalMd += '\n\n---\n### Suggested Visual Assets\n' +
                     imageLinks.map(u => `- <${u}>`).join('\n');
         }
 
@@ -1498,7 +1487,18 @@
 
         renderMarkdown(loadingBubble, finalMd);
         fullMarkdown = finalMd;
-        document.getElementById('exportbtn').style.display = 'block';
+        const exportMsg = appendMessage('', 'bot');
+        exportMsg.querySelector('.bubble').innerHTML = `<a id="exportbtn" href="#" class="btn-secondary w-inline-block" style="display: block;"><div class="flex-horizontal gap-column-6px"><div>${exportT[currentLang]}</div></div></a>`;
+        const exportBtn = document.getElementById('exportbtn');
+        exportBtn.addEventListener('click', function() {
+            const htmltext = marked.parse(fullMarkdown);
+            if (htmltext) {
+                const docxBlob = htmlDocx.asBlob(htmltext);
+                saveAs(docxBlob, 'plan.docx');
+            } else {
+                alert('No plan to export.');
+            }
+        });
         setTimeout(askIfRefineNeeded, 500);
       } catch (err) {
         console.error(err);

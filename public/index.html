@@ -1411,8 +1411,13 @@
       await Promise.all([...pendingExtractions]);
 
       const uploads = answers['have'] || [];
-      const fileTexts = uploads
+      /*const fileTexts = uploads
         .map(f => (f.text ?? '').trim().slice(0, 4096))
+        .filter(Boolean)
+        .join('\n\n---\n\n');*/
+
+      const fileTexts = uploads
+        .map(f => (f.text ?? '').trim().slice(0, 87382)) // maximum context length 64k/0.6 = 109223 chinese characters
         .filter(Boolean)
         .join('\n\n---\n\n');
 
@@ -1873,23 +1878,65 @@
 
 
 
-    function extractAndStore(fileRecord, file) {
+    async function extractAndStore(fileRecord, file) {
       fileRecord.text = '⌛ extracting…';
+      const extractionId = Symbol(`extraction-${file.name}`); // Unique ID for this operation
 
-    // create + start extraction
-    const promise = extractTextFromFile(file)
-      .then(txt => {
-        fileRecord.text = (txt || '').trim() || '(empty file)';
-      })
-      .catch(err => {
-        console.error('Extraction error →', err);      // full stack
-        fileRecord.text = `❌ Failed: ${err.message || err}`;
-      })
-      .finally(() => pendingExtractions.delete(promise));  // clean up
+      pendingExtractions.add(extractionId); // Mark as pending
 
-    pendingExtractions.add(promise);
+      try {
+        let accumulatedText = '';
+        let hasReceivedText = false;
+
+        // extractTextFromFile is the async generator from your Canvas
+        for await (const chunk of extractTextFromFile(file, {
+          /* tesseractLogger: (m) => console.log(`Tesseract Progress (${file.name}): ${m.status} - ${m.progress}`) */
+        })) {
+          if (chunk.startsWith('⚠️') || chunk.startsWith('ℹ️')) {
+            // Handle warnings or info messages, perhaps log them or display them differently
+            console.warn(`Extraction info/warning for ${file.name}: ${chunk.trim()}`);
+            // Optionally append to a separate log in fileRecord or display to user
+            // For now, we'll append it to the main text but you might want to separate it
+            accumulatedText += chunk;
+          } else {
+            accumulatedText += chunk;
+            hasReceivedText = true;
+          }
+          // Update UI progressively if desired, e.g., by setting fileRecord.text here
+          // For simplicity in this example, we'll update at the end,
+          // but for a live UI, you'd update it inside the loop.
+          // fileRecord.text = accumulatedText; // <-- Uncomment for progressive UI update
+        }
+
+        if (accumulatedText.trim() === '' && !hasReceivedText) {
+          // If no actual text content was yielded, but also no specific error messages from the stream itself
+          fileRecord.text = '(empty or no extractable text)';
+        } else if (accumulatedText.startsWith('⌛ extracting…') && accumulatedText.length > '⌛ extracting…'.length) {
+          // If we only got warnings/info messages appended to the initial status
+          fileRecord.text = accumulatedText.substring('⌛ extracting…'.length).trim();
+          if (fileRecord.text === '') fileRecord.text = '(extraction yielded warnings/info but no content)';
+        }
+        else {
+          fileRecord.text = accumulatedText.trim();
+        }
+
+        if (fileRecord.text === '⌛ extracting…') { // If it was never updated beyond initial
+            fileRecord.text = '(empty or no extractable text found)';
+        }
 
 
+      } catch (err) {
+        console.error('Extraction error in extractAndStore for file:', file.name, '→', err);
+        fileRecord.text = `❌ Failed: ${err.message || String(err)}`;
+      } finally {
+        pendingExtractions.delete(extractionId); // Clean up
+        // Final check if text is still the loading message
+        if (fileRecord.text === '⌛ extracting…') {
+            fileRecord.text = `❌ Extraction did not complete or yield text for ${file.name}.`;
+        }else{
+          console.log(fileRecord.text);
+        }
+      }
     }
 
     function handleUserInput() {
@@ -2063,69 +2110,197 @@ fileInput.addEventListener('change', () => {
 
 
 
-  async function extractTextFromDocx(file) {
-    const { value } = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
-    return value;
-  }
-
-  async function extractTextFromImage(file) {
-  const result = await Tesseract.recognize(file, 'chi_sim+chi_tra+eng', {
-    logger: m => console.log(m.status, m.progress)
-  });
-  return result.data.text;
-}
-
-  async function extractTextFromPDF(file) {
-    try {
-      const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
-      let text = '';
-
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        const pageText = content.items.map(item => item.str).join(' ');
-        text += pageText + '\n';
+    /**
+     * Extracts text from a DOCX file and streams it paragraph by paragraph.
+     * @param {File} file - The DOCX file object.
+     * @async
+     * @generator
+     * @yields {string} Chunks of text (paragraphs) from the DOCX file.
+     */
+    async function* extractTextFromDocx(file) {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const { value } = await mammoth.extractRawText({ arrayBuffer });
+        // Split the extracted text by paragraphs (two or more newlines, possibly with whitespace)
+        // or by single newlines if paragraphs are not distinct.
+        const paragraphs = value.split(/\n\s*\n/); // More robust paragraph splitting
+        for (const paragraph of paragraphs) {
+          const trimmedParagraph = paragraph.trim();
+          if (trimmedParagraph) {
+            yield trimmedParagraph + '\n'; // Add a newline for separation
+          }
+        }
+      } catch (error) {
+        console.error("Error extracting text from DOCX:", error);
+        yield `⚠️ Error extracting text from ${file.name}: ${error.message}\n`;
       }
-
-      if (text.trim()) return text.trim();
-
-      throw new Error('empty text layer');
-    } catch (err) {
-      console.warn('Text extraction failed, switching to OCR →', err.message);
-
-      // OCR fallback
-      const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
-      let ocrText = '';
-
-      for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
-        const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 2 });
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-
-        await page.render({ canvasContext: context, viewport }).promise;
-
-        const { data } = await Tesseract.recognize(canvas, 'chi_sim+chi_tra+eng');
-        ocrText += data.text + '\n';
-      }
-
-      return ocrText.trim() || '⚠️ OCR produced no text.';
     }
-  }
 
-    async function extractTextFromFile(file) {
+    /**
+     * Extracts text from an image file using OCR and streams it line by line.
+     * @param {File} file - The image file object (e.g., PNG, JPG).
+     * @param {object} [options] - Optional parameters.
+     * @param {function} [options.logger] - Logger function for Tesseract progress.
+     * @async
+     * @generator
+     * @yields {string} Chunks of text (lines) from the image file.
+     */
+    async function* extractTextFromImage(file, options = {}) {
+      try {
+        const tesseractOptions = { logger: options.logger || (m => console.log(`Tesseract (${file.name}): ${m.status} (${(m.progress * 100).toFixed(2)}%)`)) };
+        const { data: { text } } = await Tesseract.recognize(
+          file,
+          'chi_sim+chi_tra+eng', // Standard languages from original code
+          tesseractOptions
+        );
+
+        const lines = text.split('\n');
+        for (const line of lines) {
+          // Optionally trim, but for OCR, preserving original spacing might be important sometimes.
+          // Here, we yield the line as is, consumers can trim if needed.
+          yield line + '\n';
+        }
+      } catch (error) {
+        console.error("Error extracting text from image:", error);
+        yield `⚠️ Error extracting text from ${file.name} (OCR): ${error.message}\n`;
+      }
+    }
+
+    /**
+     * Extracts text from a PDF file and streams it page by page.
+     * Falls back to OCR if text layer extraction fails or yields no text.
+     * @param {File} file - The PDF file object.
+     * @param {object} [options] - Optional parameters.
+     * @param {function} [options.tesseractLogger] - Logger function for Tesseract progress during OCR.
+     * @async
+     * @generator
+     * @yields {string} Chunks of text from the PDF file.
+     */
+    async function* extractTextFromPDF(file, options = {}) {
+      let arrayBuffer;
+      try {
+        arrayBuffer = await file.arrayBuffer();
+      } catch (readError) {
+        console.error(`Error reading file ${file.name}:`, readError);
+        yield `⚠️ Error reading file ${file.name}: ${readError.message}\n`;
+        return;
+      }
+
+      let textLayerExtractedSuccessfully = false;
+      let anyTextYieldedFromLayer = false;
+
+      // Attempt 1: Text Layer Extraction
+      try {
+        // Use slice(0) to ensure the buffer can be potentially reused if pdfjsLib modifies it (though it typically shouldn't)
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
+        if (pdf.numPages === 0) {
+            yield `⚠️ PDF file ${file.name} has no pages.\n`;
+        }
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          if (content.items.length > 0) {
+            const pageText = content.items.map(item => item.str).join(' ');
+            const trimmedPageText = pageText.trim();
+            if (trimmedPageText) {
+              yield trimmedPageText + '\n';
+              anyTextYieldedFromLayer = true;
+            }
+          }
+        }
+        textLayerExtractedSuccessfully = true; // Mark success if loop completes without error
+      } catch (err) {
+        console.warn(`Text layer extraction failed for ${file.name}: ${err.message}. Will attempt OCR.`);
+        // Error occurred, so text layer extraction was not successful. OCR fallback will be triggered.
+        textLayerExtractedSuccessfully = false;
+      }
+
+      // Attempt 2: OCR Fallback (if text layer extraction failed or yielded no text)
+      if (!textLayerExtractedSuccessfully || !anyTextYieldedFromLayer) {
+        if (textLayerExtractedSuccessfully && !anyTextYieldedFromLayer) {
+            console.warn(`No text found in text layer of ${file.name}. Attempting OCR.`);
+        }
+
+        let anyTextYieldedFromOcr = false;
+        try {
+          const pdfForOcr = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
+          // Limit OCR to the first 5 pages as in the original code, to avoid long processing times.
+          const numPagesToOcr = Math.min(pdfForOcr.numPages, 5);
+
+          if (pdfForOcr.numPages > 0 && numPagesToOcr === 0) {
+            // This case should ideally not be hit if numPages > 0, but as a safeguard.
+            yield `⚠️ PDF ${file.name} has pages, but OCR was configured to process 0 pages.\n`;
+          } else if (pdfForOcr.numPages === 0 && numPagesToOcr === 0) {
+            // This was already handled by the text layer check, but good to be explicit if we somehow reach here.
+            // yield `⚠️ PDF file ${file.name} has no pages for OCR.\n`; (already covered)
+          }
+
+
+          for (let i = 1; i <= numPagesToOcr; i++) {
+            const page = await pdfForOcr.getPage(i);
+            const viewport = page.getViewport({ scale: 2 }); // Scale 2 for better OCR accuracy
+            
+            // Create canvas dynamically. Ensure this runs in a browser-like environment.
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            await page.render({ canvasContext: context, viewport }).promise;
+            
+            const tesseractOptions = { logger: options.tesseractLogger || (m => console.log(`Tesseract (PDF Page ${i}, ${file.name}): ${m.status} (${(m.progress * 100).toFixed(2)}%)`)) };
+            const { data } = await Tesseract.recognize(canvas, 'chi_sim+chi_tra+eng', tesseractOptions);
+            
+            // Clean up canvas to free memory
+            canvas.width = 0;
+            canvas.height = 0;
+
+            const ocrPageText = data.text ? data.text.trim() : "";
+            if (ocrPageText) {
+              yield ocrPageText + '\n';
+              anyTextYieldedFromOcr = true;
+            }
+          }
+
+          if (numPagesToOcr > 0 && !anyTextYieldedFromOcr) {
+            yield `⚠️ OCR produced no text from the first ${numPagesToOcr} page(s) of ${file.name}.\n`;
+          }
+          if (pdfForOcr.numPages > numPagesToOcr) {
+            yield `ℹ️ OCR for ${file.name} was limited to the first ${numPagesToOcr} of ${pdfForOcr.numPages} pages.\n`;
+          }
+
+        } catch (ocrErr) {
+          console.error(`OCR process failed for ${file.name}:`, ocrErr);
+          yield `⚠️ OCR process for ${file.name} failed: ${ocrErr.message}\n`;
+        }
+      }
+    }
+
+    /**
+     * Main function to extract text from a file, routing to the appropriate extractor.
+     * Streams text content.
+     * @param {File} file - The file object.
+     * @param {object} [options] - Optional parameters for extractors (e.g., loggers).
+     * @async
+     * @generator
+     * @yields {string} Chunks of text from the file.
+     */
+    async function* extractTextFromFile(file, options = {}) {
+      if (!file || !file.name) {
+        yield `⚠️ Invalid file object provided.\n`;
+        return;
+      }
       const name = file.name.toLowerCase();
 
       if (name.endsWith('.pdf')) {
-        return await extractTextFromPDF(file);
+        yield* extractTextFromPDF(file, options);
       } else if (name.endsWith('.docx')) {
-        return await extractTextFromDocx(file);
+        yield* extractTextFromDocx(file); // Options not currently used by docx extractor
       } else if (/\.(png|jpg|jpeg)$/i.test(name)) {
-        return await extractTextFromImage(file);
+        yield* extractTextFromImage(file, { logger: options.tesseractLogger });
       } else {
-        return `⚠️ Unsupported file type: ${file.name}`;
+        yield `⚠️ Unsupported file type: ${file.name}\n`;
       }
     }
 

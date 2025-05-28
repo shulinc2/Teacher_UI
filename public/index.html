@@ -857,68 +857,139 @@
     }
     
     
+    // Assuming 'currentLang' is defined and accessible in this scope.
+
     async function callDeepSeek(promptText, onChunkReceived) {
-        const locale = currentLang;
-        const params = new URLSearchParams({ promptText, locale });
-        //const eventSource = new EventSource(`http://localhost:3140/aigc/aio-generation?${params.toString()}`);
-        const eventSource = new EventSource(`https://backend.canpaniongroup.com/aigc/aio-generation?${params.toString()}`);
-        
-        return new Promise((resolve, reject) => {
-            let completeContent = '';
-            let isCompleted = false;
-            
-            // Handle incoming message chunks
-            eventSource.addEventListener('message', (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    if (data.content) {
-                        completeContent += data.content;
-                        if (onChunkReceived) {
-                            onChunkReceived(data.content);
+        const locale = currentLang; // Make sure currentLang is correctly set
+        const postData = { promptText, locale };
+
+        let reader; // To store the stream reader for potential cancellation
+        let completeContent = '';
+        let isCompletedSuccessfully = false; // To track successful completion via 'end' event
+
+        return new Promise(async (resolve, reject) => { // Make the Promise executor async
+            try {
+                const response = await fetch('https://backend.canpaniongroup.com/aigc/aio-generation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Add any other necessary headers, e.g., Authorization
+                    },
+                    body: JSON.stringify(postData),
+                });
+
+                if (!response.ok) {
+                    // Handle HTTP errors from the initial POST request
+                    const errorText = await response.text();
+                    console.error('Server error on initial POST:', response.status, errorText);
+                    reject(new Error(`Server error: ${response.status}. ${errorText.substring(0,100)}`));
+                    return;
+                }
+
+                const contentType = response.headers.get('Content-Type');
+                if (!contentType || !contentType.includes('text/event-stream')) {
+                    console.error('Expected text/event-stream, but received:', contentType);
+                    const responseText = await response.text();
+                    reject(new Error(`Unexpected response type from server: ${responseText.substring(0,100)}`));
+                    return;
+                }
+
+                reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                const processSseEvents = () => {
+                    let eolIndex;
+                    while ((eolIndex = buffer.indexOf('\n\n')) >= 0) {
+                        const messageBlock = buffer.substring(0, eolIndex);
+                        buffer = buffer.substring(eolIndex + 2);
+
+                        let eventType = 'message'; // Default SSE event type
+                        let eventDataString = '';
+
+                        const lines = messageBlock.split('\n');
+                        for (const line of lines) {
+                            if (line.startsWith('event:')) {
+                                eventType = line.substring(6).trim();
+                            } else if (line.startsWith('data:')) {
+                                eventDataString += line.substring(5).trim();
+                            }
+                        }
+
+                        try {
+                            const parsedData = eventDataString ? JSON.parse(eventDataString) : null;
+
+                            if (eventType === 'message' && parsedData && parsedData.content) {
+                                completeContent += parsedData.content;
+                                if (onChunkReceived) {
+                                    onChunkReceived(parsedData.content);
+                                }
+                            } else if (eventType === 'end' && parsedData && parsedData.status === 'completed') {
+                                isCompletedSuccessfully = true;
+                                resolve(completeContent);
+                                if (reader) {
+                                    reader.cancel().catch(e => console.warn("Error cancelling reader on 'end' event:", e));
+                                    reader = null;
+                                }
+                                return true; // Signal to stop reading
+                            } else if (eventType === 'error' && parsedData && parsedData.error) {
+                                reject(new Error(parsedData.error));
+                                if (reader) {
+                                    reader.cancel().catch(e => console.warn("Error cancelling reader on 'error' event:", e));
+                                    reader = null;
+                                }
+                                return true; // Signal to stop reading
+                            }
+                        } catch (e) {
+                            console.error('Error parsing SSE data JSON:', e, "Raw data string:", eventDataString);
+                            // Don't reject here for a single bad message if the stream might continue,
+                            // unless it's critical.
                         }
                     }
-                } catch (e) {
-                    console.error('Error parsing message data:', e);
-                    reject(e);
-                }
-            });
-            
-            // Handle stream completion
-            eventSource.addEventListener('end', (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    if (data.status === 'completed') {
-                        isCompleted = true;
-                        resolve(completeContent);
+                    return false; // Continue reading
+                };
+
+
+                // eslint-disable-next-line no-constant-condition
+                while (true) {
+                    if (!reader) break; // Stop if reader was cancelled
+
+                    const { done, value } = await reader.read();
+
+                    if (done) {
+                        // Stream finished from server side
+                        if (buffer.trim()) { // Process any remaining buffer
+                            if (processSseEvents()) break;
+                        }
+                        if (!isCompletedSuccessfully) {
+                            // If stream ended without our 'end' event, it might be an unexpected closure
+                            console.warn("Stream ended without explicit 'completed' status.");
+                            // Decide if this should be a resolve or reject based on your app's logic
+                            // For now, let's assume if content was received, it's a partial success.
+                            // Or, if no content, it's an error.
+                            if (completeContent) {
+                                 resolve(completeContent); // Resolve with what we have
+                            } else {
+                                 reject(new Error('Stream ended prematurely without completion signal or content.'));
+                            }
+                        }
+                        break;
                     }
-                } catch (e) {
-                    console.error('Error parsing end data:', e);
-                    reject(e);
-                } finally {
-                    eventSource.close();
+
+                    buffer += decoder.decode(value, { stream: true });
+                    if (processSseEvents()) {
+                        break; // Stop if an event signaled completion or error
+                    }
                 }
-            });
-            
-            // Handle server-sent errors
-            eventSource.addEventListener('error', (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    reject(new Error(data.error || 'Server error'));
-                } catch (e) {
-                    console.error('Error parsing server error data:', e);
-                    reject(e);
-                } finally {
-                    eventSource.close();
+
+            } catch (error) { // Catches network errors for fetch or errors in stream setup
+                console.error('Fetch or stream processing error in callDeepSeek:', error);
+                reject(error); // General catch-all
+            } finally {
+                if (reader && typeof reader.cancel === 'function') {
+                    reader.cancel().catch(e => console.warn("Error cancelling reader in finally block:", e));
                 }
-            });
-            
-            // Handle connection errors
-            eventSource.onerror = () => {
-                if (!isCompleted) {
-                    reject(new Error('Connection error'));
-                }
-                eventSource.close();
-            };
+            }
         });
     }
 

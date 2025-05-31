@@ -13,6 +13,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.5.1/mammoth.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.1/dist/tesseract.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://unpkg.com/file-saver/dist/FileSaver.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
 
   <style>
@@ -264,7 +265,7 @@
           "Anticipated Difficulties/ Challenges → Solution",
           "Follow‑up / Reflection box"
         ],
-        chi_sim: [
+        zh: [
           "课题 / 学科领域",
           "学习目标 & 可测量指标",
           "先备知识",
@@ -275,7 +276,7 @@
           "预判难点 / 挑战 → 解决方案",
           "课后跟进 / 反思"
         ],
-        chi_tra: [
+        "zh-HK": [
           "課程標題 / 科目領域",
           "學習目標 & 可衡量指標",
           "先備知識",
@@ -297,7 +298,7 @@
           "Branding Elements (school logo, colors, fonts)",
           "Speaker‑note Depth (none / bullet / full script)"
         ],
-        chi_sim: [
+        zh: [
           "演示主题 / 关注问题",
           "目标受众（年级或课程）",
           "关键要点 / 幻灯片大纲",
@@ -306,7 +307,7 @@
           "品牌元素（校徽、色彩、字体）",
           "演讲者备注深度（无 / 要点 / 全脚本）"
         ],
-        chi_tra: [
+        "zh-HK": [
           "簡報主題 / 焦點問題",
           "預期受眾（年級或課程）",
           "重點 / 投影片大綱",
@@ -328,7 +329,7 @@
           "Teacher Narrative Comments",
           "Parent signature flag"
         ],
-        chi_sim: [
+        zh: [
           "学生与班级信息",
           "学期 / 成绩周期",
           "科目列表与评分标准",
@@ -339,7 +340,7 @@
           "教师评语",
           "家长签名项"
         ],
-        chi_tra: [
+        "zh-HK": [
           "學生與班級資訊",
           "學期 / 成績週期",
           "科目清單與評分標準",
@@ -361,7 +362,7 @@
           "Overall Comment",
           "Next-check-in Date"
         ],
-        chi_sim: [
+        zh: [
           "学生 / 作业编号",
           "评分标准或“优点与改进”字段（优势、需改进、下一步）",
           "表现等级或分数",
@@ -369,7 +370,7 @@
           "整体评语",
           "下次回顾日期"
         ],
-        chi_tra: [
+        "zh-HK": [
           "學生 / 作業編號",
           "評分標準或「亮點與改進」欄位（優勢、需改善、後續步驟）",
           "表現等級或分數",
@@ -391,7 +392,7 @@
           "Time Limit Per Item",
           "Category Folder"
         ],
-        chi_sim: [
+        zh: [
           "学科与主题标签",
           "课程标准对齐",
           "题型（选择题、开放题等）",
@@ -402,7 +403,7 @@
           "每题时间限制",
           "分类文件夹"
         ],
-        chi_tra: [
+        "zh-HK": [
           "學科與主題標籤",
           "課綱對應",
           "題型（選擇題、開放題等）",
@@ -427,7 +428,7 @@
           "Risk / safety considerations",
           "Assessment or reflection Method"
         ],
-        chi_sim: [
+        zh: [
           "活动名称与目的",
           "日期 / 时间段",
           "地点与进入说明",
@@ -438,7 +439,7 @@
           "风险 / 安全考量",
           "评估或反思方式"
         ],
-        chi_tra: [
+        "zh-HK": [
           "活動名稱與目的",
           "日期 / 時段",
           "地點與進出說明",
@@ -460,7 +461,7 @@
           "Header-footer Branding",
           "Distribution Date"
         ],
-        chi_sim: [
+        zh: [
           "文档类型（议程、简报、手册、政策等）",
           "目标读者",
           "重点部分 / 要点",
@@ -468,7 +469,7 @@
           "页眉页脚品牌标识",
           "发布日期"
         ],
-        chi_tra: [
+        "zh-HK": [
           "文件類型（議程、簡報、手冊、政策等）",
           "目標讀者",
           "重點內容 / 討論要點",
@@ -639,6 +640,7 @@
     ph_duration: "Duration (e.g., 45 mins)",
     ph_length  : "Length (Short / Medium / Long)",
     pleaseWait : "Please wait for 1 minute…",
+    pleaseWaitVA: "Your Visual Assets is delivering…",
     ph_input : "Type something...",
 
     details      : "Details",
@@ -649,7 +651,7 @@
     label_length : "Length",
     na           : "N/A"
   },
-  chi_sim: {
+  zh: {
     title: "👋 你想生成什么？",
     next: "下一步",
     upload: "上传文件",
@@ -692,6 +694,7 @@
     ph_duration: "时长（例如 45 分钟）",
     ph_length  : "长度（短 / 中 / 长）",
     pleaseWait : "请等待 1 分钟…",
+    pleaseWaitVA: "您的教材正在送上...",
     ph_input : "请输入内容…",
 
     details      : "详情",
@@ -704,7 +707,7 @@
 
 
   },
-  chi_tra: {
+  "zh-HK": {
     title: "👋 你想要生成什麼？",
     next: "下一步",
     upload: "上傳檔案",
@@ -747,6 +750,7 @@
     ph_duration: "時長（例如 45 分鐘）",
     ph_length  : "長度（短 / 中 / 長）",
     pleaseWait : "請等待 1 分鐘…",
+    pleaseWaitVA: "您的教材正在送上...",
     ph_input : "請輸入內容…",
 
     details      : "詳情",
@@ -761,7 +765,7 @@
 };
 
 
-  document.getElementById('ocr-lang').dispatchEvent(new Event('change'));
+  //document.getElementById('ocr-lang').dispatchEvent(new Event('change'));
 
 
   
@@ -887,56 +891,160 @@
       return container
 
     }
-
-
-    async function callDeepSeek(promptText) {
-      const apiKey = 'sk-816d9a802e5f4c8ab73459a40791d7db'; 
-      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'deepseek-reasoner', 
-          messages: [
-            { role: 'system', content: 'You are an experienced AI education specialist, skilled at explaining complex concepts in a clear and engaging manner while providing personalized guidance tailored to students at different learning levels. Provide details plan for user(teacher)' },
-            { role: 'user', content: promptText }
-          ],
-          temperature: 0.7
-        }),
-      });
-
-      const data = await response.json();
-      if (data.choices && data.choices.length > 0) {
-      return data.choices[0].message.content;
-    } else {
-      throw new Error('No response from DeepSeek API');
-    }
-  }
     
-      async function generateImageSearchLinksViaLLM(fullPrompt) {
-    const imagePrompt = `
-  你是一个教育类图像建议助手。请从下面这段文本中，提取 2-5 个最适合用于搜索教学相关图片的关键词或短语。它们应准确反映内容主题，适合用于 Google 图片搜索。仅返回关键词列表，不需要解释或引号。
+    async function callDeepSeek(promptText, onChunkReceived) {
+        const locale = currentLang; // Make sure currentLang is correctly set
+        const postData = { promptText, locale };
 
-  【教学内容】：
-  ${fullPrompt}
+        let reader; // To store the stream reader for potential cancellation
+        let completeContent = '';
+        let isCompletedSuccessfully = false; // To track successful completion via 'end' event
 
-  【输出格式】：
-  - ...
-  - ...
-  - ...
-    `.trim();
+        return new Promise(async (resolve, reject) => { // Make the Promise executor async
+            try {
+                const response = await fetch('https://backend.canpaniongroup.com/aigc/aio-generation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Add any other necessary headers, e.g., Authorization
+                    },
+                    body: JSON.stringify(postData),
+                });
 
-    const result = await callDeepSeek(imagePrompt);
-    return result
-      .split('\n')
-      .map(line => line.replace(/^[-•*]\s*/, '').trim())
-      .filter(Boolean)
-      .map(p => `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(p)}`);
-  }
+                if (!response.ok) {
+                    // Handle HTTP errors from the initial POST request
+                    const errorText = await response.text();
+                    console.error('Server error on initial POST:', response.status, errorText);
+                    reject(new Error(`Server error: ${response.status}. ${errorText.substring(0,100)}`));
+                    return;
+                }
+
+                const contentType = response.headers.get('Content-Type');
+                if (!contentType || !contentType.includes('text/event-stream')) {
+                    console.error('Expected text/event-stream, but received:', contentType);
+                    const responseText = await response.text();
+                    reject(new Error(`Unexpected response type from server: ${responseText.substring(0,100)}`));
+                    return;
+                }
+
+                reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                const processSseEvents = () => {
+                    let eolIndex;
+                    while ((eolIndex = buffer.indexOf('\n\n')) >= 0) {
+                        const messageBlock = buffer.substring(0, eolIndex);
+                        buffer = buffer.substring(eolIndex + 2);
+
+                        let eventType = 'message'; // Default SSE event type
+                        let eventDataString = '';
+
+                        const lines = messageBlock.split('\n');
+                        for (const line of lines) {
+                            if (line.startsWith('event:')) {
+                                eventType = line.substring(6).trim();
+                            } else if (line.startsWith('data:')) {
+                                eventDataString += line.substring(5).trim();
+                            }
+                        }
+
+                        try {
+                            const parsedData = eventDataString ? JSON.parse(eventDataString) : null;
+
+                            if (eventType === 'message' && parsedData && parsedData.content) {
+                                completeContent += parsedData.content;
+                                if (onChunkReceived) {
+                                    onChunkReceived(parsedData.content);
+                                }
+                            } else if (eventType === 'end' && parsedData && parsedData.status === 'completed') {
+                                isCompletedSuccessfully = true;
+                                resolve(completeContent);
+                                if (reader) {
+                                    reader.cancel().catch(e => console.warn("Error cancelling reader on 'end' event:", e));
+                                    reader = null;
+                                }
+                                return true; // Signal to stop reading
+                            } else if (eventType === 'error' && parsedData && parsedData.error) {
+                                reject(new Error(parsedData.error));
+                                if (reader) {
+                                    reader.cancel().catch(e => console.warn("Error cancelling reader on 'error' event:", e));
+                                    reader = null;
+                                }
+                                return true; // Signal to stop reading
+                            }
+                        } catch (e) {
+                            console.error('Error parsing SSE data JSON:', e, "Raw data string:", eventDataString);
+                            // Don't reject here for a single bad message if the stream might continue,
+                            // unless it's critical.
+                        }
+                    }
+                    return false; // Continue reading
+                };
 
 
+                // eslint-disable-next-line no-constant-condition
+                while (true) {
+                    if (!reader) break; // Stop if reader was cancelled
+
+                    const { done, value } = await reader.read();
+
+                    if (done) {
+                        // Stream finished from server side
+                        if (buffer.trim()) { // Process any remaining buffer
+                            if (processSseEvents()) break;
+                        }
+                        if (!isCompletedSuccessfully) {
+                            // If stream ended without our 'end' event, it might be an unexpected closure
+                            console.warn("Stream ended without explicit 'completed' status.");
+                            // Decide if this should be a resolve or reject based on your app's logic
+                            // For now, let's assume if content was received, it's a partial success.
+                            // Or, if no content, it's an error.
+                            if (completeContent) {
+                                 resolve(completeContent); // Resolve with what we have
+                            } else {
+                                 reject(new Error('Stream ended prematurely without completion signal or content.'));
+                            }
+                        }
+                        break;
+                    }
+
+                    buffer += decoder.decode(value, { stream: true });
+                    if (processSseEvents()) {
+                        break; // Stop if an event signaled completion or error
+                    }
+                }
+
+            } catch (error) { // Catches network errors for fetch or errors in stream setup
+                console.error('Fetch or stream processing error in callDeepSeek:', error);
+                reject(error); // General catch-all
+            } finally {
+                if (reader && typeof reader.cancel === 'function') {
+                    reader.cancel().catch(e => console.warn("Error cancelling reader in finally block:", e));
+                }
+            }
+        });
+    }
+    async function generateImageSearchLinksViaLLM(fullPrompt) {
+      const imagePrompt = `
+    你是一个教育类图像建议助手。请从下面这段文本中，提取 2-5 个最适合用于搜索教学相关图片的关键词或短语。它们应准确反映内容主题，适合用于 Google 图片搜索。仅返回关键词列表，不需要解释或引号。
+
+    【教学内容】：
+    ${fullPrompt}
+
+    【输出格式】：
+    - ...
+    - ...
+    - ...
+      `.trim();
+
+      const result = await callDeepSeek(imagePrompt);
+      return result
+        .split('\n')
+        .map(line => line.replace(/^[-•*]\s*/, '').trim())
+        .filter(Boolean)
+        .map(p => `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(p)}`);
+    }
     function showStage() {
       const stage = stages[currentStage];
       if (!stage) return;
@@ -1189,20 +1297,24 @@
       }
     }
 
-    const langSelector = document.getElementById('ocr-lang');
-    let currentLang = langSelector.value;
+    //const langSelector = document.getElementById('ocr-lang');
+    //let currentLang = langSelector.value;
+    let currentLang = document.documentElement.lang;
+    updateUIText(); 
+    refreshStage0UI();  
 
     function t(key, vars = {}) {
       let s = translations[currentLang]?.[key] || translations.eng[key] || key;
       for (const [k, v] of Object.entries(vars)) s = s.replace(`{${k}}`, v);
       return s;
     }
-
+		
+    /*
     langSelector.addEventListener('change', () => {
       currentLang = langSelector.value;
       updateUIText(); 
       refreshStage0UI();    
-    });
+    });*/
 
     function updateUIText() {
       document.querySelector('h2.centered-heading').textContent = t('title');
@@ -1222,10 +1334,10 @@
         });
     }
 
-    langSelector.addEventListener('change', () => {
+    /*langSelector.addEventListener('change', () => {
       currentLang = langSelector.value;
       updateUIText();
-    });
+    });*/
 
     window.addEventListener('DOMContentLoaded', () => {
       updateUIText();
@@ -1256,6 +1368,13 @@
         default: return opt;
       }
     }
+    
+    const exportT = {
+      	en: "export to .docx",
+        zh: "导出到 .docx",
+        "zh-HK": "導出至 .docx"
+      }
+    
 
     function addFilePreviewRow(fileRecord) {
       const fileItem = document.createElement('div');
@@ -1292,8 +1411,13 @@
       await Promise.all([...pendingExtractions]);
 
       const uploads = answers['have'] || [];
-      const fileTexts = uploads
+      /*const fileTexts = uploads
         .map(f => (f.text ?? '').trim().slice(0, 4096))
+        .filter(Boolean)
+        .join('\n\n---\n\n');*/
+
+      const fileTexts = uploads
+        .map(f => (f.text ?? '').trim().slice(0, 87382)) // maximum context length 64k/0.6 = 109223 chinese characters
         .filter(Boolean)
         .join('\n\n---\n\n');
 
@@ -1335,18 +1459,32 @@
       const loadingMsg = appendMessage('🔄 Generating...', 'bot');
       const loadingBubble = loadingMsg.querySelector('.bubble');
       loadingBubble.innerHTML =
-        `<img src="boywalking.gif" style="width:48px;height:48px;margin-right:6px;vertical-align:middle;" alt="loading">` +
-        `<span>${t('pleaseWait')}</span>`;
+  `<img src="https://cdn.prod.website-files.com/67af0a7f5730375704f96216/682588f940a6776a7f6c138a_boywalkingg.gif" style="height:120px;margin-right:6px;vertical-align:middle;" alt="loading">` +
+  `<span>${t('pleaseWait')}</span>`;
 
       lastGeneratedResult = loadingMsg;
+      
 
       try {
-        const generated = await callDeepSeek(fullPrompt);
+        let result = '';
+        const generated = await callDeepSeek(fullPrompt, (chunk) => {
+            // Update your UI here, e.g., append to a div or textarea
+            result += chunk;
+            loadingBubble.innerHTML = marked.parse(result);
+        }).then((completeContent) => {
+        		
+            return completeContent;
+        }).catch((error) => {
+            console.error('Error:', error);
+            return error;
+        });
         let finalMd = generated;
+        loadingBubble.innerHTML += `<img src="https://cdn.prod.website-files.com/67af0a7f5730375704f96216/682588f940a6776a7f6c138a_boywalkingg.gif" style="width:96px;height:96px;margin-right:6px;vertical-align:middle;" alt="loading">` +
+  `<span>${t('pleaseWaitVA')}</span>`;
 
         const imageLinks = await generateImageSearchLinksViaLLM(fullPrompt);
         if (imageLinks.length) {
-          finalMd += '\n\n---\n### Suggested Visual Assets\n' +
+          finalMd += '\n\n---\n### Suggested Visual Assets\n' +
                     imageLinks.map(u => `- <${u}>`).join('\n');
         }
 
@@ -1354,7 +1492,18 @@
 
         renderMarkdown(loadingBubble, finalMd);
         fullMarkdown = finalMd;
-
+        const exportMsg = appendMessage('', 'bot');
+        exportMsg.querySelector('.bubble').innerHTML = `<a id="exportbtn" href="#" class="btn-secondary w-inline-block" style="display: block;"><div class="flex-horizontal gap-column-6px"><div>${exportT[currentLang]}</div></div></a>`;
+        const exportBtn = document.getElementById('exportbtn');
+        exportBtn.addEventListener('click', function() {
+            const htmltext = marked.parse(fullMarkdown);
+            if (htmltext) {
+                const docxBlob = htmlDocx.asBlob(htmltext);
+                saveAs(docxBlob, 'plan.docx');
+            } else {
+                alert('No plan to export.');
+            }
+        });
         setTimeout(askIfRefineNeeded, 500);
       } catch (err) {
         console.error(err);
@@ -1605,7 +1754,8 @@
       showStage();
     }
 
-    
+
+		let askcount = 0;
     function askRefineSections() {
       const type   = answers['type'];
       const fields = (templateSections[type] || {})[currentLang] ||
@@ -1673,7 +1823,7 @@
         const loadingMsg    = appendMessage('⏳ Regenerating…', 'bot');
         const loadingBubble = loadingMsg.querySelector('.bubble');
         loadingBubble.innerHTML =
-  `<img src="boywalking.gif" style="width:48px;height:48px;margin-right:6px;vertical-align:middle;" alt="loading">` +
+  `<img src="https://cdn.prod.website-files.com/67af0a7f5730375704f96216/682588f940a6776a7f6c138a_boywalkingg.gif" style="width:48px;height:48px;margin-right:6px;vertical-align:middle;" alt="loading">` +
   `<span>${t('pleaseWait')}</span>`;
 
         const prompt = `
@@ -1699,12 +1849,25 @@
           renderMarkdown(loadingBubble, refined); 
           //loadingBubble.innerHTML = marked.parse(refined);
           fullMarkdown = mergeSections(fullMarkdown, refined);
+          const exportMsg = appendMessage('', 'bot');
+          exportMsg.querySelector('.bubble').innerHTML = `<a id="exportbtn${askcount}" href="#" class="btn-secondary w-inline-block" style="display: block;"><div class="flex-horizontal gap-column-6px"><div>${exportT[currentLang]}</div></div></a>`;
+          const exportBtn = document.getElementById(`exportbtn${askcount}`);
+          exportBtn.addEventListener('click', function() {
+            const htmltext = loadingBubble.innerHTML;
+            if (htmltext) {
+              const docxBlob = htmlDocx.asBlob(htmltext);
+              saveAs(docxBlob, 'plan.docx');
+            } else {
+              alert('No plan to export.');
+            }
+          });
           askIfRefineNeeded();
         } catch (e) {
           console.error(e);
           loadingBubble.textContent = t('generationFailed');
         }
       };
+      askcount++;
 
       wrap.append(cbGroup, okBtn);
       chat.appendChild(wrap);
@@ -1715,23 +1878,65 @@
 
 
 
-    function extractAndStore(fileRecord, file) {
+    async function extractAndStore(fileRecord, file) {
       fileRecord.text = '⌛ extracting…';
+      const extractionId = Symbol(`extraction-${file.name}`); // Unique ID for this operation
 
-    // create + start extraction
-    const promise = extractTextFromFile(file)
-      .then(txt => {
-        fileRecord.text = (txt || '').trim() || '(empty file)';
-      })
-      .catch(err => {
-        console.error('Extraction error →', err);      // full stack
-        fileRecord.text = `❌ Failed: ${err.message || err}`;
-      })
-      .finally(() => pendingExtractions.delete(promise));  // clean up
+      pendingExtractions.add(extractionId); // Mark as pending
 
-    pendingExtractions.add(promise);
+      try {
+        let accumulatedText = '';
+        let hasReceivedText = false;
+
+        // extractTextFromFile is the async generator from your Canvas
+        for await (const chunk of extractTextFromFile(file, {
+          /* tesseractLogger: (m) => console.log(`Tesseract Progress (${file.name}): ${m.status} - ${m.progress}`) */
+        })) {
+          if (chunk.startsWith('⚠️') || chunk.startsWith('ℹ️')) {
+            // Handle warnings or info messages, perhaps log them or display them differently
+            console.warn(`Extraction info/warning for ${file.name}: ${chunk.trim()}`);
+            // Optionally append to a separate log in fileRecord or display to user
+            // For now, we'll append it to the main text but you might want to separate it
+            accumulatedText += chunk;
+          } else {
+            accumulatedText += chunk;
+            hasReceivedText = true;
+          }
+          // Update UI progressively if desired, e.g., by setting fileRecord.text here
+          // For simplicity in this example, we'll update at the end,
+          // but for a live UI, you'd update it inside the loop.
+          // fileRecord.text = accumulatedText; // <-- Uncomment for progressive UI update
+        }
+
+        if (accumulatedText.trim() === '' && !hasReceivedText) {
+          // If no actual text content was yielded, but also no specific error messages from the stream itself
+          fileRecord.text = '(empty or no extractable text)';
+        } else if (accumulatedText.startsWith('⌛ extracting…') && accumulatedText.length > '⌛ extracting…'.length) {
+          // If we only got warnings/info messages appended to the initial status
+          fileRecord.text = accumulatedText.substring('⌛ extracting…'.length).trim();
+          if (fileRecord.text === '') fileRecord.text = '(extraction yielded warnings/info but no content)';
+        }
+        else {
+          fileRecord.text = accumulatedText.trim();
+        }
+
+        if (fileRecord.text === '⌛ extracting…') { // If it was never updated beyond initial
+            fileRecord.text = '(empty or no extractable text found)';
+        }
 
 
+      } catch (err) {
+        console.error('Extraction error in extractAndStore for file:', file.name, '→', err);
+        fileRecord.text = `❌ Failed: ${err.message || String(err)}`;
+      } finally {
+        pendingExtractions.delete(extractionId); // Clean up
+        // Final check if text is still the loading message
+        if (fileRecord.text === '⌛ extracting…') {
+            fileRecord.text = `❌ Extraction did not complete or yield text for ${file.name}.`;
+        }else{
+          console.log(fileRecord.text);
+        }
+      }
     }
 
     function handleUserInput() {
@@ -1905,69 +2110,197 @@ fileInput.addEventListener('change', () => {
 
 
 
-  async function extractTextFromDocx(file) {
-    const { value } = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
-    return value;
-  }
-
-  async function extractTextFromImage(file) {
-  const result = await Tesseract.recognize(file, 'chi_sim+chi_tra+eng', {
-    logger: m => console.log(m.status, m.progress)
-  });
-  return result.data.text;
-}
-
-  async function extractTextFromPDF(file) {
-    try {
-      const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
-      let text = '';
-
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        const pageText = content.items.map(item => item.str).join(' ');
-        text += pageText + '\n';
+    /**
+     * Extracts text from a DOCX file and streams it paragraph by paragraph.
+     * @param {File} file - The DOCX file object.
+     * @async
+     * @generator
+     * @yields {string} Chunks of text (paragraphs) from the DOCX file.
+     */
+    async function* extractTextFromDocx(file) {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const { value } = await mammoth.extractRawText({ arrayBuffer });
+        // Split the extracted text by paragraphs (two or more newlines, possibly with whitespace)
+        // or by single newlines if paragraphs are not distinct.
+        const paragraphs = value.split(/\n\s*\n/); // More robust paragraph splitting
+        for (const paragraph of paragraphs) {
+          const trimmedParagraph = paragraph.trim();
+          if (trimmedParagraph) {
+            yield trimmedParagraph + '\n'; // Add a newline for separation
+          }
+        }
+      } catch (error) {
+        console.error("Error extracting text from DOCX:", error);
+        yield `⚠️ Error extracting text from ${file.name}: ${error.message}\n`;
       }
-
-      if (text.trim()) return text.trim();
-
-      throw new Error('empty text layer');
-    } catch (err) {
-      console.warn('Text extraction failed, switching to OCR →', err.message);
-
-      // OCR fallback
-      const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
-      let ocrText = '';
-
-      for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
-        const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 2 });
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-
-        await page.render({ canvasContext: context, viewport }).promise;
-
-        const { data } = await Tesseract.recognize(canvas, 'chi_sim+chi_tra+eng');
-        ocrText += data.text + '\n';
-      }
-
-      return ocrText.trim() || '⚠️ OCR produced no text.';
     }
-  }
 
-    async function extractTextFromFile(file) {
+    /**
+     * Extracts text from an image file using OCR and streams it line by line.
+     * @param {File} file - The image file object (e.g., PNG, JPG).
+     * @param {object} [options] - Optional parameters.
+     * @param {function} [options.logger] - Logger function for Tesseract progress.
+     * @async
+     * @generator
+     * @yields {string} Chunks of text (lines) from the image file.
+     */
+    async function* extractTextFromImage(file, options = {}) {
+      try {
+        const tesseractOptions = { logger: options.logger || (m => console.log(`Tesseract (${file.name}): ${m.status} (${(m.progress * 100).toFixed(2)}%)`)) };
+        const { data: { text } } = await Tesseract.recognize(
+          file,
+          'chi_sim+chi_tra+eng', // Standard languages from original code
+          tesseractOptions
+        );
+
+        const lines = text.split('\n');
+        for (const line of lines) {
+          // Optionally trim, but for OCR, preserving original spacing might be important sometimes.
+          // Here, we yield the line as is, consumers can trim if needed.
+          yield line + '\n';
+        }
+      } catch (error) {
+        console.error("Error extracting text from image:", error);
+        yield `⚠️ Error extracting text from ${file.name} (OCR): ${error.message}\n`;
+      }
+    }
+
+    /**
+     * Extracts text from a PDF file and streams it page by page.
+     * Falls back to OCR if text layer extraction fails or yields no text.
+     * @param {File} file - The PDF file object.
+     * @param {object} [options] - Optional parameters.
+     * @param {function} [options.tesseractLogger] - Logger function for Tesseract progress during OCR.
+     * @async
+     * @generator
+     * @yields {string} Chunks of text from the PDF file.
+     */
+    async function* extractTextFromPDF(file, options = {}) {
+      let arrayBuffer;
+      try {
+        arrayBuffer = await file.arrayBuffer();
+      } catch (readError) {
+        console.error(`Error reading file ${file.name}:`, readError);
+        yield `⚠️ Error reading file ${file.name}: ${readError.message}\n`;
+        return;
+      }
+
+      let textLayerExtractedSuccessfully = false;
+      let anyTextYieldedFromLayer = false;
+
+      // Attempt 1: Text Layer Extraction
+      try {
+        // Use slice(0) to ensure the buffer can be potentially reused if pdfjsLib modifies it (though it typically shouldn't)
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
+        if (pdf.numPages === 0) {
+            yield `⚠️ PDF file ${file.name} has no pages.\n`;
+        }
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          if (content.items.length > 0) {
+            const pageText = content.items.map(item => item.str).join(' ');
+            const trimmedPageText = pageText.trim();
+            if (trimmedPageText) {
+              yield trimmedPageText + '\n';
+              anyTextYieldedFromLayer = true;
+            }
+          }
+        }
+        textLayerExtractedSuccessfully = true; // Mark success if loop completes without error
+      } catch (err) {
+        console.warn(`Text layer extraction failed for ${file.name}: ${err.message}. Will attempt OCR.`);
+        // Error occurred, so text layer extraction was not successful. OCR fallback will be triggered.
+        textLayerExtractedSuccessfully = false;
+      }
+
+      // Attempt 2: OCR Fallback (if text layer extraction failed or yielded no text)
+      if (!textLayerExtractedSuccessfully || !anyTextYieldedFromLayer) {
+        if (textLayerExtractedSuccessfully && !anyTextYieldedFromLayer) {
+            console.warn(`No text found in text layer of ${file.name}. Attempting OCR.`);
+        }
+
+        let anyTextYieldedFromOcr = false;
+        try {
+          const pdfForOcr = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
+          // Limit OCR to the first 5 pages as in the original code, to avoid long processing times.
+          const numPagesToOcr = Math.min(pdfForOcr.numPages, 5);
+
+          if (pdfForOcr.numPages > 0 && numPagesToOcr === 0) {
+            // This case should ideally not be hit if numPages > 0, but as a safeguard.
+            yield `⚠️ PDF ${file.name} has pages, but OCR was configured to process 0 pages.\n`;
+          } else if (pdfForOcr.numPages === 0 && numPagesToOcr === 0) {
+            // This was already handled by the text layer check, but good to be explicit if we somehow reach here.
+            // yield `⚠️ PDF file ${file.name} has no pages for OCR.\n`; (already covered)
+          }
+
+
+          for (let i = 1; i <= numPagesToOcr; i++) {
+            const page = await pdfForOcr.getPage(i);
+            const viewport = page.getViewport({ scale: 2 }); // Scale 2 for better OCR accuracy
+            
+            // Create canvas dynamically. Ensure this runs in a browser-like environment.
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            await page.render({ canvasContext: context, viewport }).promise;
+            
+            const tesseractOptions = { logger: options.tesseractLogger || (m => console.log(`Tesseract (PDF Page ${i}, ${file.name}): ${m.status} (${(m.progress * 100).toFixed(2)}%)`)) };
+            const { data } = await Tesseract.recognize(canvas, 'chi_sim+chi_tra+eng', tesseractOptions);
+            
+            // Clean up canvas to free memory
+            canvas.width = 0;
+            canvas.height = 0;
+
+            const ocrPageText = data.text ? data.text.trim() : "";
+            if (ocrPageText) {
+              yield ocrPageText + '\n';
+              anyTextYieldedFromOcr = true;
+            }
+          }
+
+          if (numPagesToOcr > 0 && !anyTextYieldedFromOcr) {
+            yield `⚠️ OCR produced no text from the first ${numPagesToOcr} page(s) of ${file.name}.\n`;
+          }
+          if (pdfForOcr.numPages > numPagesToOcr) {
+            yield `ℹ️ OCR for ${file.name} was limited to the first ${numPagesToOcr} of ${pdfForOcr.numPages} pages.\n`;
+          }
+
+        } catch (ocrErr) {
+          console.error(`OCR process failed for ${file.name}:`, ocrErr);
+          yield `⚠️ OCR process for ${file.name} failed: ${ocrErr.message}\n`;
+        }
+      }
+    }
+
+    /**
+     * Main function to extract text from a file, routing to the appropriate extractor.
+     * Streams text content.
+     * @param {File} file - The file object.
+     * @param {object} [options] - Optional parameters for extractors (e.g., loggers).
+     * @async
+     * @generator
+     * @yields {string} Chunks of text from the file.
+     */
+    async function* extractTextFromFile(file, options = {}) {
+      if (!file || !file.name) {
+        yield `⚠️ Invalid file object provided.\n`;
+        return;
+      }
       const name = file.name.toLowerCase();
 
       if (name.endsWith('.pdf')) {
-        return await extractTextFromPDF(file);
+        yield* extractTextFromPDF(file, options);
       } else if (name.endsWith('.docx')) {
-        return await extractTextFromDocx(file);
+        yield* extractTextFromDocx(file); // Options not currently used by docx extractor
       } else if (/\.(png|jpg|jpeg)$/i.test(name)) {
-        return await extractTextFromImage(file);
+        yield* extractTextFromImage(file, { logger: options.tesseractLogger });
       } else {
-        return `⚠️ Unsupported file type: ${file.name}`;
+        yield `⚠️ Unsupported file type: ${file.name}\n`;
       }
     }
 

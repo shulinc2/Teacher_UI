@@ -14,7 +14,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.5.1/mammoth.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.1/dist/tesseract.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://unpkg.com/file-saver/dist/FileSaver.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
 
   <style>
@@ -215,9 +214,9 @@
       margin: 0 2px;
     }
     button.selected {
-      background: #2eb84e !important; /* light green */
-      border-color: #28a745;
-      color: #155724;
+      background: #10a37f !important; /* green */
+      border-color: #0d8c6d;
+      color: white !important;
     }
 
      .book-item {
@@ -254,9 +253,9 @@
   }
 
   .choice-btn.selected {
-    background: #10a37f;
-    color: white;
-    border-color: #10a37f;
+    background: #10a37f !important;
+    color: white !important;
+    border-color: #0d8c6d;
   }
 
   #stage-3 {
@@ -375,13 +374,11 @@
         morePrompt: "Question 4/5: ✏️  Add more details: Comment, Grade, Number of Students, Duration, Length",
         refineWhich: "🧩 Which part(s) would you like to be more specific?",
         done: "🎉 Got it! Let me know if you need anything else.",
-
         question1: "Question 1/5: 👇 Please select a type:",
         question2: "Question 2/5: 💭 Why do you need this?",
         question3: "Question 3/5: 📎 What do you have on hand?",
         question4: "Question 4/5: ✏️ Add more details",
         question5: "Question 5/5: 🔍 Do you want to make any part more specific?",
-        
         pleaseFill: "Please fill in at least one field.",
         noExtractedText: "No extracted text found – please upload a PDF / Word / image first.",
         noTemplateFound: "⚠️ No corresponding template was found to generate content!",
@@ -427,54 +424,6 @@
       upload: "上传文件",
       yes: "是",
       no: "否",
-      saveBtn: "保存",
-      regenerateBtn: "🔍 重新生成并丰富细节",
-      morePrompt: "问题 4/5：✏️  请补充更多信息：注释、年级、学生人数、时长、长度",
-      refineWhich: "🧩 你想让哪些部分更具体？",
-      done: "🎉 明白了！如有其他需求请告诉我。",
-
-      question1: "问题 1/5：👇 请选择一个类型：",
-      question2: "问题 2/5：💭 你为什么需要这个？（例如：为二年级学生上的数学课，或是下周的家长会）",
-      question3: "问题 3/5：📎 你现在手上有什么资料？（你可以上传文件，仅限 PDF 或 Word 文档，或是简单描述一下）",
-      question4: "问题 4/5：✏️ 请补充更多信息：注释、年级、学生人数、时长、长度",
-      question5: "问题 5/5：🔍 是否希望某些部分更具体？",
-
-      pleaseFill: "请至少填写一个字段。",
-      noExtractedText: "未找到提取的文本 – 请上传 PDF / Word / 图片文件。",
-      noTemplateFound: "⚠️ 找不到对应的生成模板！",
-      atLeastOnePart: "请至少选择一个要细化的部分。",
-      generationFailed: "❌ 生成失败。请重试。",
-      pleaseRefine: "✅ 是的，请细化。",
-      noThanks: "❌ 不用了。",
-      replacedMsg: "🔄 已替换\"{filename}\"。",
-      replaceConfirm: "是否替换之前上传的\"{filename}\"？",
-      infoCollected: "✅ 所有信息已收集，准备生成！",
-
-      type_lesson: "课程教案",
-      type_materials: "课堂素材 (PPT/图片)",
-      type_report: "成绩单",
-      type_feedback: "作品反馈",
-      type_bank: "题库 / 作业",
-      type_activity: "活动方案",
-      type_admin: "行政文档 (PPT/Word)",
-
-      ph_comment : "注释（可选）",
-      ph_grade   : "年级（可选）",
-      ph_students: "学生人数",
-      ph_duration: "时长（例如 45 分钟）",
-      ph_length  : "长度（短 / 中 / 长）",
-      pleaseWait : "请等待 1 分钟…",
-      pleaseWaitVA: "您的教材正在送上...",
-      ph_input : "请输入内容…",
-
-      details      : "详情",
-      label_comment: "注释",
-      label_grade  : "年级",
-      label_students:"学生人数",
-      label_duration:"时长",
-      label_length : "长度",
-      na           : "未填写",
-
       uploadFiles: "上传文件",
       browseDatabase: "浏览数据库",
       browseFiles: "📁 从数据库中选择文件：",
@@ -487,52 +436,6 @@
       upload: "上傳檔案",
       yes: "是",
       no: "否",
-      regenerateBtn: "🔍 重新生成並豐富細節",
-      morePrompt: "問題 4/5：✏️  請補充更多細節：註解、年級、學生人數、時長、長度",
-      refineWhich: "🧩 你想讓哪些部分更具體？",
-      done: "🎉 明白！如有其他需要請告訴我。",
-
-      question1: "問題 1/5：👇 請選擇一個類型：",
-      question2: "問題 2/5：💭 你為什麼需要這個？（例如：為二年級學生上的數學課，或是下週的家長會）",
-      question3: "問題 3/5：📎 你現在手上有什麼資料 (你可以上傳檔案，僅限 PDF 或 Word 文件，或簡單描述一下)",
-      question4: "問題 4/5：✏️ 請補充更多細節：註解、年級、學生數量、時間、長度",
-      question5: "問題 5/5：🔍 是否需要更具體的部分？",
-
-      pleaseFill: "請至少填寫一項內容。",
-      noExtractedText: "未找到提取內容 – 請先上傳 PDF / Word / 圖片。",
-      noTemplateFound: "⚠️ 找不到對應的生成模板！",
-      atLeastOnePart: "請至少選擇一個需要細化的部分。",
-      generationFailed: "❌ 生成失敗。請再試一次。",
-      pleaseRefine: "✅ 是的，請細化。",
-      noThanks: "❌ 不用了。",
-      replacedMsg: "🔄 已替換\"{filename}\"。",
-      replaceConfirm: "是否替換之前上傳的\"{filename}\"？",
-      infoCollected: "✅ 所有資訊已收集，準備生成！",
-
-      type_lesson: "課程教案",
-      type_materials: "課堂素材 (PPT/圖片)",
-      type_report: "成績單",
-      type_feedback: "作品回饋",
-      type_bank: "題庫 / 作業",
-      type_activity: "活動計畫",
-      type_admin: "行政文件 (PPT/Word)",
-
-      ph_comment : "註解（可選）",
-      ph_grade   : "年級（可選）",
-      ph_students: "學生人數",
-      ph_duration: "時長（例如 45 分鐘）",
-      ph_length  : "長度（短 / 中 / 長）",
-      pleaseWait : "請等待 1 分鐘…",
-      pleaseWaitVA: "您的教材正在送上...",
-      ph_input : "請輸入內容…",
-
-      details      : "詳情",
-      label_comment: "註解",
-      label_grade  : "年級",
-      label_students:"學生人數",
-      label_duration:"時長",
-      label_length : "長度",
-      na           : "未填寫",
       uploadFiles: "上傳檔案",
       browseDatabase: "瀏覽數據庫",
       browseFiles: "📁 從數據庫中選擇文件：",
@@ -558,7 +461,7 @@
           "Anticipated Difficulties/ Challenges → Solution",
           "Follow‑up / Reflection box"
         ],
-        zh: [
+        chi_sim: [
           "课题 / 学科领域",
           "学习目标 & 可测量指标",
           "先备知识",
@@ -569,7 +472,7 @@
           "预判难点 / 挑战 → 解决方案",
           "课后跟进 / 反思"
         ],
-        "zh-HK": [
+        chi_tra: [
           "課程標題 / 科目領域",
           "學習目標 & 可衡量指標",
           "先備知識",
@@ -591,7 +494,7 @@
           "Branding Elements (school logo, colors, fonts)",
           "Speaker‑note Depth (none / bullet / full script)"
         ],
-        zh: [
+        chi_sim: [
           "演示主题 / 关注问题",
           "目标受众（年级或课程）",
           "关键要点 / 幻灯片大纲",
@@ -600,7 +503,7 @@
           "品牌元素（校徽、色彩、字体）",
           "演讲者备注深度（无 / 要点 / 全脚本）"
         ],
-        "zh-HK": [
+        chi_tra: [
           "簡報主題 / 焦點問題",
           "預期受眾（年級或課程）",
           "重點 / 投影片大綱",
@@ -622,7 +525,7 @@
           "Teacher Narrative Comments",
           "Parent signature flag"
         ],
-        zh: [
+        chi_sim: [
           "学生与班级信息",
           "学期 / 成绩周期",
           "科目列表与评分标准",
@@ -633,7 +536,7 @@
           "教师评语",
           "家长签名项"
         ],
-        "zh-HK": [
+        chi_tra: [
           "學生與班級資訊",
           "學期 / 成績週期",
           "科目清單與評分標準",
@@ -655,7 +558,7 @@
           "Overall Comment",
           "Next-check-in Date"
         ],
-        zh: [
+        chi_sim: [
           "学生 / 作业编号",
           "评分标准或优点与改进字段（优势、需改进、下一步）",
           "表现等级或分数",
@@ -663,7 +566,7 @@
           "整体评语",
           "下次回顾日期"
         ],
-        "zh-HK": [
+        chi_tra: [
           "學生 / 作業編號",
           "評分標準或「亮點與改進」欄位（優勢、需改善、後續步驟）",
           "表現等級或分數",
@@ -685,7 +588,7 @@
           "Time Limit Per Item",
           "Category Folder"
         ],
-        zh: [
+        chi_sim: [
           "学科与主题标签",
           "课程标准对齐",
           "题型（选择题、开放题等）",
@@ -696,7 +599,7 @@
           "每题时间限制",
           "分类文件夹"
         ],
-        "zh-HK": [
+        chi_tra: [
           "學科與主題標籤",
           "課綱對應",
           "題型（選擇題、開放題等）",
@@ -721,7 +624,7 @@
           "Risk / safety considerations",
           "Assessment or reflection Method"
         ],
-        zh: [
+        chi_sim: [
           "活动名称与目的",
           "日期 / 时间段",
           "地点与进入说明",
@@ -732,7 +635,7 @@
           "风险 / 安全考量",
           "评估或反思方式"
         ],
-        "zh-HK": [
+        chi_tra: [
           "活動名稱與目的",
           "日期 / 時段",
           "地點與進出說明",
@@ -754,7 +657,7 @@
           "Header-footer Branding",
           "Distribution Date"
         ],
-        zh: [
+        chi_sim: [
           "文档类型（议程、简报、手册、政策等）",
           "目标读者",
           "重点部分 / 要点",
@@ -762,7 +665,7 @@
           "页眉页脚品牌标识",
           "发布日期"
         ],
-        "zh-HK": [
+        chi_tra: [
           "文件類型（議程、簡報、手冊、政策等）",
           "目標讀者",
           "重點內容 / 討論要點",
@@ -887,175 +790,8 @@
   ];
 
     const inputArea = document.getElementById('input-area');
-    const translations = {
-  eng: {
-    /* global */
-    title: "👋 What do you wanna generate?",
-    next: "Next",
-    upload: "Upload File",
-    yes: "Yes",
-    no: "No",
-    saveBtn: "Save",
-    regenerateBtn: "🔍 Regenerate with More Detail",
-    morePrompt: "Question 4/5: ✏️  Add more details: Comment, Grade, Number of Students, Duration, Length",
-    refineWhich: "🧩 Which part(s) would you like to be more specific?",
-    done: "🎉 Got it! Let me know if you need anything else.",
 
-    question1: "Question 1/5: 👇 Please select a type:",
-    question2: "Question 2/5: 💭 Why do you need this? (e.g. for student of grade 2 to have maths class, for parents meeting next week)",
-    question3: "Question 3/5: 📎 What do you have on hand? (You can upload files(PDF or Word only), or describe)",
-    question4: "Question 4/5: ✏️ Add more details: Comment, Grade, Number of Students, Duration, Length",
-    question5: "Question 5/5: 🔍 Do you want to make any part more specific?",
-
-
-    pleaseFill: "Please fill in at least one field.",
-    noExtractedText: "No extracted text found – please upload a PDF / Word / image first.",
-    noTemplateFound: "⚠️ No corresponding template was found to generate content!",
-    atLeastOnePart: "Please select at least one part to refine.",
-    generationFailed: "❌ Generation failed. Please try again.",
-    pleaseRefine: "✅ Yes, please refine.",
-    noThanks: "❌ No, that’s enough.",
-    replacedMsg: "🔄 \"{filename}\" replaced.",
-    replaceConfirm: "Replace previously uploaded \"{filename}\"?",
-    infoCollected: "✅ All info collected. Ready to generate!",
-
-    type_lesson: "Lesson Plan",
-    type_materials: "Class Materials (PPT/pictures)",
-    type_report: "Report Card",
-    type_feedback: "Student‑Work Feedback",
-    type_bank: "Subject Question Bank / Assignment",
-    type_activity: "Activity Plan / Extracurricular",
-    type_admin: "Admin Helper (PPT / Word)",
-
-    ph_comment : "Comment (optional)",
-    ph_grade   : "Grade (optional)",
-    ph_students: "Number of Students",
-    ph_duration: "Duration (e.g., 45 mins)",
-    ph_length  : "Length (Short / Medium / Long)",
-    pleaseWait : "Please wait for 1 minute…",
-    ph_input : "Type something...",
-
-    details      : "Details",
-    label_comment: "Comment",
-    label_grade  : "Grade",
-    label_students:"Number of Students",
-    label_duration:"Duration",
-    label_length : "Length",
-    na           : "N/A"
-  },
-  chi_sim: {
-    title: "👋 你想生成什么？",
-    next: "下一步",
-    upload: "上传文件",
-    yes: "是",
-    no: "否",
-    saveBtn: "保存",
-    regenerateBtn: "🔍 重新生成并丰富细节",
-    morePrompt: "问题 4/5：✏️  请补充更多信息：注释、年级、学生人数、时长、长度",
-    refineWhich: "🧩 你想让哪些部分更具体？",
-    done: "🎉 明白了！如有其他需求请告诉我。",
-
-    question1: "问题 1/5：👇 请选择一个类型：",
-    question2: "问题 2/5：💭 你为什么需要这个？（例如：为二年级学生上的数学课，或是下周的家长会）",
-    question3: "问题 3/5：📎 你现在手上有什么资料？（你可以上传文件，仅限 PDF 或 Word 文档，或是简单描述一下）",
-    question4: "问题 4/5：✏️ 请补充更多信息：注释、年级、学生人数、时长、长度",
-    question5: "问题 5/5：🔍 是否希望某些部分更具体？",
-
-    pleaseFill: "请至少填写一个字段。",
-    noExtractedText: "未找到提取的文本 – 请上传 PDF / Word / 图片文件。",
-    noTemplateFound: "⚠️ 找不到对应的生成模板！",
-    atLeastOnePart: "请至少选择一个要细化的部分。",
-    generationFailed: "❌ 生成失败。请重试。",
-    pleaseRefine: "✅ 是的，请细化。",
-    noThanks: "❌ 不用了。",
-    replacedMsg: "🔄 已替换\"{filename}\"。",
-    replaceConfirm: "是否替换之前上传的\"{filename}\"？",
-    infoCollected: "✅ 所有信息已收集，准备生成！",
-
-    type_lesson: "课程教案",
-    type_materials: "课堂素材 (PPT/图片)",
-    type_report: "成绩单",
-    type_feedback: "作品反馈",
-    type_bank: "题库 / 作业",
-    type_activity: "活动方案",
-    type_admin: "行政文档 (PPT/Word)",
-
-    ph_comment : "注释（可选）",
-    ph_grade   : "年级（可选）",
-    ph_students: "学生人数",
-    ph_duration: "时长（例如 45 分钟）",
-    ph_length  : "长度（短 / 中 / 长）",
-    pleaseWait : "请等待 1 分钟…",
-    ph_input : "请输入内容…",
-
-    details      : "详情",
-    label_comment: "注释",
-    label_grade  : "年级",
-    label_students:"学生人数",
-    label_duration:"时长",
-    label_length : "长度",
-    na           : "未填写"
-
-
-  },
-  chi_tra: {
-    title: "👋 你想要生成什麼？",
-    next: "下一步",
-    upload: "上傳檔案",
-    yes: "是",
-    no: "否",
-    saveBtn: "儲存",
-    regenerateBtn: "🔍 重新生成並豐富細節",
-    morePrompt: "問題 4/5：✏️  請補充更多細節：註解、年級、學生人數、時長、長度",
-    refineWhich: "🧩 你想讓哪些部分更具體？",
-    done: "🎉 明白！如有其他需要請告訴我。",
-
-    question1: "問題 1/5：👇 請選擇一個類型：",
-    question2: "問題 2/5：💭 你為什麼需要這個？（例如：為二年級學生上的數學課，或是下週的家長會）",
-    question3: "問題 3/5：📎 你現在手上有什麼資料 (你可以上傳檔案，僅限 PDF 或 Word 文件，或簡單描述一下)",
-    question4: "問題 4/5：✏️ 請補充更多細節：註解、年級、學生數量、時間、長度",
-    question5: "問題 5/5：🔍 是否需要更具體的部分？",
-
-    pleaseFill: "請至少填寫一項內容。",
-    noExtractedText: "未找到提取內容 – 請先上傳 PDF / Word / 圖片。",
-    noTemplateFound: "⚠️ 找不到對應的生成模板！",
-    atLeastOnePart: "請至少選擇一個需要細化的部分。",
-    generationFailed: "❌ 生成失敗。請再試一次。",
-    pleaseRefine: "✅ 是的，請細化。",
-    noThanks: "❌ 不用了。",
-    replacedMsg: "🔄 已替換\"{filename}\"。",
-    replaceConfirm: "是否替換之前上傳的\"{filename}\"？",
-    infoCollected: "✅ 所有資訊已收集，準備生成！",
-
-    type_lesson: "課程教案",
-    type_materials: "課堂素材 (PPT/圖片)",
-    type_report: "成績單",
-    type_feedback: "作品回饋",
-    type_bank: "題庫 / 作業",
-    type_activity: "活動計畫",
-    type_admin: "行政文件 (PPT/Word)",
-
-    ph_comment : "註解（可選）",
-    ph_grade   : "年級（可選）",
-    ph_students: "學生人數",
-    ph_duration: "時長（例如 45 分鐘）",
-    ph_length  : "長度（短 / 中 / 長）",
-    pleaseWait : "請等待 1 分鐘…",
-    ph_input : "請輸入內容…",
-
-    details      : "詳情",
-    label_comment: "註解",
-    label_grade  : "年級",
-    label_students:"學生人數",
-    label_duration:"時長",
-    label_length : "長度",
-    na           : "未填寫"
-
-  }
-};
-
-
-  document.getElementById('ocr-lang').dispatchEvent(new Event('change'));
+    document.getElementById('ocr-lang').dispatchEvent(new Event('change'));
 
 
   
@@ -1182,181 +918,87 @@
       chat.scrollTop = chat.scrollHeight;
       return container;
     }
+
+
+    async function callDeepSeek(promptText) {
+      const apiKey = 'sk-816d9a802e5f4c8ab73459a40791d7db'; 
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'deepseek-reasoner', 
+          messages: [
+            { role: 'system', content: 'You are an experienced AI education specialist, skilled at explaining complex concepts in a clear and engaging manner while providing personalized guidance tailored to students at different learning levels. Provide details plan for user(teacher)' },
+            { role: 'user', content: promptText }
+          ],
+          temperature: 0.7
+        }),
+      });
+
+      const data = await response.json();
+      if (data.choices && data.choices.length > 0) {
+      return data.choices[0].message.content;
+    } else {
+      throw new Error('No response from DeepSeek API');
+    }
+  }
     
-    async function callDeepSeek(promptText, onChunkReceived) {
-        const locale = currentLang; // Make sure currentLang is correctly set
-        const postData = { promptText, locale };
+      async function generateImageSearchLinksViaLLM(fullPrompt) {
+    const imagePrompt = `
+  你是一个教育类图像建议助手。请从下面这段文本中，提取 2-5 个最适合用于搜索教学相关图片的关键词或短语。它们应准确反映内容主题，适合用于 Google 图片搜索。仅返回关键词列表，不需要解释或引号。
 
-        let reader; // To store the stream reader for potential cancellation
-        let completeContent = '';
-        let isCompletedSuccessfully = false; // To track successful completion via 'end' event
+  【教学内容】：
+  ${fullPrompt}
 
-        return new Promise(async (resolve, reject) => { // Make the Promise executor async
-            try {
-                const response = await fetch('https://backend.canpaniongroup.com/aigc/aio-generation', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        // Add any other necessary headers, e.g., Authorization
-                    },
-                    body: JSON.stringify(postData),
-                });
+  【输出格式】：
+  - ...
+  - ...
+  - ...
+    `.trim();
 
-                if (!response.ok) {
-                    // Handle HTTP errors from the initial POST request
-                    const errorText = await response.text();
-                    console.error('Server error on initial POST:', response.status, errorText);
-                    reject(new Error(`Server error: ${response.status}. ${errorText.substring(0,100)}`));
-                    return;
-                }
-
-                const contentType = response.headers.get('Content-Type');
-                if (!contentType || !contentType.includes('text/event-stream')) {
-                    console.error('Expected text/event-stream, but received:', contentType);
-                    const responseText = await response.text();
-                    reject(new Error(`Unexpected response type from server: ${responseText.substring(0,100)}`));
-                    return;
-                }
-
-                reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let buffer = '';
-
-                const processSseEvents = () => {
-                    let eolIndex;
-                    while ((eolIndex = buffer.indexOf('\n\n')) >= 0) {
-                        const messageBlock = buffer.substring(0, eolIndex);
-                        buffer = buffer.substring(eolIndex + 2);
-
-                        let eventType = 'message'; // Default SSE event type
-                        let eventDataString = '';
-
-                        const lines = messageBlock.split('\n');
-                        for (const line of lines) {
-                            if (line.startsWith('event:')) {
-                                eventType = line.substring(6).trim();
-                            } else if (line.startsWith('data:')) {
-                                eventDataString += line.substring(5).trim();
-                            }
-                        }
-
-                        try {
-                            const parsedData = eventDataString ? JSON.parse(eventDataString) : null;
-
-                            if (eventType === 'message' && parsedData && parsedData.content) {
-                                completeContent += parsedData.content;
-                                if (onChunkReceived) {
-                                    onChunkReceived(parsedData.content);
-                                }
-                            } else if (eventType === 'end' && parsedData && parsedData.status === 'completed') {
-                                isCompletedSuccessfully = true;
-                                resolve(completeContent);
-                                if (reader) {
-                                    reader.cancel().catch(e => console.warn("Error cancelling reader on 'end' event:", e));
-                                    reader = null;
-                                }
-                                return true; // Signal to stop reading
-                            } else if (eventType === 'error' && parsedData && parsedData.error) {
-                                reject(new Error(parsedData.error));
-                                if (reader) {
-                                    reader.cancel().catch(e => console.warn("Error cancelling reader on 'error' event:", e));
-                                    reader = null;
-                                }
-                                return true; // Signal to stop reading
-                            }
-                        } catch (e) {
-                            console.error('Error parsing SSE data JSON:', e, "Raw data string:", eventDataString);
-                            // Don't reject here for a single bad message if the stream might continue,
-                            // unless it's critical.
-                        }
-                    }
-                    return false; // Continue reading
-                };
+    const result = await callDeepSeek(imagePrompt);
+    return result
+      .split('\n')
+      .map(line => line.replace(/^[-•*]\s*/, '').trim())
+      .filter(Boolean)
+      .map(p => `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(p)}`);
+  }
 
 
-                // eslint-disable-next-line no-constant-condition
-                while (true) {
-                    if (!reader) break; // Stop if reader was cancelled
-
-                    const { done, value } = await reader.read();
-
-                    if (done) {
-                        // Stream finished from server side
-                        if (buffer.trim()) { // Process any remaining buffer
-                            if (processSseEvents()) break;
-                        }
-                        if (!isCompletedSuccessfully) {
-                            // If stream ended without our 'end' event, it might be an unexpected closure
-                            console.warn("Stream ended without explicit 'completed' status.");
-                            // Decide if this should be a resolve or reject based on your app's logic
-                            // For now, let's assume if content was received, it's a partial success.
-                            // Or, if no content, it's an error.
-                            if (completeContent) {
-                                 resolve(completeContent); // Resolve with what we have
-                            } else {
-                                 reject(new Error('Stream ended prematurely without completion signal or content.'));
-                            }
-                        }
-                        break;
-                    }
-
-                    buffer += decoder.decode(value, { stream: true });
-                    if (processSseEvents()) {
-                        break; // Stop if an event signaled completion or error
-                    }
-                }
-
-            } catch (error) { // Catches network errors for fetch or errors in stream setup
-                console.error('Fetch or stream processing error in callDeepSeek:', error);
-                reject(error); // General catch-all
-            } finally {
-                if (reader && typeof reader.cancel === 'function') {
-                    reader.cancel().catch(e => console.warn("Error cancelling reader in finally block:", e));
-                }
-            }
-        });
-    }
-    async function generateImageSearchLinksViaLLM(fullPrompt) {
-      const imagePrompt = `
-    你是一个教育类图像建议助手。请从下面这段文本中，提取 2-5 个最适合用于搜索教学相关图片的关键词或短语。它们应准确反映内容主题，适合用于 Google 图片搜索。仅返回关键词列表，不需要解释或引号。
-
-    【教学内容】：
-    ${fullPrompt}
-
-    【输出格式】：
-    - ...
-    - ...
-    - ...
-      `.trim();
-
-      const result = await callDeepSeek(imagePrompt);
-      return result
-        .split('\n')
-        .map(line => line.replace(/^[-•*]\s*/, '').trim())
-        .filter(Boolean)
-        .map(p => `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(p)}`);
-    }
     function showStage() {
       const stage = stages[currentStage];
       if (!stage) {
-        console.log('No stage found for index:', currentStage);
+        console.error('Invalid stage:', currentStage);
         return;
       }
+      console.log('Showing stage:', currentStage, stage);
 
       const promptTxt = t(stage.promptKey);
-      console.log('Showing stage:', { currentStage, key: stage.key, promptTxt });
+      console.log('Prompt text:', promptTxt);
 
       if (stage.key === 'have') {
         appendMessage(promptTxt, 'bot', currentStage);
         
         // Show the stage-3 container
         const stage3 = document.getElementById('stage-3');
+        if (!stage3) {
+          console.error('Stage 3 container not found');
+          return;
+        }
         stage3.style.display = 'block';
         
         // Update button texts with translations
-        const [uploadBtn, browseBtn] = stage3.querySelectorAll('.choice-btn');
-        uploadBtn.textContent = t('uploadFiles');
-        browseBtn.textContent = t('browseDatabase');
+        const buttons = stage3.querySelectorAll('.choice-btn');
+        if (buttons.length >= 2) {
+          const [uploadBtn, browseBtn] = buttons;
+          uploadBtn.textContent = t('uploadFiles');
+          browseBtn.textContent = t('browseDatabase');
+        } else {
+          console.error('Choice buttons not found');
+        }
         
         // Show upload section by default
         showUploadSection();
@@ -1365,10 +1007,11 @@
 
       if (stage.type === 'dropdown') {
         appendMessage(promptTxt, 'bot', currentStage);
-
+        
         // build button list container
         const container = document.createElement('div');
         container.className = 'message bot';
+        container.dataset.stageIndex = currentStage;
         container.style.display = 'flex';
 
         const avatar = document.createElement('div');
@@ -1377,7 +1020,10 @@
 
         const btnGroup = document.createElement('div');
         Object.assign(btnGroup.style, {
-          display: 'flex', flexDirection: 'column', gap: '8px', marginLeft: '44px'
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+          marginLeft: '44px'
         });
 
         stage.options.forEach(optConst => {
@@ -1406,19 +1052,7 @@
             }
           };
 
-          btn.onclick = () => {
-            // Remove previous selections
-            btnGroup.querySelectorAll('button').forEach(b => {
-              b.classList.remove('selected');
-              b.style.background = 'white';
-            });
-
-            // Add selection styling
-            btn.classList.add('selected');
-            btn.style.background = '#d4edda'; // light green
-
-            handleChooseType(btn, optConst);
-          };
+          btn.onclick = () => handleChooseType(btn, optConst);
 
           btnGroup.appendChild(btn);
         });
@@ -1428,7 +1062,6 @@
         chat.scrollTop = chat.scrollHeight;
         return;
       }
-
 
       if (stage.type === 'yesno') {
         appendMessage(promptTxt, 'bot', currentStage);
@@ -1443,7 +1076,9 @@
 
         const btnGroup = document.createElement('div');
         Object.assign(btnGroup.style, {
-          display: 'flex', gap: '12px', marginLeft: '44px'
+          display: 'flex',
+          gap: '12px',
+          marginLeft: '44px'
         });
 
         ['yes', 'no'].forEach(key => {
@@ -1461,8 +1096,11 @@
             appendMessage(t(key === 'yes' ? 'pleaseRefine' : 'noThanks'), 'user', currentStage);
             answers[stage.key] = key;
             currentStage++;
-            if (key === 'yes') askRefineSections();
-            else appendMessage(t('done'), 'bot');
+            if (key === 'yes') {
+              askRefineSections();
+            } else {
+              appendMessage(t('done'), 'bot');
+            }
           };
 
           btnGroup.appendChild(btn);
@@ -1473,7 +1111,6 @@
         chat.scrollTop = chat.scrollHeight;
         return;
       }
-
 
       appendMessage(promptTxt, 'bot', currentStage);
     }
@@ -1494,7 +1131,7 @@
     }
 
     function renderMoreForm() {
-      // Remove any existing form
+      console.log('Starting renderMoreForm');
       lastGeneratedForm?.remove();
       lastUserMoreMessage?.remove();
 
@@ -1508,132 +1145,314 @@
 
       const bubble = document.createElement('div');
       bubble.className = 'bubble';
-      bubble.style.padding = '16px';
+
+      const promptText = document.createElement('div');
+      promptText.textContent = t('morePrompt');
+      promptText.style.marginBottom = '8px';
 
       const form = document.createElement('div');
-      form.style.display = 'flex';
-      form.style.flexDirection = 'column';
-      form.style.gap = '12px';
-
-      // Add title
-      const title = document.createElement('div');
-      title.textContent = t('morePrompt');
-      title.style.marginBottom = '12px';
-      form.appendChild(title);
-
-      // Create input fields
-      const fields = [
-        { key: 'comment', placeholder: t('ph_comment') },
-        { key: 'grade', placeholder: t('ph_grade') },
-        { key: 'students', placeholder: t('ph_students') },
-        { key: 'duration', placeholder: t('ph_duration') },
-        { key: 'length', placeholder: t('ph_length') }
-      ];
-
-      const inputs = {};
-      fields.forEach(({ key, placeholder }) => {
-        const input = makeInput(placeholder);
-        inputs[key] = input;
-        form.appendChild(input);
+      Object.assign(form.style, {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
       });
 
-      // Add submit button
+      const promptInput = makeInput(t('ph_comment'));
+      const gradeInput = makeInput(t('ph_grade'));
+      const studentCountInput = makeInput(t('ph_students'));
+      const durationInput = makeInput(t('ph_duration'));
+      const lengthInput = makeInput(t('ph_length'));
+
+      [promptInput, gradeInput, studentCountInput, durationInput, lengthInput]
+        .forEach(inp => form.appendChild(inp));
+
       const submitBtn = document.createElement('button');
       submitBtn.textContent = t('saveBtn');
-      submitBtn.className = 'next-button';
-      submitBtn.style.marginTop = '12px';
-      submitBtn.onclick = () => {
-        const values = {};
-        let hasValue = false;
-        
-        Object.entries(inputs).forEach(([key, input]) => {
-          values[key] = input.value.trim();
-          if (values[key]) hasValue = true;
-        });
+      Object.assign(submitBtn.style, {
+        marginTop: '6px',
+        padding: '6px 12px',
+        background: '#10a37f',
+        color: '#fff',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+      });
 
-        if (!hasValue) {
+      submitBtn.onclick = () => {
+        console.log('Submit button clicked in more form');
+        removeNodesAfter(container);
+        const prompt = promptInput.value.trim();
+        const grade = gradeInput.value.trim();
+        const students = studentCountInput.value.trim();
+        const duration = durationInput.value.trim();
+        const length = lengthInput.value.trim();
+
+        if (!prompt && !grade && !students && !duration && !length) {
           alert(t('pleaseFill'));
           return;
         }
 
-        // Format the message
-        const details = [
+        lastUserMoreMessage = null;
+        lastGeneratedResult = null;
+        reviewTableContainer = null;
+        refineOptionsContainer = null;
+        refineChoiceContainer = null;
+
+        const na = t('na');
+        
+        // 简化的详情显示格式
+        const userInfo = [
           '📌 Details:',
-          `Comment: ${values.comment || t('na')}`,
-          `Grade: ${values.grade || t('na')}`,
-          `Number of Students: ${values.students || t('na')}`,
-          `Duration: ${values.duration || t('na')}`,
-          `Length: ${values.length || t('na')}`
+          `Comment: ${prompt || na}`,
+          `Grade: ${grade || na}`,
+          `Number of Students: ${students || na}`,
+          `Duration: ${duration || na}`,
+          `Length: ${length || na}`
         ].join('\n');
 
-        // Remove previous messages if they exist
-        lastUserMoreMessage?.remove();
-        lastGeneratedResult?.remove();
-        reviewTableContainer?.remove();
-        refineOptionsContainer?.remove();
-        refineChoiceContainer?.remove();
+        lastUserMoreMessage = appendMessage(userInfo, 'user', currentStage, false);
 
-        // Add new message
-        lastUserMoreMessage = appendMessage(details, 'user');
-
-        // Store values
-        answers.more = values;
-        answers.studentsGrade = `${values.students || 'N/A'} / ${values.grade || 'N/A'}`;
-
-        // Move to next stage
+        answers['more'] = { prompt, grade, students, duration, length };
+        answers['studentsGrade'] = `${students || 'N/A'} / ${grade || 'N/A'}`;
+        
+        appendMessage(t('infoCollected'), 'bot');
+        
+        console.log('Moving to next stage after more form');
         currentStage++;
-        generateContent();
+        if (currentStage < stages.length) {
+          showStage();
+        } else {
+          generateContent();
+        }
       };
 
       form.appendChild(submitBtn);
-      bubble.appendChild(form);
+      bubble.append(promptText, form);
       container.append(avatar, bubble);
       chat.appendChild(container);
       lastGeneratedForm = container;
       chat.scrollTop = chat.scrollHeight;
     }
 
-    //const langSelector = document.getElementById('ocr-lang');
-    //let currentLang = langSelector.value;
-    let currentLang = document.documentElement.lang;
-    updateUIText(); 
-    refreshStage0UI();  
+    function makeInput(placeholder) {
+      const inp = document.createElement('input');
+      inp.placeholder = placeholder;
+      Object.assign(inp.style, {
+        padding: '6px',
+        border: '1px solid #ccc',
+        borderRadius: '6px',
+        fontFamily: 'Inter',
+      });
+      return inp;
+    }
+
+    const langSelector = document.getElementById('ocr-lang');
+    let currentLang = langSelector.value;
 
     function t(key, vars = {}) {
       let s = translations[currentLang]?.[key] || translations.eng[key] || key;
       for (const [k, v] of Object.entries(vars)) s = s.replace(`{${k}}`, v);
       return s;
     }
-		
-    /*
+
     langSelector.addEventListener('change', () => {
       currentLang = langSelector.value;
       updateUIText(); 
       refreshStage0UI();    
-    });*/
+    });
 
-    function updateUIText() {
-      document.querySelector('h2.centered-heading').textContent = t('title');
-      document.querySelector('.next-button').textContent          = t('next');
-      const tooltip = document.querySelector('.tooltip-text');
-      if (tooltip) tooltip.textContent = t('upload');
 
-      document.getElementById('user-input').placeholder = t('ph_input');
-
-      // update stage prompts already created (optional)
-      stages.forEach((s, i) => s.prompt = t(`question${i + 1}`));
-      document
-        .querySelectorAll('[data-stage-index] .bubble')
-        .forEach(b => {
-          const idx = Number(b.parentElement.dataset.stageIndex);
-          if (!isNaN(idx) && idx < 5) b.textContent = t(`question${idx + 1}`);
-        });
+    function extractFileId(driveUrl) {
+      const m = driveUrl.match(/\/d\/([^/]+)\//);
+      return m ? m[1] : '';
     }
 
-    langSelector.addEventListener('change', () => {
-      currentLang = langSelector.value;
-      updateUIText();
-    });
+    async function onItemClick(divEl, fileId, title) {
+      document.querySelectorAll('.book-item').forEach(el => el.classList.remove('selected'));
+      divEl.classList.add('selected');
+      
+      // Show PDF preview section
+      const pdfPreview = document.getElementById('pdf-preview');
+      pdfPreview.style.display = 'block';
+      
+      // Clear previous PDF
+      const pdfContainer = document.getElementById('pdf-container');
+      pdfContainer.innerHTML = '<p style="padding: 20px;">Loading PDF preview...</p>';
+      
+      try {
+        // Create a viewer container that will host the Google Drive preview
+        const viewerContainer = document.createElement('div');
+        viewerContainer.style.width = '100%';
+        viewerContainer.style.height = '600px';
+        viewerContainer.style.position = 'relative';
+        viewerContainer.style.overflow = 'hidden';
+        viewerContainer.style.backgroundColor = '#f5f5f5';
+        viewerContainer.style.borderRadius = '8px';
+        
+        // Create the preview iframe
+        const iframe = document.createElement('iframe');
+        iframe.src = `https://drive.google.com/file/d/${fileId}/preview`;
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        iframe.style.borderRadius = '8px';
+        
+        // Add loading indicator that will be hidden once iframe loads
+        const loadingIndicator = document.createElement('div');
+        loadingIndicator.style.position = 'absolute';
+        loadingIndicator.style.top = '50%';
+        loadingIndicator.style.left = '50%';
+        loadingIndicator.style.transform = 'translate(-50%, -50%)';
+        loadingIndicator.style.textAlign = 'center';
+        loadingIndicator.innerHTML = `
+          <div style="margin-bottom: 15px;">
+            <img src="loading.gif" alt="Loading..." style="width: 40px; height: 40px;">
+          </div>
+          <div style="color: #666;">加载预览中...</div>
+        `;
+        
+        // Add iframe load event listener
+        iframe.onload = () => {
+          loadingIndicator.style.display = 'none';
+        };
+        
+        // Add elements to container
+        viewerContainer.appendChild(loadingIndicator);
+        viewerContainer.appendChild(iframe);
+        
+        // Clear container and add viewer
+        pdfContainer.innerHTML = '';
+        pdfContainer.appendChild(viewerContainer);
+        
+        // Store selected file info
+        window.selectedDriveFile = { fileId, title };
+        
+        // Setup confirm button
+        const confirmBtn = document.getElementById('confirm-selection');
+        confirmBtn.textContent = t('confirmSelection');
+        confirmBtn.style.display = 'block';
+        confirmBtn.style.marginTop = '20px';
+        
+        // Remove any existing event listeners
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        
+        // Add new event listener
+        newConfirmBtn.addEventListener('click', () => {
+          console.log('Confirm button clicked');
+          handleDatabaseFileSelection(fileId, title);
+        });
+        
+      } catch (error) {
+        console.error('Error loading PDF:', error);
+        pdfContainer.innerHTML = `
+          <div style="color: red; padding: 20px; text-align: center;">
+            <p style="margin-bottom: 15px;">无法加载预览，请尝试以下方式：</p>
+            <a href="https://drive.google.com/file/d/${fileId}/view" target="_blank" class="choice-btn" style="display: inline-block; text-decoration: none; margin-bottom: 15px;">
+              在新窗口中打开
+            </a>
+            <p style="color: #666; font-size: 14px;">
+              提示：您仍可以点击"确认选择"继续下一步
+            </p>
+          </div>
+        `;
+      }
+    }
+
+    function handleDatabaseFileSelection(fileId, title) {
+      console.log('Handling database file selection:', { fileId, title });
+      
+      if (!answers.have) {
+        console.log('Initializing answers.have array');
+        answers.have = [];
+      }
+      
+      // Add file to answers with more detailed information
+      const fileEntry = {
+        id: fileId,
+        name: title,
+        source: 'database',
+        url: `https://drive.google.com/file/d/${fileId}/view`,
+        type: 'pdf'
+      };
+      console.log('Adding file entry:', fileEntry);
+      answers.have.push(fileEntry);
+
+      // Create clickable message with file link
+      const fileMessage = `Selected file from database: <a href="${fileEntry.url}" class="uploaded-file" target="_blank">📚 ${title}</a>`;
+      appendMessage(fileMessage, 'user', currentStage, true);
+      
+      // Hide both the database browser and the entire stage-3 container
+      document.getElementById('db-browser-container').style.display = 'none';
+      document.getElementById('stage-3').style.display = 'none';
+      
+      // Enable next step
+      console.log('Current stage before increment:', currentStage);
+      currentStage++;
+      console.log('Current stage after increment:', currentStage);
+      
+      if (currentStage < stages.length) {
+        console.log('Moving to next stage:', stages[currentStage]);
+        if (stages[currentStage].key === 'more') {
+          console.log('Rendering more form');
+          renderMoreForm();
+        } else {
+          console.log('Showing next stage');
+          showStage();
+        }
+      }
+    }
+
+    function parseGradeOrder(title) {
+      const match = title.match(/([一二三四五六])年级([上下])册/);
+      if (!match) return 999;
+      const gradeMap = { 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6 };
+      const termMap = { 上: 0, 下: 1 };
+      const grade = gradeMap[match[1]] || 0;
+      const term = termMap[match[2]] || 0;
+      return grade * 10 + term;
+    }
+
+    function renderGroupedList(bookList) {
+      const container = document.getElementById('item-list');
+      container.innerHTML = '';
+
+      const groupMap = {};
+      bookList.forEach(book => {
+        const group = book.path || '未分类';
+        if (!groupMap[group]) groupMap[group] = [];
+        groupMap[group].push(book);
+      });
+
+      const sortedGroupNames = Object.keys(groupMap).sort();
+      sortedGroupNames.forEach(group => {
+        const title = document.createElement('div');
+        title.className = 'group-title';
+        title.textContent = `📂 ${group}`;
+        container.appendChild(title);
+
+        const sortedBooks = groupMap[group].sort((a, b) =>
+          parseGradeOrder(a.title) - parseGradeOrder(b.title) ||
+          a.title.localeCompare(b.title)
+        );
+
+        sortedBooks.forEach(book => {
+          const div = document.createElement('div');
+          div.className = 'book-item';
+          div.textContent = book.title;
+          const fileId = extractFileId(book.drive_url);
+          div.dataset.fileId = fileId;
+
+          div.addEventListener('click', () => onItemClick(div, fileId, book.title));
+          container.appendChild(div);
+        });
+      });
+    }
+
+    function updateUIText() {
+      document.getElementById('question3-title').textContent = t('question3');
+      document.getElementById('db-browser-label').textContent = t('browseFiles');
+    }
 
     window.addEventListener('DOMContentLoaded', () => {
       updateUIText();
@@ -1678,13 +1497,6 @@
         default: return opt;
       }
     }
-    
-    const exportT = {
-      	en: "export to .docx",
-        zh: "导出到 .docx",
-        "zh-HK": "導出至 .docx"
-      }
-    
 
     function addFilePreviewRow(fileRecord) {
       const fileItem = document.createElement('div');
@@ -1721,13 +1533,8 @@
       await Promise.all([...pendingExtractions]);
 
       const uploads = answers['have'] || [];
-      /*const fileTexts = uploads
-        .map(f => (f.text ?? '').trim().slice(0, 4096))
-        .filter(Boolean)
-        .join('\n\n---\n\n');*/
-
       const fileTexts = uploads
-        .map(f => (f.text ?? '').trim().slice(0, 87382)) // maximum context length 64k/0.6 = 109223 chinese characters
+        .map(f => (f.text ?? '').trim().slice(0, 4096))
         .filter(Boolean)
         .join('\n\n---\n\n');
 
@@ -1769,32 +1576,18 @@
       const loadingMsg = appendMessage('🔄 Generating...', 'bot');
       const loadingBubble = loadingMsg.querySelector('.bubble');
       loadingBubble.innerHTML =
-  `<img src="https://cdn.prod.website-files.com/67af0a7f5730375704f96216/682588f940a6776a7f6c138a_boywalkingg.gif" style="height:120px;margin-right:6px;vertical-align:middle;" alt="loading">` +
-  `<span>${t('pleaseWait')}</span>`;
+        `<img src="boywalking.gif" style="width:48px;height:48px;margin-right:6px;vertical-align:middle;" alt="loading">` +
+        `<span>${t('pleaseWait')}</span>`;
 
       lastGeneratedResult = loadingMsg;
-      
 
       try {
-        let result = '';
-        const generated = await callDeepSeek(fullPrompt, (chunk) => {
-            // Update your UI here, e.g., append to a div or textarea
-            result += chunk;
-            loadingBubble.innerHTML = marked.parse(result);
-        }).then((completeContent) => {
-        		
-            return completeContent;
-        }).catch((error) => {
-            console.error('Error:', error);
-            return error;
-        });
+        const generated = await callDeepSeek(fullPrompt);
         let finalMd = generated;
-        loadingBubble.innerHTML += `<img src="https://cdn.prod.website-files.com/67af0a7f5730375704f96216/682588f940a6776a7f6c138a_boywalkingg.gif" style="width:96px;height:96px;margin-right:6px;vertical-align:middle;" alt="loading">` +
-  `<span>${t('pleaseWaitVA')}</span>`;
 
         const imageLinks = await generateImageSearchLinksViaLLM(fullPrompt);
         if (imageLinks.length) {
-          finalMd += '\n\n---\n### Suggested Visual Assets\n' +
+          finalMd += '\n\n---\n### Suggested Visual Assets\n' +
                     imageLinks.map(u => `- <${u}>`).join('\n');
         }
 
@@ -1802,18 +1595,7 @@
 
         renderMarkdown(loadingBubble, finalMd);
         fullMarkdown = finalMd;
-        const exportMsg = appendMessage('', 'bot');
-        exportMsg.querySelector('.bubble').innerHTML = `<a id="exportbtn" href="#" class="btn-secondary w-inline-block" style="display: block;"><div class="flex-horizontal gap-column-6px"><div>${exportT[currentLang]}</div></div></a>`;
-        const exportBtn = document.getElementById('exportbtn');
-        exportBtn.addEventListener('click', function() {
-            const htmltext = marked.parse(fullMarkdown);
-            if (htmltext) {
-                const docxBlob = htmlDocx.asBlob(htmltext);
-                saveAs(docxBlob, 'plan.docx');
-            } else {
-                alert('No plan to export.');
-            }
-        });
+
         setTimeout(askIfRefineNeeded, 500);
       } catch (err) {
         console.error(err);
@@ -1969,12 +1751,10 @@
 
       function updateSelection(btn) {
         if (s.lastSelectedBtn) {
-          s.lastSelectedBtn.style.background = 'white';
-          s.lastSelectedBtn.style.color      = 'black';
+          s.lastSelectedBtn.classList.remove('selected');
         }
-        btn.style.background = '#10a37f';
-        btn.style.color      = 'white';
-        s.lastSelectedBtn    = btn;
+        btn.classList.add('selected');
+        s.lastSelectedBtn = btn;
       }
     }
 
@@ -2024,33 +1804,27 @@
     }
 
     function handleChooseType(btn, optConst) {
-      const stageKey  = 'type';       // first question key
+      const stageKey = 'type';
       const oldChoice = answers[stageKey];
-      const newLabel  = trType(optConst);
-
+      const newLabel = trType(optConst);
 
       if (oldChoice && oldChoice !== optConst) {
         const ok = confirm(`${t('replaceConfirm', { filename: oldChoice })}\n→ ${newLabel}`);
         if (!ok) return;
       }
 
-
+      // Remove selected class from all buttons and add it to the clicked one
       document.querySelectorAll('button[data-opt-key]').forEach(b => {
-        b.style.background = 'white';
-        b.style.color      = 'black';
+        b.classList.remove('selected');
       });
-      btn.style.background = '#10a37f';
-      btn.style.color      = 'white';
+      btn.classList.add('selected');
 
-
-      answers[stageKey] = optConst;      
+      answers[stageKey] = optConst;
 
       const oldBubble = document.querySelector('.message.user[data-stage-index="0"]');
       if (oldBubble) oldBubble.remove();
 
-
       appendMessage(newLabel, 'user', 0);
-
 
       for (let i = 1; i < stages.length; i++) delete answers[stages[i].key];
       const messages = Array.from(chat.children);
@@ -2059,13 +1833,11 @@
         if (!isNaN(idx) && idx > 0) el.remove();
       });
 
-
       currentStage = 1;
       showStage();
     }
 
-
-		let askcount = 0;
+    
     function askRefineSections() {
       const type   = answers['type'];
       const fields = (templateSections[type] || {})[currentLang] ||
@@ -2133,7 +1905,7 @@
         const loadingMsg    = appendMessage('⏳ Regenerating…', 'bot');
         const loadingBubble = loadingMsg.querySelector('.bubble');
         loadingBubble.innerHTML =
-  `<img src="https://cdn.prod.website-files.com/67af0a7f5730375704f96216/682588f940a6776a7f6c138a_boywalkingg.gif" style="width:48px;height:48px;margin-right:6px;vertical-align:middle;" alt="loading">` +
+  `<img src="boywalking.gif" style="width:48px;height:48px;margin-right:6px;vertical-align:middle;" alt="loading">` +
   `<span>${t('pleaseWait')}</span>`;
 
         const prompt = `
@@ -2159,25 +1931,12 @@
           renderMarkdown(loadingBubble, refined); 
           //loadingBubble.innerHTML = marked.parse(refined);
           fullMarkdown = mergeSections(fullMarkdown, refined);
-          const exportMsg = appendMessage('', 'bot');
-          exportMsg.querySelector('.bubble').innerHTML = `<a id="exportbtn${askcount}" href="#" class="btn-secondary w-inline-block" style="display: block;"><div class="flex-horizontal gap-column-6px"><div>${exportT[currentLang]}</div></div></a>`;
-          const exportBtn = document.getElementById(`exportbtn${askcount}`);
-          exportBtn.addEventListener('click', function() {
-            const htmltext = loadingBubble.innerHTML;
-            if (htmltext) {
-              const docxBlob = htmlDocx.asBlob(htmltext);
-              saveAs(docxBlob, 'plan.docx');
-            } else {
-              alert('No plan to export.');
-            }
-          });
           askIfRefineNeeded();
         } catch (e) {
           console.error(e);
           loadingBubble.textContent = t('generationFailed');
         }
       };
-      askcount++;
 
       wrap.append(cbGroup, okBtn);
       chat.appendChild(wrap);
@@ -2188,87 +1947,61 @@
 
 
 
-    async function extractAndStore(fileRecord, file) {
+    function extractAndStore(fileRecord, file) {
       fileRecord.text = '⌛ extracting…';
-      const extractionId = Symbol(`extraction-${file.name}`); // Unique ID for this operation
 
-      pendingExtractions.add(extractionId); // Mark as pending
+    // create + start extraction
+    const promise = extractTextFromFile(file)
+      .then(txt => {
+        fileRecord.text = (txt || '').trim() || '(empty file)';
+      })
+      .catch(err => {
+        console.error('Extraction error →', err);      // full stack
+        fileRecord.text = `❌ Failed: ${err.message || err}`;
+      })
+      .finally(() => pendingExtractions.delete(promise));  // clean up
 
-      try {
-        let accumulatedText = '';
-        let hasReceivedText = false;
-
-        // extractTextFromFile is the async generator from your Canvas
-        for await (const chunk of extractTextFromFile(file, {
-          /* tesseractLogger: (m) => console.log(`Tesseract Progress (${file.name}): ${m.status} - ${m.progress}`) */
-        })) {
-          if (chunk.startsWith('⚠️') || chunk.startsWith('ℹ️')) {
-            // Handle warnings or info messages, perhaps log them or display them differently
-            console.warn(`Extraction info/warning for ${file.name}: ${chunk.trim()}`);
-            // Optionally append to a separate log in fileRecord or display to user
-            // For now, we'll append it to the main text but you might want to separate it
-            accumulatedText += chunk;
-          } else {
-            accumulatedText += chunk;
-            hasReceivedText = true;
-          }
-          // Update UI progressively if desired, e.g., by setting fileRecord.text here
-          // For simplicity in this example, we'll update at the end,
-          // but for a live UI, you'd update it inside the loop.
-          // fileRecord.text = accumulatedText; // <-- Uncomment for progressive UI update
-        }
-
-        if (accumulatedText.trim() === '' && !hasReceivedText) {
-          // If no actual text content was yielded, but also no specific error messages from the stream itself
-          fileRecord.text = '(empty or no extractable text)';
-        } else if (accumulatedText.startsWith('⌛ extracting…') && accumulatedText.length > '⌛ extracting…'.length) {
-          // If we only got warnings/info messages appended to the initial status
-          fileRecord.text = accumulatedText.substring('⌛ extracting…'.length).trim();
-          if (fileRecord.text === '') fileRecord.text = '(extraction yielded warnings/info but no content)';
-        }
-        else {
-          fileRecord.text = accumulatedText.trim();
-        }
-
-        if (fileRecord.text === '⌛ extracting…') { // If it was never updated beyond initial
-            fileRecord.text = '(empty or no extractable text found)';
-        }
+    pendingExtractions.add(promise);
 
 
-      } catch (err) {
-        console.error('Extraction error in extractAndStore for file:', file.name, '→', err);
-        fileRecord.text = `❌ Failed: ${err.message || String(err)}`;
-      } finally {
-        pendingExtractions.delete(extractionId); // Clean up
-        // Final check if text is still the loading message
-        if (fileRecord.text === '⌛ extracting…') {
-            fileRecord.text = `❌ Extraction did not complete or yield text for ${file.name}.`;
-        }else{
-          console.log(fileRecord.text);
-        }
-      }
     }
 
-    function makeInput(placeholder) {
-      const input = document.createElement('input');
-      Object.assign(input.style, {
-        width: '100%',
-        padding: '8px',
-        border: '1px solid #ccc',
-        borderRadius: '4px',
-        fontSize: '14px'
-      });
-      input.placeholder = placeholder;
-      return input;
+    function validateState() {
+      // Check if current stage is valid
+      if (currentStage < 0 || currentStage >= stages.length) {
+        console.error('Invalid stage index:', currentStage);
+        return false;
+      }
+
+      // Check if we have all required answers up to current stage
+      for (let i = 0; i < currentStage; i++) {
+        const key = stages[i].key;
+        if (!answers[key]) {
+          console.error('Missing answer for stage', i, key);
+          return false;
+        }
+      }
+
+      return true;
     }
 
     function handleUserInput() {
+      if (!validateState()) {
+        console.error('Invalid state detected');
+        return;
+      }
+
       const stageKey = stages[currentStage]?.key;
       const value = input.value.trim();
       let advanced = false;
 
       if (stageKey === 'have') {
-        const uploadedFiles = document.getElementById('user-upload').files;
+        const uploadedFiles = document.getElementById('user-upload')?.files;
+        if (!uploadedFiles) {
+          console.error('File input not found');
+          return;
+        }
+
         const hasFiles = uploadedFiles.length > 0;
         const hasText = value.length > 0;
         const selectedFile = window.selectedDriveFile;
@@ -2317,7 +2050,10 @@
         );
 
         // Hide stage-3 container after file upload
-        document.getElementById('stage-3').style.display = 'none';
+        const stage3 = document.getElementById('stage-3');
+        if (stage3) {
+          stage3.style.display = 'none';
+        }
 
         input.value = '';
         advanced = true;
@@ -2331,12 +2067,14 @@
       if (advanced) {
         currentStage++;
         if (currentStage < stages.length) {
+          console.log('Moving to next stage:', currentStage, stages[currentStage].key);
           if (stages[currentStage].key === 'more') {
             renderMoreForm();
           } else {
             showStage();
           }
         } else {
+          console.log('All stages complete, generating content');
           generateContent();
         }
       }
@@ -2352,197 +2090,69 @@
 
 
 
-    /**
-     * Extracts text from a DOCX file and streams it paragraph by paragraph.
-     * @param {File} file - The DOCX file object.
-     * @async
-     * @generator
-     * @yields {string} Chunks of text (paragraphs) from the DOCX file.
-     */
-    async function* extractTextFromDocx(file) {
-      try {
-        const arrayBuffer = await file.arrayBuffer();
-        const { value } = await mammoth.extractRawText({ arrayBuffer });
-        // Split the extracted text by paragraphs (two or more newlines, possibly with whitespace)
-        // or by single newlines if paragraphs are not distinct.
-        const paragraphs = value.split(/\n\s*\n/); // More robust paragraph splitting
-        for (const paragraph of paragraphs) {
-          const trimmedParagraph = paragraph.trim();
-          if (trimmedParagraph) {
-            yield trimmedParagraph + '\n'; // Add a newline for separation
-          }
-        }
-      } catch (error) {
-        console.error("Error extracting text from DOCX:", error);
-        yield `⚠️ Error extracting text from ${file.name}: ${error.message}\n`;
+  async function extractTextFromDocx(file) {
+    const { value } = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+    return value;
+  }
+
+  async function extractTextFromImage(file) {
+  const result = await Tesseract.recognize(file, 'chi_sim+chi_tra+eng', {
+    logger: m => console.log(m.status, m.progress)
+  });
+  return result.data.text;
+}
+
+  async function extractTextFromPDF(file) {
+    try {
+      const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+      let text = '';
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const pageText = content.items.map(item => item.str).join(' ');
+        text += pageText + '\n';
       }
+
+      if (text.trim()) return text.trim();
+
+      throw new Error('empty text layer');
+    } catch (err) {
+      console.warn('Text extraction failed, switching to OCR →', err.message);
+
+      // OCR fallback
+      const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+      let ocrText = '';
+
+      for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 2 });
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        await page.render({ canvasContext: context, viewport }).promise;
+
+        const { data } = await Tesseract.recognize(canvas, 'chi_sim+chi_tra+eng');
+        ocrText += data.text + '\n';
+      }
+
+      return ocrText.trim() || '⚠️ OCR produced no text.';
     }
+  }
 
-    /**
-     * Extracts text from an image file using OCR and streams it line by line.
-     * @param {File} file - The image file object (e.g., PNG, JPG).
-     * @param {object} [options] - Optional parameters.
-     * @param {function} [options.logger] - Logger function for Tesseract progress.
-     * @async
-     * @generator
-     * @yields {string} Chunks of text (lines) from the image file.
-     */
-    async function* extractTextFromImage(file, options = {}) {
-      try {
-        const tesseractOptions = { logger: options.logger || (m => console.log(`Tesseract (${file.name}): ${m.status} (${(m.progress * 100).toFixed(2)}%)`)) };
-        const { data: { text } } = await Tesseract.recognize(
-          file,
-          'chi_sim+chi_tra+eng', // Standard languages from original code
-          tesseractOptions
-        );
-
-        const lines = text.split('\n');
-        for (const line of lines) {
-          // Optionally trim, but for OCR, preserving original spacing might be important sometimes.
-          // Here, we yield the line as is, consumers can trim if needed.
-          yield line + '\n';
-        }
-      } catch (error) {
-        console.error("Error extracting text from image:", error);
-        yield `⚠️ Error extracting text from ${file.name} (OCR): ${error.message}\n`;
-      }
-    }
-
-    /**
-     * Extracts text from a PDF file and streams it page by page.
-     * Falls back to OCR if text layer extraction fails or yields no text.
-     * @param {File} file - The PDF file object.
-     * @param {object} [options] - Optional parameters.
-     * @param {function} [options.tesseractLogger] - Logger function for Tesseract progress during OCR.
-     * @async
-     * @generator
-     * @yields {string} Chunks of text from the PDF file.
-     */
-    async function* extractTextFromPDF(file, options = {}) {
-      let arrayBuffer;
-      try {
-        arrayBuffer = await file.arrayBuffer();
-      } catch (readError) {
-        console.error(`Error reading file ${file.name}:`, readError);
-        yield `⚠️ Error reading file ${file.name}: ${readError.message}\n`;
-        return;
-      }
-
-      let textLayerExtractedSuccessfully = false;
-      let anyTextYieldedFromLayer = false;
-
-      // Attempt 1: Text Layer Extraction
-      try {
-        // Use slice(0) to ensure the buffer can be potentially reused if pdfjsLib modifies it (though it typically shouldn't)
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
-        if (pdf.numPages === 0) {
-            yield `⚠️ PDF file ${file.name} has no pages.\n`;
-        }
-
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          if (content.items.length > 0) {
-            const pageText = content.items.map(item => item.str).join(' ');
-            const trimmedPageText = pageText.trim();
-            if (trimmedPageText) {
-              yield trimmedPageText + '\n';
-              anyTextYieldedFromLayer = true;
-            }
-          }
-        }
-        textLayerExtractedSuccessfully = true; // Mark success if loop completes without error
-      } catch (err) {
-        console.warn(`Text layer extraction failed for ${file.name}: ${err.message}. Will attempt OCR.`);
-        // Error occurred, so text layer extraction was not successful. OCR fallback will be triggered.
-        textLayerExtractedSuccessfully = false;
-      }
-
-      // Attempt 2: OCR Fallback (if text layer extraction failed or yielded no text)
-      if (!textLayerExtractedSuccessfully || !anyTextYieldedFromLayer) {
-        if (textLayerExtractedSuccessfully && !anyTextYieldedFromLayer) {
-            console.warn(`No text found in text layer of ${file.name}. Attempting OCR.`);
-        }
-
-        let anyTextYieldedFromOcr = false;
-        try {
-          const pdfForOcr = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
-          // Limit OCR to the first 5 pages as in the original code, to avoid long processing times.
-          const numPagesToOcr = Math.min(pdfForOcr.numPages, 5);
-
-          if (pdfForOcr.numPages > 0 && numPagesToOcr === 0) {
-            // This case should ideally not be hit if numPages > 0, but as a safeguard.
-            yield `⚠️ PDF ${file.name} has pages, but OCR was configured to process 0 pages.\n`;
-          } else if (pdfForOcr.numPages === 0 && numPagesToOcr === 0) {
-            // This was already handled by the text layer check, but good to be explicit if we somehow reach here.
-            // yield `⚠️ PDF file ${file.name} has no pages for OCR.\n`; (already covered)
-          }
-
-
-          for (let i = 1; i <= numPagesToOcr; i++) {
-            const page = await pdfForOcr.getPage(i);
-            const viewport = page.getViewport({ scale: 2 }); // Scale 2 for better OCR accuracy
-            
-            // Create canvas dynamically. Ensure this runs in a browser-like environment.
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-
-            await page.render({ canvasContext: context, viewport }).promise;
-            
-            const tesseractOptions = { logger: options.tesseractLogger || (m => console.log(`Tesseract (PDF Page ${i}, ${file.name}): ${m.status} (${(m.progress * 100).toFixed(2)}%)`)) };
-            const { data } = await Tesseract.recognize(canvas, 'chi_sim+chi_tra+eng', tesseractOptions);
-            
-            // Clean up canvas to free memory
-            canvas.width = 0;
-            canvas.height = 0;
-
-            const ocrPageText = data.text ? data.text.trim() : "";
-            if (ocrPageText) {
-              yield ocrPageText + '\n';
-              anyTextYieldedFromOcr = true;
-            }
-          }
-
-          if (numPagesToOcr > 0 && !anyTextYieldedFromOcr) {
-            yield `⚠️ OCR produced no text from the first ${numPagesToOcr} page(s) of ${file.name}.\n`;
-          }
-          if (pdfForOcr.numPages > numPagesToOcr) {
-            yield `ℹ️ OCR for ${file.name} was limited to the first ${numPagesToOcr} of ${pdfForOcr.numPages} pages.\n`;
-          }
-
-        } catch (ocrErr) {
-          console.error(`OCR process failed for ${file.name}:`, ocrErr);
-          yield `⚠️ OCR process for ${file.name} failed: ${ocrErr.message}\n`;
-        }
-      }
-    }
-
-    /**
-     * Main function to extract text from a file, routing to the appropriate extractor.
-     * Streams text content.
-     * @param {File} file - The file object.
-     * @param {object} [options] - Optional parameters for extractors (e.g., loggers).
-     * @async
-     * @generator
-     * @yields {string} Chunks of text from the file.
-     */
-    async function* extractTextFromFile(file, options = {}) {
-      if (!file || !file.name) {
-        yield `⚠️ Invalid file object provided.\n`;
-        return;
-      }
+    async function extractTextFromFile(file) {
       const name = file.name.toLowerCase();
 
       if (name.endsWith('.pdf')) {
-        yield* extractTextFromPDF(file, options);
+        return await extractTextFromPDF(file);
       } else if (name.endsWith('.docx')) {
-        yield* extractTextFromDocx(file); // Options not currently used by docx extractor
+        return await extractTextFromDocx(file);
       } else if (/\.(png|jpg|jpeg)$/i.test(name)) {
-        yield* extractTextFromImage(file, { logger: options.tesseractLogger });
+        return await extractTextFromImage(file);
       } else {
-        yield `⚠️ Unsupported file type: ${file.name}\n`;
+        return `⚠️ Unsupported file type: ${file.name}`;
       }
     }
 
@@ -2639,29 +2249,6 @@
       // Initialize the database browser if not already done
       renderGroupedList(books);
     }
-
-    document.getElementById('user-upload').addEventListener('change', function(e) {
-      const files = e.target.files;
-      if (files.length > 0) {
-        handleDroppedFiles(files);
-        
-        // Create message for uploaded files
-        const fileNames = Array.from(files).map(f => `📎 ${f.name}`).join('\n');
-        appendMessage(fileNames, 'user', currentStage);
-        
-        // Hide upload section and stage-3 container
-        document.getElementById('upload-section').style.display = 'none';
-        document.getElementById('stage-3').style.display = 'none';
-        
-        // Move to next stage
-        currentStage++;
-        if (stages[currentStage].key === 'more') {
-          renderMoreForm();
-        } else {
-          showStage();
-        }
-      }
-    });
 
   </script>
 </body>

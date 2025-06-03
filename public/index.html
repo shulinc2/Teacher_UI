@@ -1,0 +1,2668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teacher All in One AI Chat</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  </script>
+  <script src="books.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.5.1/mammoth.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.1/dist/tesseract.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://unpkg.com/file-saver/dist/FileSaver.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f5f7fa;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+    .message {
+      display: flex;
+      align-items: flex-end;
+      margin: 8px 0;
+      width: fit-content;
+      max-width: 90%;
+    }
+    .bot {
+      flex-direction: row;
+    }
+    .user {
+      flex-direction: row-reverse;
+      align-self: flex-end;
+    }
+    .bubble {
+      padding: 12px 16px;
+      border-radius: 18px;
+      animation: fadeIn 0.3s ease-in;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 16px;
+      display: inline-block;
+      background-color: #eeeeee;
+    }
+    .user .bubble {
+      background-color: #d2f0ff;
+    }
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background-color: #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      margin: 0 8px;
+    }
+    #input-area {
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      background: white;
+      border-top: 1px solid #ccc;
+    }
+    .input-top-files {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+    .file-item {
+      display: flex;
+      align-items: center;
+      background: #f0f0f0;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 6px;
+      gap: 10px;
+    }
+    .file-item span {
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .file-note {
+      flex: 1;
+      padding: 4px 8px;
+      font-size: 13px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .file-item button {
+      background: none;
+      border: none;
+      color: red;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .input-wrapper {
+      display: flex;
+      align-items: center;
+    }
+    #user-input {
+      flex: 1;
+      min-height: 44px;
+      max-height: 300px;
+      resize: vertical;
+      padding: 10px;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    #file-upload {
+      display: none;
+    }
+    .tooltip-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+    #file-button {
+      background-color: white;
+      border: none;
+      font-size: 20px;
+      margin: 0 10px;
+      cursor: pointer;
+    }
+    .tooltip-text {
+      visibility: hidden;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 12px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      white-space: nowrap;
+    }
+    .tooltip-wrapper:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+    .next-button {
+      padding: 10px 20px;
+      background-color: #10a37f;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+    }
+    h2.centered-heading {
+      font-size: 28px;
+      margin-bottom: 20px;
+      text-align: center;
+      width: 100%;
+    }
+    .select-inline {
+      margin-left: 12px;
+      margin-top: 4px;
+      font-size: 16px;
+      font-family: 'Inter', sans-serif;
+      padding: 6px;
+      border-radius: 6px;
+      width: fit-content;
+      max-width: 400px;
+    }
+    .uploaded-file {
+      color: rgb(41, 96, 198);
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .uploaded-file:hover {
+      text-decoration: none;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 1; }
+    }
+
+    .dot-anim {
+      font-size: 20px;
+      color: #999;
+      animation: blink 1.5s infinite;
+      margin: 0 2px;
+    }
+    button.selected {
+      background: #2eb84e !important; /* light green */
+      border-color: #28a745;
+      color: #155724;
+    }
+
+     .book-item {
+    padding: 6px 10px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+  }
+  .book-item:hover {
+    background: #f7f7f7;
+  }
+  .book-item.selected {
+    background: #d2f0ff;
+  }
+  .group-title {
+    margin: 10px 0 4px;
+    font-weight: bold;
+    background: #f0f0f0;
+    padding: 4px 6px;
+  }
+
+  .choice-btn {
+    padding: 10px 20px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s ease;
+    min-width: 120px;
+  }
+
+  .choice-btn:hover {
+    background: #f0f0f0;
+  }
+
+  .choice-btn.selected {
+    background: #10a37f;
+    color: white;
+    border-color: #10a37f;
+  }
+
+  #stage-3 {
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    margin: 10px 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  #upload-section {
+    margin-top: 16px;
+    padding: 20px;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    text-align: center;
+  }
+
+  #db-browser-container {
+    margin-top: 16px;
+    padding: 16px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+  }
+
+  .source-choice {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    justify-content: center;
+  }
+
+  #pdf-preview {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  #pdf-container {
+    background: #f5f5f5;
+    overflow: auto;
+  }
+
+  #confirm-selection {
+    width: 100%;
+    margin-top: 10px;
+    font-weight: 500;
+  }
+
+  #confirm-selection:hover {
+    background: #0d8c6d !important;
+  }
+
+  </style>
+</head>
+<select id="ocr-lang" style="margin-left: 12px; font-size: 14px; padding: 4px 8px; border-radius: 6px;">
+  <option value="eng">English</option>
+  <option value="chi_sim">简体中文</option>
+  <option value="chi_tra">繁體中文</option>
+</select>
+<body>
+  <div id="chat">
+    <h2 class="centered-heading">👋 What do you wanna generate?</h2>
+  </div>
+  <div id="input-area">
+    <div id="file-preview" class="input-top-files"></div>
+    <div class="input-wrapper">
+      <textarea id="user-input" rows="2"></textarea>
+      <div class="tooltip-wrapper">
+        <button id="file-button" onclick="document.getElementById('file-upload').click()">＋</button>
+        <span class="tooltip-text">Upload File</span>
+      </div>
+      <input type="file" id="file-upload" multiple />
+      <button class="next-button" onclick="handleUserInput()">Next</button>
+    </div>
+  </div>
+
+  <div id="stage-3" style="display: none;">
+    <h3 id="question3-title"></h3>
+    
+    <div class="source-choice" style="display: flex; gap: 12px; margin-bottom: 16px;">
+      <button class="choice-btn" onclick="showUploadSection()">Upload Files</button>
+      <button class="choice-btn" onclick="showDatabaseSection()">Browse Database</button>
+    </div>
+
+    <div id="upload-section" style="display: none;">
+      <input type="file" id="user-upload" accept=".pdf,.doc,.docx" multiple />
+    </div>
+
+    <div id="db-browser-container" style="display: none;">
+      <strong id="db-browser-label"></strong>
+      <input type="text" id="filter-input" placeholder="🔍 Search…" style="width:100%; padding:4px; margin:6px 0;" />
+      <div id="item-list" style="max-height: 300px; overflow-y:auto; border: 1px solid #eee; padding: 4px;"></div>
+      
+      <!-- Add PDF preview section -->
+      <div id="pdf-preview" style="display: none; margin-top: 20px;">
+        <h4 style="margin-bottom: 10px;">Selected File Preview:</h4>
+        <div id="pdf-container" style="width: 100%; height: 500px; border: 1px solid #eee; margin-bottom: 10px;"></div>
+        <button id="confirm-selection" class="choice-btn" style="background: #10a37f; color: white;">Confirm Selection</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // First, let's fix the translations object
+    const translations = {
+      eng: {
+        title: "👋 What do you wanna generate?",
+        next: "Next",
+        upload: "Upload File",
+        yes: "Yes",
+        no: "No",
+        saveBtn: "Save",
+        regenerateBtn: "🔍 Regenerate with More Detail",
+        morePrompt: "Question 4/5: ✏️  Add more details: Comment, Grade, Number of Students, Duration, Length",
+        refineWhich: "🧩 Which part(s) would you like to be more specific?",
+        done: "🎉 Got it! Let me know if you need anything else.",
+
+        question1: "Question 1/5: 👇 Please select a type:",
+        question2: "Question 2/5: 💭 Why do you need this?",
+        question3: "Question 3/5: 📎 What do you have on hand?",
+        question4: "Question 4/5: ✏️ Add more details",
+        question5: "Question 5/5: 🔍 Do you want to make any part more specific?",
+        
+        pleaseFill: "Please fill in at least one field.",
+        noExtractedText: "No extracted text found – please upload a PDF / Word / image first.",
+        noTemplateFound: "⚠️ No corresponding template was found to generate content!",
+        atLeastOnePart: "Please select at least one part to refine.",
+        generationFailed: "❌ Generation failed. Please try again.",
+        pleaseRefine: "✅ Yes, please refine.",
+        noThanks: "❌ No, that's enough.",
+        replacedMsg: "🔄 \"{filename}\" replaced.",
+        replaceConfirm: "Replace previously uploaded \"{filename}\"?",
+        infoCollected: "✅ All info collected. Ready to generate!",
+        type_lesson: "Lesson Plan",
+        type_materials: "Class Materials (PPT/pictures)",
+        type_report: "Report Card",
+        type_feedback: "Student‑Work Feedback",
+        type_bank: "Subject Question Bank / Assignment",
+        type_activity: "Activity Plan / Extracurricular",
+        type_admin: "Admin Helper (PPT / Word)",
+        ph_comment: "Comment (optional)",
+        ph_grade: "Grade (optional)",
+        ph_students: "Number of Students",
+        ph_duration: "Duration (e.g., 45 mins)",
+        ph_length: "Length (Short / Medium / Long)",
+        pleaseWait: "Please wait for 1 minute…",
+        ph_input: "Type something...",
+        details: "Details",
+        label_comment: "Comment",
+        label_grade: "Grade",
+        label_students: "Number of Students",
+        label_duration: "Duration",
+        label_length: "Length",
+        na: "N/A",
+        browseFiles: "📁 Browse files from database:",
+        uploadFiles: "Upload Files",
+        browseDatabase: "Browse Database",
+        confirmSelection: "Confirm Selection"
+      }
+    };
+
+    // Add Chinese translations
+    translations.chi_sim = Object.assign({}, translations.eng, {
+      title: "👋 你想生成什么？",
+      next: "下一步",
+      upload: "上传文件",
+      yes: "是",
+      no: "否",
+      saveBtn: "保存",
+      regenerateBtn: "🔍 重新生成并丰富细节",
+      morePrompt: "问题 4/5：✏️  请补充更多信息：注释、年级、学生人数、时长、长度",
+      refineWhich: "🧩 你想让哪些部分更具体？",
+      done: "🎉 明白了！如有其他需求请告诉我。",
+
+      question1: "问题 1/5：👇 请选择一个类型：",
+      question2: "问题 2/5：💭 你为什么需要这个？（例如：为二年级学生上的数学课，或是下周的家长会）",
+      question3: "问题 3/5：📎 你现在手上有什么资料？（你可以上传文件，仅限 PDF 或 Word 文档，或是简单描述一下）",
+      question4: "问题 4/5：✏️ 请补充更多信息：注释、年级、学生人数、时长、长度",
+      question5: "问题 5/5：🔍 是否希望某些部分更具体？",
+
+      pleaseFill: "请至少填写一个字段。",
+      noExtractedText: "未找到提取的文本 – 请上传 PDF / Word / 图片文件。",
+      noTemplateFound: "⚠️ 找不到对应的生成模板！",
+      atLeastOnePart: "请至少选择一个要细化的部分。",
+      generationFailed: "❌ 生成失败。请重试。",
+      pleaseRefine: "✅ 是的，请细化。",
+      noThanks: "❌ 不用了。",
+      replacedMsg: "🔄 已替换\"{filename}\"。",
+      replaceConfirm: "是否替换之前上传的\"{filename}\"？",
+      infoCollected: "✅ 所有信息已收集，准备生成！",
+
+      type_lesson: "课程教案",
+      type_materials: "课堂素材 (PPT/图片)",
+      type_report: "成绩单",
+      type_feedback: "作品反馈",
+      type_bank: "题库 / 作业",
+      type_activity: "活动方案",
+      type_admin: "行政文档 (PPT/Word)",
+
+      ph_comment : "注释（可选）",
+      ph_grade   : "年级（可选）",
+      ph_students: "学生人数",
+      ph_duration: "时长（例如 45 分钟）",
+      ph_length  : "长度（短 / 中 / 长）",
+      pleaseWait : "请等待 1 分钟…",
+      pleaseWaitVA: "您的教材正在送上...",
+      ph_input : "请输入内容…",
+
+      details      : "详情",
+      label_comment: "注释",
+      label_grade  : "年级",
+      label_students:"学生人数",
+      label_duration:"时长",
+      label_length : "长度",
+      na           : "未填写",
+
+      uploadFiles: "上传文件",
+      browseDatabase: "浏览数据库",
+      browseFiles: "📁 从数据库中选择文件：",
+      confirmSelection: "确认选择"
+    });
+
+    translations.chi_tra = Object.assign({}, translations.eng, {
+      title: "👋 你想要生成什麼？",
+      next: "下一步",
+      upload: "上傳檔案",
+      yes: "是",
+      no: "否",
+      regenerateBtn: "🔍 重新生成並豐富細節",
+      morePrompt: "問題 4/5：✏️  請補充更多細節：註解、年級、學生人數、時長、長度",
+      refineWhich: "🧩 你想讓哪些部分更具體？",
+      done: "🎉 明白！如有其他需要請告訴我。",
+
+      question1: "問題 1/5：👇 請選擇一個類型：",
+      question2: "問題 2/5：💭 你為什麼需要這個？（例如：為二年級學生上的數學課，或是下週的家長會）",
+      question3: "問題 3/5：📎 你現在手上有什麼資料 (你可以上傳檔案，僅限 PDF 或 Word 文件，或簡單描述一下)",
+      question4: "問題 4/5：✏️ 請補充更多細節：註解、年級、學生數量、時間、長度",
+      question5: "問題 5/5：🔍 是否需要更具體的部分？",
+
+      pleaseFill: "請至少填寫一項內容。",
+      noExtractedText: "未找到提取內容 – 請先上傳 PDF / Word / 圖片。",
+      noTemplateFound: "⚠️ 找不到對應的生成模板！",
+      atLeastOnePart: "請至少選擇一個需要細化的部分。",
+      generationFailed: "❌ 生成失敗。請再試一次。",
+      pleaseRefine: "✅ 是的，請細化。",
+      noThanks: "❌ 不用了。",
+      replacedMsg: "🔄 已替換\"{filename}\"。",
+      replaceConfirm: "是否替換之前上傳的\"{filename}\"？",
+      infoCollected: "✅ 所有資訊已收集，準備生成！",
+
+      type_lesson: "課程教案",
+      type_materials: "課堂素材 (PPT/圖片)",
+      type_report: "成績單",
+      type_feedback: "作品回饋",
+      type_bank: "題庫 / 作業",
+      type_activity: "活動計畫",
+      type_admin: "行政文件 (PPT/Word)",
+
+      ph_comment : "註解（可選）",
+      ph_grade   : "年級（可選）",
+      ph_students: "學生人數",
+      ph_duration: "時長（例如 45 分鐘）",
+      ph_length  : "長度（短 / 中 / 長）",
+      pleaseWait : "請等待 1 分鐘…",
+      pleaseWaitVA: "您的教材正在送上...",
+      ph_input : "請輸入內容…",
+
+      details      : "詳情",
+      label_comment: "註解",
+      label_grade  : "年級",
+      label_students:"學生人數",
+      label_duration:"時長",
+      label_length : "長度",
+      na           : "未填寫",
+      uploadFiles: "上傳檔案",
+      browseDatabase: "瀏覽數據庫",
+      browseFiles: "📁 從數據庫中選擇文件：",
+      confirmSelection: "確認選擇"
+    });
+
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('user-input');
+    const fileInput = document.getElementById('file-upload');
+    const filePreview = document.getElementById('file-preview');
+    let fullMarkdown = ''; 
+    const escapeRegExp = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const templateSections = {
+      "Lesson Plan": {
+        eng: [
+          "Lesson Title / Subject Area",
+          "Learning Goals & Measurable Objectives",
+          "Prerequisite Knowledge",
+          "Materials / Resources List",
+          "Step‑by‑step Procedure & Timing",
+          "Assessment / Evidence of Learning",
+          "Differentiation / Accommodations",
+          "Anticipated Difficulties/ Challenges → Solution",
+          "Follow‑up / Reflection box"
+        ],
+        zh: [
+          "课题 / 学科领域",
+          "学习目标 & 可测量指标",
+          "先备知识",
+          "材料 / 资源清单",
+          "课堂步骤 & 时间分配",
+          "评估方式 / 学习证据",
+          "差异化教学 / 适应策略",
+          "预判难点 / 挑战 → 解决方案",
+          "课后跟进 / 反思"
+        ],
+        "zh-HK": [
+          "課程標題 / 科目領域",
+          "學習目標 & 可衡量指標",
+          "先備知識",
+          "材料 / 資源清單",
+          "步驟流程 & 時間配置",
+          "評量方式 / 學習證據",
+          "差異化教學 / 調整方案",
+          "預期困難 / 挑戰 → 解決策略",
+          "後續追蹤 / 反思"
+        ]
+      },
+      "Class Materials (PPT/pictures)": {
+        eng: [
+          "Presentation Topic / Focus Question",
+          "Expected Audience (Grade or Course)",
+          "Key Points / Slide Outline",
+          "Desired Visual Assets (images, charts, video links)",
+          "Desired Audio Assets (music, sound clips)",
+          "Branding Elements (school logo, colors, fonts)",
+          "Speaker‑note Depth (none / bullet / full script)"
+        ],
+        zh: [
+          "演示主题 / 关注问题",
+          "目标受众（年级或课程）",
+          "关键要点 / 幻灯片大纲",
+          "视觉素材需求（图片、图表、视频链接）",
+          "音频素材需求（音乐、音效）",
+          "品牌元素（校徽、色彩、字体）",
+          "演讲者备注深度（无 / 要点 / 全脚本）"
+        ],
+        "zh-HK": [
+          "簡報主題 / 焦點問題",
+          "預期受眾（年級或課程）",
+          "重點 / 投影片大綱",
+          "視覺素材需求（圖片、圖表、影片鏈接）",
+          "音訊素材需求（音樂、音效）",
+          "品牌元素（校徽、色彩、字體）",
+          "講者備註深度（無 / 要點 / 完整稿）"
+        ]
+      },
+      "Report Card": {
+        eng: [
+          "Student & Class Identifiers",
+          "Term / Grading Period",
+          "Subject List & Grade Scale",
+          "Attendance Figures",
+          "Behavior /Work‑Habit Ratings",
+          "Other Learning Experience/ Extra-curricular activities",
+          "Award",
+          "Teacher Narrative Comments",
+          "Parent signature flag"
+        ],
+        zh: [
+          "学生与班级信息",
+          "学期 / 成绩周期",
+          "科目列表与评分标准",
+          "出勤数据",
+          "行为 / 学习习惯评分",
+          "其他学习经历 / 课外活动",
+          "奖励",
+          "教师评语",
+          "家长签名项"
+        ],
+        "zh-HK": [
+          "學生與班級資訊",
+          "學期 / 成績週期",
+          "科目清單與評分標準",
+          "出勤數據",
+          "行為 / 學習習慣評分",
+          "其他學習經驗 / 課外活動",
+          "獎勵",
+          "教師評語",
+          "家長簽名項"
+        ]
+      },
+
+      "Student-Work Feedback": {
+        eng: [
+          "Student / Assignment ID",
+          "Rubric criteria or \"Glow & Grow\" fields (Strengths, Needs, Next Steps)",
+          "Performance level or score",
+          "Inline examples / Quotes",
+          "Overall Comment",
+          "Next-check-in Date"
+        ],
+        zh: [
+          "学生 / 作业编号",
+          "评分标准或优点与改进字段（优势、需改进、下一步）",
+          "表现等级或分数",
+          "文中示例 / 引语",
+          "整体评语",
+          "下次回顾日期"
+        ],
+        "zh-HK": [
+          "學生 / 作業編號",
+          "評分標準或「亮點與改進」欄位（優勢、需改善、後續步驟）",
+          "表現等級或分數",
+          "內文示例 / 引語",
+          "整體評論",
+          "下次檢視日期"
+        ]
+      },
+
+      "Subject Question Bank / Assignment": {
+        eng: [
+          "Subject & Topic Tags",
+          "Standard Alignment",
+          "Question Type (MCQ, open, etc.)",
+          "Difficulty Level",
+          "Question Text",
+          "Answer Choices & Correct Answer",
+          "Explanation / Feedback",
+          "Time Limit Per Item",
+          "Category Folder"
+        ],
+        zh: [
+          "学科与主题标签",
+          "课程标准对齐",
+          "题型（选择题、开放题等）",
+          "难度等级",
+          "题干",
+          "选项与正确答案",
+          "解析 / 反馈",
+          "每题时间限制",
+          "分类文件夹"
+        ],
+        "zh-HK": [
+          "學科與主題標籤",
+          "課綱對應",
+          "題型（選擇題、開放題等）",
+          "難度等級",
+          "題目內容",
+          "選項與正確答案",
+          "解析 / 回饋",
+          "每題時間限制",
+          "分類資料夾"
+        ]
+      },
+
+      "Activity Plan / Extracurricular": {
+        eng: [
+          "Activity Name & Purpose",
+          "Date(s) / Time block",
+          "Location & Access notes",
+          "Target Group / # Students",
+          "Required materials & Equipment",
+          "Action plan",
+          "Roles & supervision: resources allocation/ responsibilities",
+          "Risk / safety considerations",
+          "Assessment or reflection Method"
+        ],
+        zh: [
+          "活动名称与目的",
+          "日期 / 时间段",
+          "地点与进入说明",
+          "目标群体 / 学生人数",
+          "所需材料与设备",
+          "行动计划",
+          "职责与监督：资源配置 / 分工",
+          "风险 / 安全考量",
+          "评估或反思方式"
+        ],
+        "zh-HK": [
+          "活動名稱與目的",
+          "日期 / 時段",
+          "地點與進出說明",
+          "目標對象 / 學生人數",
+          "所需材料與設備",
+          "行動計畫",
+          "職責與監督：資源分配 / 任務分工",
+          "風險 / 安全考量",
+          "評估或反思方式"
+        ]
+      },
+
+      "Admin Helper (PPT / Word)": {
+        eng: [
+          "Document Type (agenda, newsletter, handbook, policy)",
+          "Audience",
+          "Key Sections / Talking Points",
+          "Attachments / Links",
+          "Header-footer Branding",
+          "Distribution Date"
+        ],
+        zh: [
+          "文档类型（议程、简报、手册、政策等）",
+          "目标读者",
+          "重点部分 / 要点",
+          "附件 / 链接",
+          "页眉页脚品牌标识",
+          "发布日期"
+        ],
+        "zh-HK": [
+          "文件類型（議程、簡報、手冊、政策等）",
+          "目標讀者",
+          "重點內容 / 討論要點",
+          "附件 / 鏈結",
+          "頁首頁尾品牌標誌",
+          "發布日期"
+        ]
+      }
+    };
+    const topicTemplates = {
+      "Lesson Plan": `
+    请根据以下模板生成一份具体的 Lesson Plan：
+    • Lesson Title / Subject Area
+    • Learning Goals & Measurable Objectives
+    • Prerequisite Knowledge
+    • Materials / Resources List
+    • Step‑by‑step Procedure & Timing
+    • Assessment / Evidence of Learning
+    • Differentiation / Accommodations
+    • Anticipated Difficulties/ Challenges → Solution 
+    • Follow‑up / Reflection box
+    `,
+
+      "Class Materials (PPT/pictures)": `
+    请根据以下模板生成一份具体的 Class Materials：
+    • Presentation Topic / Focus Question
+    • Expected Audience (Grade or Course)
+    • Key Points / Slide Outline
+    • Desired Visual Assets (images, charts, video links)
+    • Desired Audio Assets (music, sound clips)
+    • Branding Elements (school logo, colors, fonts)
+    • Speaker‑note Depth (none / bullet / full script)
+     列举每一页的slides，以及slides需要有相对的解释图片（帮助学生更好的理解）
+
+
+    `,
+
+      "Report Card": `
+    请根据以下模板生成一份具体的 Report Card：
+    • Student & Class Identifiers
+    • Term / Grading Period
+    • Subject List & Grade Scale
+    • Attendance Figures
+    • Behavior /Work‑Habit Ratings
+    • Other Learning Experience/ Extra-curricular activities (jumping class/ drama class/ competition) 
+    • Award
+    • Teacher Narrative Comments
+    • Parent signature flag
+    `,
+
+      "Student-Work Feedback": `
+    请根据以下模板生成一份具体的 Student Work Feedback：
+    • Student / Assignment ID
+    • Rubric criteria or "Glow & Grow" fields (Strengths, Needs, Next Steps)
+    • Performance level or score
+    • Inline examples / Quotes
+    • Overall Comment
+    • Next-check-in Date
+    `,
+
+      "Subject Question Bank / Assignment": `
+    请根据以下模板生成一份 Subject Question Bank / Assignment：
+    • Subject & Topic Tags
+    • Standard Alignment
+    • Question Type (MCQ, open, etc.)
+    • Difficulty Level
+    • Question Text
+    • Answer Choices & Correct Answer
+    • Explanation / Feedback
+    • Time Limit Per Item
+    • Category Folder
+    `,
+
+      "Activity Plan / Extracurricular": `
+    请根据以下模板生成一份 Activity Plan：
+    • Activity Name & Purpose
+    • Date(s) / Time block
+    • Location & Access notes
+    • Target Group / # Students
+    • Required materials & Equipment
+    • Action plan
+    • Roles & supervision: resources allocation/ responsibilities
+    • Risk / safety considerations
+    • Assessment or reflection Method
+    `,
+
+      "Admin Helper (PPT / Word)": `
+    请根据以下模板生成一份 Admin Helper 文档：
+    • Document Type (agenda, newsletter, handbook, policy)
+    • Audience
+    • Key Sections / Talking Points
+    • Attachments / Links
+    • Header-footer Branding
+    • Distribution Date
+    `
+    };
+
+    let lastGeneratedForm = null;
+    let lastUserMoreMessage = null;
+    let uploadedFiles = [];
+    const answers = { have: [] };
+    const pendingExtractions = new Set();
+    let currentStage = 0;
+
+    const stages = [
+    {
+      promptKey: 'question1', key: 'type', type: 'dropdown',
+      options: [
+        'Lesson Plan',
+        'Class Materials (PPT/pictures)',
+        'Report Card',
+        'Student-Work Feedback',
+        'Subject Question Bank / Assignment',
+        'Activity Plan / Extracurricular',
+        'Admin Helper (PPT / Word)'
+      ]
+    },
+    { promptKey: 'question2', key: 'why',   type: 'text' },
+    { promptKey: 'question3', key: 'have',  type: 'text' },
+    { promptKey: 'question4', key: 'more',  type: 'text' },
+    { promptKey: 'question5', key: 'refine',type: 'yesno' }
+  ];
+
+    const inputArea = document.getElementById('input-area');
+    const translations = {
+  eng: {
+    /* global */
+    title: "👋 What do you wanna generate?",
+    next: "Next",
+    upload: "Upload File",
+    yes: "Yes",
+    no: "No",
+    saveBtn: "Save",
+    regenerateBtn: "🔍 Regenerate with More Detail",
+    morePrompt: "Question 4/5: ✏️  Add more details: Comment, Grade, Number of Students, Duration, Length",
+    refineWhich: "🧩 Which part(s) would you like to be more specific?",
+    done: "🎉 Got it! Let me know if you need anything else.",
+
+    question1: "Question 1/5: 👇 Please select a type:",
+    question2: "Question 2/5: 💭 Why do you need this? (e.g. for student of grade 2 to have maths class, for parents meeting next week)",
+    question3: "Question 3/5: 📎 What do you have on hand? (You can upload files(PDF or Word only), or describe)",
+    question4: "Question 4/5: ✏️ Add more details: Comment, Grade, Number of Students, Duration, Length",
+    question5: "Question 5/5: 🔍 Do you want to make any part more specific?",
+
+
+    pleaseFill: "Please fill in at least one field.",
+    noExtractedText: "No extracted text found – please upload a PDF / Word / image first.",
+    noTemplateFound: "⚠️ No corresponding template was found to generate content!",
+    atLeastOnePart: "Please select at least one part to refine.",
+    generationFailed: "❌ Generation failed. Please try again.",
+    pleaseRefine: "✅ Yes, please refine.",
+    noThanks: "❌ No, that’s enough.",
+    replacedMsg: "🔄 \"{filename}\" replaced.",
+    replaceConfirm: "Replace previously uploaded \"{filename}\"?",
+    infoCollected: "✅ All info collected. Ready to generate!",
+
+    type_lesson: "Lesson Plan",
+    type_materials: "Class Materials (PPT/pictures)",
+    type_report: "Report Card",
+    type_feedback: "Student‑Work Feedback",
+    type_bank: "Subject Question Bank / Assignment",
+    type_activity: "Activity Plan / Extracurricular",
+    type_admin: "Admin Helper (PPT / Word)",
+
+    ph_comment : "Comment (optional)",
+    ph_grade   : "Grade (optional)",
+    ph_students: "Number of Students",
+    ph_duration: "Duration (e.g., 45 mins)",
+    ph_length  : "Length (Short / Medium / Long)",
+    pleaseWait : "Please wait for 1 minute…",
+    ph_input : "Type something...",
+
+    details      : "Details",
+    label_comment: "Comment",
+    label_grade  : "Grade",
+    label_students:"Number of Students",
+    label_duration:"Duration",
+    label_length : "Length",
+    na           : "N/A"
+  },
+  chi_sim: {
+    title: "👋 你想生成什么？",
+    next: "下一步",
+    upload: "上传文件",
+    yes: "是",
+    no: "否",
+    saveBtn: "保存",
+    regenerateBtn: "🔍 重新生成并丰富细节",
+    morePrompt: "问题 4/5：✏️  请补充更多信息：注释、年级、学生人数、时长、长度",
+    refineWhich: "🧩 你想让哪些部分更具体？",
+    done: "🎉 明白了！如有其他需求请告诉我。",
+
+    question1: "问题 1/5：👇 请选择一个类型：",
+    question2: "问题 2/5：💭 你为什么需要这个？（例如：为二年级学生上的数学课，或是下周的家长会）",
+    question3: "问题 3/5：📎 你现在手上有什么资料？（你可以上传文件，仅限 PDF 或 Word 文档，或是简单描述一下）",
+    question4: "问题 4/5：✏️ 请补充更多信息：注释、年级、学生人数、时长、长度",
+    question5: "问题 5/5：🔍 是否希望某些部分更具体？",
+
+    pleaseFill: "请至少填写一个字段。",
+    noExtractedText: "未找到提取的文本 – 请上传 PDF / Word / 图片文件。",
+    noTemplateFound: "⚠️ 找不到对应的生成模板！",
+    atLeastOnePart: "请至少选择一个要细化的部分。",
+    generationFailed: "❌ 生成失败。请重试。",
+    pleaseRefine: "✅ 是的，请细化。",
+    noThanks: "❌ 不用了。",
+    replacedMsg: "🔄 已替换\"{filename}\"。",
+    replaceConfirm: "是否替换之前上传的\"{filename}\"？",
+    infoCollected: "✅ 所有信息已收集，准备生成！",
+
+    type_lesson: "课程教案",
+    type_materials: "课堂素材 (PPT/图片)",
+    type_report: "成绩单",
+    type_feedback: "作品反馈",
+    type_bank: "题库 / 作业",
+    type_activity: "活动方案",
+    type_admin: "行政文档 (PPT/Word)",
+
+    ph_comment : "注释（可选）",
+    ph_grade   : "年级（可选）",
+    ph_students: "学生人数",
+    ph_duration: "时长（例如 45 分钟）",
+    ph_length  : "长度（短 / 中 / 长）",
+    pleaseWait : "请等待 1 分钟…",
+    ph_input : "请输入内容…",
+
+    details      : "详情",
+    label_comment: "注释",
+    label_grade  : "年级",
+    label_students:"学生人数",
+    label_duration:"时长",
+    label_length : "长度",
+    na           : "未填写"
+
+
+  },
+  chi_tra: {
+    title: "👋 你想要生成什麼？",
+    next: "下一步",
+    upload: "上傳檔案",
+    yes: "是",
+    no: "否",
+    saveBtn: "儲存",
+    regenerateBtn: "🔍 重新生成並豐富細節",
+    morePrompt: "問題 4/5：✏️  請補充更多細節：註解、年級、學生人數、時長、長度",
+    refineWhich: "🧩 你想讓哪些部分更具體？",
+    done: "🎉 明白！如有其他需要請告訴我。",
+
+    question1: "問題 1/5：👇 請選擇一個類型：",
+    question2: "問題 2/5：💭 你為什麼需要這個？（例如：為二年級學生上的數學課，或是下週的家長會）",
+    question3: "問題 3/5：📎 你現在手上有什麼資料 (你可以上傳檔案，僅限 PDF 或 Word 文件，或簡單描述一下)",
+    question4: "問題 4/5：✏️ 請補充更多細節：註解、年級、學生數量、時間、長度",
+    question5: "問題 5/5：🔍 是否需要更具體的部分？",
+
+    pleaseFill: "請至少填寫一項內容。",
+    noExtractedText: "未找到提取內容 – 請先上傳 PDF / Word / 圖片。",
+    noTemplateFound: "⚠️ 找不到對應的生成模板！",
+    atLeastOnePart: "請至少選擇一個需要細化的部分。",
+    generationFailed: "❌ 生成失敗。請再試一次。",
+    pleaseRefine: "✅ 是的，請細化。",
+    noThanks: "❌ 不用了。",
+    replacedMsg: "🔄 已替換\"{filename}\"。",
+    replaceConfirm: "是否替換之前上傳的\"{filename}\"？",
+    infoCollected: "✅ 所有資訊已收集，準備生成！",
+
+    type_lesson: "課程教案",
+    type_materials: "課堂素材 (PPT/圖片)",
+    type_report: "成績單",
+    type_feedback: "作品回饋",
+    type_bank: "題庫 / 作業",
+    type_activity: "活動計畫",
+    type_admin: "行政文件 (PPT/Word)",
+
+    ph_comment : "註解（可選）",
+    ph_grade   : "年級（可選）",
+    ph_students: "學生人數",
+    ph_duration: "時長（例如 45 分鐘）",
+    ph_length  : "長度（短 / 中 / 長）",
+    pleaseWait : "請等待 1 分鐘…",
+    ph_input : "請輸入內容…",
+
+    details      : "詳情",
+    label_comment: "註解",
+    label_grade  : "年級",
+    label_students:"學生人數",
+    label_duration:"時長",
+    label_length : "長度",
+    na           : "未填寫"
+
+  }
+};
+
+
+  document.getElementById('ocr-lang').dispatchEvent(new Event('change'));
+
+
+  
+    inputArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      inputArea.style.border = '2px dashed #10a37f';
+      inputArea.style.backgroundColor = '#f3fffa';
+    });
+
+    inputArea.addEventListener('dragleave', () => {
+      inputArea.style.border = '';
+      inputArea.style.backgroundColor = '';
+    });
+
+    inputArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      inputArea.style.border = '';
+      inputArea.style.backgroundColor = '';
+      const files = e.dataTransfer.files;
+      if (files.length) handleDroppedFiles(files);
+    });
+
+    function handleDroppedFiles(fileList) {
+      [...fileList].forEach(file => {
+        if (!answers.have) answers.have = []; 
+
+        const fileRecord = {
+          id: crypto.randomUUID(),
+          name: file.name,
+          note: '',
+          text: ''
+        };
+
+        extractAndStore(fileRecord, file);
+        answers.have.push(fileRecord);
+
+
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+
+        const span = document.createElement('span');
+        span.textContent = file.name;
+
+        const note = document.createElement('input');
+        note.className = 'file-note';
+        note.placeholder = 'Add note...';
+        note.oninput = (e) => fileRecord.note = e.target.value;
+
+        const delBtn = document.createElement('button');
+        delBtn.textContent = '✕';
+        delBtn.onclick = () => {
+          fileItem.remove();
+          answers.have = answers.have.filter(f => f.id !== fileRecord.id);
+        };
+
+        fileItem.append(span, note, delBtn);
+        document.getElementById('file-preview').appendChild(fileItem);
+
+      });
+    }
+
+
+    function appendMessage(content, sender, stageIndex = null, asHTML = false) {
+      content = content || '';
+      const container = document.createElement('div');
+      container.className = `message ${sender}`;
+      container.dataset.stageIndex = stageIndex;
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = sender === 'bot' ? '🤖' : '🧑‍🏫';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      
+      if (asHTML) {
+        bubble.innerHTML = DOMPurify.sanitize(content);
+      } else {
+        bubble.textContent = content;
+      }
+
+      if (sender === 'user') {
+        bubble.style.cursor = 'pointer';
+        bubble.title = 'Click to edit';
+        bubble.addEventListener('click', () => {
+          if (!bubble.querySelector('a')) { // Don't allow editing if contains links
+            const newValue = prompt('Edit your response:', bubble.textContent);
+            if (newValue !== null && newValue.trim() !== '') {
+              const confirmed = confirm('This will delete all responses after this point. Continue?');
+              if (!confirmed) return;
+
+              bubble.textContent = newValue.trim();
+              const stageIdx = Number(container.dataset.stageIndex);
+              
+              const stageKey = stages[stageIdx].key;
+              answers[stageKey] = newValue.trim();
+              currentStage = stageIdx + 1;
+              
+              if (stageKey === 'type') {
+                const dropdown = document.querySelector('select.select-inline');
+                if (dropdown) dropdown.value = newValue.trim();
+              }
+
+              for (let i = stageIdx + 1; i < stages.length; i++) {
+                delete answers[stages[i].key];
+              }
+
+              let next = container.nextSibling;
+              while (next) {
+                const toRemove = next;
+                next = next.nextSibling;
+                toRemove.remove();
+              }
+
+              showStage();
+            }
+          }
+        });
+      }
+
+      container.appendChild(avatar);
+      container.appendChild(bubble);
+      chat.appendChild(container);
+      chat.scrollTop = chat.scrollHeight;
+      return container;
+    }
+    
+    async function callDeepSeek(promptText, onChunkReceived) {
+        const locale = currentLang; // Make sure currentLang is correctly set
+        const postData = { promptText, locale };
+
+        let reader; // To store the stream reader for potential cancellation
+        let completeContent = '';
+        let isCompletedSuccessfully = false; // To track successful completion via 'end' event
+
+        return new Promise(async (resolve, reject) => { // Make the Promise executor async
+            try {
+                const response = await fetch('https://backend.canpaniongroup.com/aigc/aio-generation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Add any other necessary headers, e.g., Authorization
+                    },
+                    body: JSON.stringify(postData),
+                });
+
+                if (!response.ok) {
+                    // Handle HTTP errors from the initial POST request
+                    const errorText = await response.text();
+                    console.error('Server error on initial POST:', response.status, errorText);
+                    reject(new Error(`Server error: ${response.status}. ${errorText.substring(0,100)}`));
+                    return;
+                }
+
+                const contentType = response.headers.get('Content-Type');
+                if (!contentType || !contentType.includes('text/event-stream')) {
+                    console.error('Expected text/event-stream, but received:', contentType);
+                    const responseText = await response.text();
+                    reject(new Error(`Unexpected response type from server: ${responseText.substring(0,100)}`));
+                    return;
+                }
+
+                reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                const processSseEvents = () => {
+                    let eolIndex;
+                    while ((eolIndex = buffer.indexOf('\n\n')) >= 0) {
+                        const messageBlock = buffer.substring(0, eolIndex);
+                        buffer = buffer.substring(eolIndex + 2);
+
+                        let eventType = 'message'; // Default SSE event type
+                        let eventDataString = '';
+
+                        const lines = messageBlock.split('\n');
+                        for (const line of lines) {
+                            if (line.startsWith('event:')) {
+                                eventType = line.substring(6).trim();
+                            } else if (line.startsWith('data:')) {
+                                eventDataString += line.substring(5).trim();
+                            }
+                        }
+
+                        try {
+                            const parsedData = eventDataString ? JSON.parse(eventDataString) : null;
+
+                            if (eventType === 'message' && parsedData && parsedData.content) {
+                                completeContent += parsedData.content;
+                                if (onChunkReceived) {
+                                    onChunkReceived(parsedData.content);
+                                }
+                            } else if (eventType === 'end' && parsedData && parsedData.status === 'completed') {
+                                isCompletedSuccessfully = true;
+                                resolve(completeContent);
+                                if (reader) {
+                                    reader.cancel().catch(e => console.warn("Error cancelling reader on 'end' event:", e));
+                                    reader = null;
+                                }
+                                return true; // Signal to stop reading
+                            } else if (eventType === 'error' && parsedData && parsedData.error) {
+                                reject(new Error(parsedData.error));
+                                if (reader) {
+                                    reader.cancel().catch(e => console.warn("Error cancelling reader on 'error' event:", e));
+                                    reader = null;
+                                }
+                                return true; // Signal to stop reading
+                            }
+                        } catch (e) {
+                            console.error('Error parsing SSE data JSON:', e, "Raw data string:", eventDataString);
+                            // Don't reject here for a single bad message if the stream might continue,
+                            // unless it's critical.
+                        }
+                    }
+                    return false; // Continue reading
+                };
+
+
+                // eslint-disable-next-line no-constant-condition
+                while (true) {
+                    if (!reader) break; // Stop if reader was cancelled
+
+                    const { done, value } = await reader.read();
+
+                    if (done) {
+                        // Stream finished from server side
+                        if (buffer.trim()) { // Process any remaining buffer
+                            if (processSseEvents()) break;
+                        }
+                        if (!isCompletedSuccessfully) {
+                            // If stream ended without our 'end' event, it might be an unexpected closure
+                            console.warn("Stream ended without explicit 'completed' status.");
+                            // Decide if this should be a resolve or reject based on your app's logic
+                            // For now, let's assume if content was received, it's a partial success.
+                            // Or, if no content, it's an error.
+                            if (completeContent) {
+                                 resolve(completeContent); // Resolve with what we have
+                            } else {
+                                 reject(new Error('Stream ended prematurely without completion signal or content.'));
+                            }
+                        }
+                        break;
+                    }
+
+                    buffer += decoder.decode(value, { stream: true });
+                    if (processSseEvents()) {
+                        break; // Stop if an event signaled completion or error
+                    }
+                }
+
+            } catch (error) { // Catches network errors for fetch or errors in stream setup
+                console.error('Fetch or stream processing error in callDeepSeek:', error);
+                reject(error); // General catch-all
+            } finally {
+                if (reader && typeof reader.cancel === 'function') {
+                    reader.cancel().catch(e => console.warn("Error cancelling reader in finally block:", e));
+                }
+            }
+        });
+    }
+    async function generateImageSearchLinksViaLLM(fullPrompt) {
+      const imagePrompt = `
+    你是一个教育类图像建议助手。请从下面这段文本中，提取 2-5 个最适合用于搜索教学相关图片的关键词或短语。它们应准确反映内容主题，适合用于 Google 图片搜索。仅返回关键词列表，不需要解释或引号。
+
+    【教学内容】：
+    ${fullPrompt}
+
+    【输出格式】：
+    - ...
+    - ...
+    - ...
+      `.trim();
+
+      const result = await callDeepSeek(imagePrompt);
+      return result
+        .split('\n')
+        .map(line => line.replace(/^[-•*]\s*/, '').trim())
+        .filter(Boolean)
+        .map(p => `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(p)}`);
+    }
+    function showStage() {
+      const stage = stages[currentStage];
+      if (!stage) {
+        console.log('No stage found for index:', currentStage);
+        return;
+      }
+
+      const promptTxt = t(stage.promptKey);
+      console.log('Showing stage:', { currentStage, key: stage.key, promptTxt });
+
+      if (stage.key === 'have') {
+        appendMessage(promptTxt, 'bot', currentStage);
+        
+        // Show the stage-3 container
+        const stage3 = document.getElementById('stage-3');
+        stage3.style.display = 'block';
+        
+        // Update button texts with translations
+        const [uploadBtn, browseBtn] = stage3.querySelectorAll('.choice-btn');
+        uploadBtn.textContent = t('uploadFiles');
+        browseBtn.textContent = t('browseDatabase');
+        
+        // Show upload section by default
+        showUploadSection();
+        return;
+      }
+
+      if (stage.type === 'dropdown') {
+        appendMessage(promptTxt, 'bot', currentStage);
+
+        // build button list container
+        const container = document.createElement('div');
+        container.className = 'message bot';
+        container.style.display = 'flex';
+
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar';
+        avatar.textContent = '🤖';
+
+        const btnGroup = document.createElement('div');
+        Object.assign(btnGroup.style, {
+          display: 'flex', flexDirection: 'column', gap: '8px', marginLeft: '44px'
+        });
+
+        stage.options.forEach(optConst => {
+          const btn = document.createElement('button');
+          btn.dataset.optKey = optConst;
+          btn.textContent = trType(optConst);
+
+          Object.assign(btn.style, {
+            padding: '10px 16px',
+            border: '1px solid #ccc',
+            borderRadius: '6px',
+            background: 'white',
+            cursor: 'pointer',
+            fontFamily: 'Inter',
+            transition: '0.2s'
+          });
+
+          btn.onmouseover = () => {
+            if (!btn.classList.contains('selected')) {
+              btn.style.background = '#f0f0f0';
+            }
+          };
+          btn.onmouseout = () => {
+            if (!btn.classList.contains('selected')) {
+              btn.style.background = 'white';
+            }
+          };
+
+          btn.onclick = () => {
+            // Remove previous selections
+            btnGroup.querySelectorAll('button').forEach(b => {
+              b.classList.remove('selected');
+              b.style.background = 'white';
+            });
+
+            // Add selection styling
+            btn.classList.add('selected');
+            btn.style.background = '#d4edda'; // light green
+
+            handleChooseType(btn, optConst);
+          };
+
+          btnGroup.appendChild(btn);
+        });
+
+        container.append(avatar, btnGroup);
+        chat.appendChild(container);
+        chat.scrollTop = chat.scrollHeight;
+        return;
+      }
+
+
+      if (stage.type === 'yesno') {
+        appendMessage(promptTxt, 'bot', currentStage);
+
+        const container = document.createElement('div');
+        container.className = 'message bot';
+        container.dataset.stageIndex = currentStage;
+
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar';
+        avatar.textContent = '🤖';
+
+        const btnGroup = document.createElement('div');
+        Object.assign(btnGroup.style, {
+          display: 'flex', gap: '12px', marginLeft: '44px'
+        });
+
+        ['yes', 'no'].forEach(key => {
+          const btn = document.createElement('button');
+          btn.textContent = t(key);
+          Object.assign(btn.style, {
+            padding: '8px 14px',
+            borderRadius: '6px',
+            background: 'white',
+            border: '1px solid #ccc',
+            cursor: 'pointer'
+          });
+
+          btn.onclick = () => {
+            appendMessage(t(key === 'yes' ? 'pleaseRefine' : 'noThanks'), 'user', currentStage);
+            answers[stage.key] = key;
+            currentStage++;
+            if (key === 'yes') askRefineSections();
+            else appendMessage(t('done'), 'bot');
+          };
+
+          btnGroup.appendChild(btn);
+        });
+
+        container.append(avatar, btnGroup);
+        chat.appendChild(container);
+        chat.scrollTop = chat.scrollHeight;
+        return;
+      }
+
+
+      appendMessage(promptTxt, 'bot', currentStage);
+    }
+
+    let reviewTableContainer = null;
+    let lastGeneratedResult = null;   
+    let refineOptionsContainer = null;   
+    let refineChoiceContainer = null;
+
+    function removeNodesAfter(node) {
+      if (!node) return;
+      let nxt = node.nextSibling;
+      while (nxt) {
+        const tmp = nxt;
+        nxt = nxt.nextSibling;
+        tmp.remove();
+      }
+    }
+
+    function renderMoreForm() {
+      // Remove any existing form
+      lastGeneratedForm?.remove();
+      lastUserMoreMessage?.remove();
+
+      const container = document.createElement('div');
+      container.className = 'message bot';
+      container.dataset.stageIndex = currentStage;
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = '🤖';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.style.padding = '16px';
+
+      const form = document.createElement('div');
+      form.style.display = 'flex';
+      form.style.flexDirection = 'column';
+      form.style.gap = '12px';
+
+      // Add title
+      const title = document.createElement('div');
+      title.textContent = t('morePrompt');
+      title.style.marginBottom = '12px';
+      form.appendChild(title);
+
+      // Create input fields
+      const fields = [
+        { key: 'comment', placeholder: t('ph_comment') },
+        { key: 'grade', placeholder: t('ph_grade') },
+        { key: 'students', placeholder: t('ph_students') },
+        { key: 'duration', placeholder: t('ph_duration') },
+        { key: 'length', placeholder: t('ph_length') }
+      ];
+
+      const inputs = {};
+      fields.forEach(({ key, placeholder }) => {
+        const input = makeInput(placeholder);
+        inputs[key] = input;
+        form.appendChild(input);
+      });
+
+      // Add submit button
+      const submitBtn = document.createElement('button');
+      submitBtn.textContent = t('saveBtn');
+      submitBtn.className = 'next-button';
+      submitBtn.style.marginTop = '12px';
+      submitBtn.onclick = () => {
+        const values = {};
+        let hasValue = false;
+        
+        Object.entries(inputs).forEach(([key, input]) => {
+          values[key] = input.value.trim();
+          if (values[key]) hasValue = true;
+        });
+
+        if (!hasValue) {
+          alert(t('pleaseFill'));
+          return;
+        }
+
+        // Format the message
+        const details = [
+          '📌 Details:',
+          `Comment: ${values.comment || t('na')}`,
+          `Grade: ${values.grade || t('na')}`,
+          `Number of Students: ${values.students || t('na')}`,
+          `Duration: ${values.duration || t('na')}`,
+          `Length: ${values.length || t('na')}`
+        ].join('\n');
+
+        // Remove previous messages if they exist
+        lastUserMoreMessage?.remove();
+        lastGeneratedResult?.remove();
+        reviewTableContainer?.remove();
+        refineOptionsContainer?.remove();
+        refineChoiceContainer?.remove();
+
+        // Add new message
+        lastUserMoreMessage = appendMessage(details, 'user');
+
+        // Store values
+        answers.more = values;
+        answers.studentsGrade = `${values.students || 'N/A'} / ${values.grade || 'N/A'}`;
+
+        // Move to next stage
+        currentStage++;
+        generateContent();
+      };
+
+      form.appendChild(submitBtn);
+      bubble.appendChild(form);
+      container.append(avatar, bubble);
+      chat.appendChild(container);
+      lastGeneratedForm = container;
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    //const langSelector = document.getElementById('ocr-lang');
+    //let currentLang = langSelector.value;
+    let currentLang = document.documentElement.lang;
+    updateUIText(); 
+    refreshStage0UI();  
+
+    function t(key, vars = {}) {
+      let s = translations[currentLang]?.[key] || translations.eng[key] || key;
+      for (const [k, v] of Object.entries(vars)) s = s.replace(`{${k}}`, v);
+      return s;
+    }
+		
+    /*
+    langSelector.addEventListener('change', () => {
+      currentLang = langSelector.value;
+      updateUIText(); 
+      refreshStage0UI();    
+    });*/
+
+    function updateUIText() {
+      document.querySelector('h2.centered-heading').textContent = t('title');
+      document.querySelector('.next-button').textContent          = t('next');
+      const tooltip = document.querySelector('.tooltip-text');
+      if (tooltip) tooltip.textContent = t('upload');
+
+      document.getElementById('user-input').placeholder = t('ph_input');
+
+      // update stage prompts already created (optional)
+      stages.forEach((s, i) => s.prompt = t(`question${i + 1}`));
+      document
+        .querySelectorAll('[data-stage-index] .bubble')
+        .forEach(b => {
+          const idx = Number(b.parentElement.dataset.stageIndex);
+          if (!isNaN(idx) && idx < 5) b.textContent = t(`question${idx + 1}`);
+        });
+    }
+
+    langSelector.addEventListener('change', () => {
+      currentLang = langSelector.value;
+      updateUIText();
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      updateUIText();
+      renderGroupedList(books);
+
+      document.querySelectorAll('input[placeholder]').forEach(inp => {
+        switch (inp.placeholder) {
+          case translations.eng.ph_comment:   inp.placeholder = t('ph_comment'); break;
+          case translations.eng.ph_grade:     inp.placeholder = t('ph_grade'); break;
+          case translations.eng.ph_students:  inp.placeholder = t('ph_students'); break;
+          case translations.eng.ph_duration:  inp.placeholder = t('ph_duration'); break;
+          case translations.eng.ph_length:    inp.placeholder = t('ph_length'); break;
+        }
+      });
+
+      const filterInput = document.getElementById('filter-input');
+      if (filterInput) {
+        filterInput.addEventListener('input', (e) => {
+          const kw = e.target.value.trim().toLowerCase();
+          const filtered = books.filter(b =>
+            b.title.toLowerCase().includes(kw) || b.path.toLowerCase().includes(kw)
+          );
+          renderGroupedList(filtered);
+        });
+      }
+    });
+
+    langSelector.addEventListener('change', () => {
+      currentLang = langSelector.value;
+      updateUIText();
+    });
+
+    function trType(opt) {
+      switch (opt) {
+        case 'Lesson Plan': return t('type_lesson');
+        case 'Class Materials (PPT/pictures)': return t('type_materials');
+        case 'Report Card': return t('type_report');
+        case 'Student-Work Feedback': return t('type_feedback');
+        case 'Subject Question Bank / Assignment': return t('type_bank');
+        case 'Activity Plan / Extracurricular': return t('type_activity');
+        case 'Admin Helper (PPT / Word)': return t('type_admin');
+        default: return opt;
+      }
+    }
+    
+    const exportT = {
+      	en: "export to .docx",
+        zh: "导出到 .docx",
+        "zh-HK": "導出至 .docx"
+      }
+    
+
+    function addFilePreviewRow(fileRecord) {
+      const fileItem = document.createElement('div');
+      fileItem.className = 'file-item';
+
+      const span = document.createElement('span');
+      span.textContent = fileRecord.name;
+
+      const note = document.createElement('input');
+      note.className = 'file-note';
+      note.placeholder = 'Add note...';
+      note.oninput = e => fileRecord.note = e.target.value;
+
+      const del = document.createElement('button');
+      del.textContent = '✕';
+      del.onclick = () => {
+        fileItem.remove();
+        answers.have = answers.have.filter(f => f.id !== fileRecord.id);
+      };
+
+      fileItem.append(span, note, del);
+      filePreview.appendChild(fileItem);
+    }
+
+    function validateUrls(arr) {
+      const uniq = [...new Set(arr.filter(u => /^https?:\/\/.+/i.test(u)))];
+      return uniq.filter(u =>
+        /^https:\/\/(www\.)?(google|duckduckgo)\./i.test(u)
+      );
+    }
+
+
+    async function generateContent() {
+      await Promise.all([...pendingExtractions]);
+
+      const uploads = answers['have'] || [];
+      /*const fileTexts = uploads
+        .map(f => (f.text ?? '').trim().slice(0, 4096))
+        .filter(Boolean)
+        .join('\n\n---\n\n');*/
+
+      const fileTexts = uploads
+        .map(f => (f.text ?? '').trim().slice(0, 87382)) // maximum context length 64k/0.6 = 109223 chinese characters
+        .filter(Boolean)
+        .join('\n\n---\n\n');
+
+      const descTexts = uploads
+        .filter(f => f.description)
+        .map(f => '• ' + f.description)
+        .join('\n');
+
+      const selectedType = answers['type'];
+      const basePrompt = topicTemplates[selectedType] || '';
+      if (!basePrompt) {
+        alert('⚠️ No corresponding template was found to generate content!');
+        return;
+      }
+
+      const more = answers['more'] || {};
+      const purpose = answers['why'] ? `- **Purpose / Rationale**: ${answers['why']}` : '';
+      const na = t('na');
+      const extraDetails = `
+    Context Information:
+    ${purpose}
+    - **${t('label_comment')}**: ${more.prompt || na}
+    - **${t('label_grade')}**: ${more.grade || na}
+    - **${t('label_students')}**: ${more.students || na}
+    - **${t('label_duration')}**: ${more.duration || na}
+    - **${t('label_length')}**: ${more.length || na}
+    `.trim();
+
+      const docPayload = [fileTexts, descTexts].filter(Boolean).join('\n');
+      const docSection = docPayload
+        ? `📄 Source Document:\n\`\`\`\n${docPayload}\n\`\`\`` : '';
+
+      const fullPrompt = [docSection, extraDetails, basePrompt]
+        .filter(Boolean)
+        .join('\n\n');
+
+      console.log('📝 Prompt sent to DeepSeek:\n', fullPrompt);
+
+      const loadingMsg = appendMessage('🔄 Generating...', 'bot');
+      const loadingBubble = loadingMsg.querySelector('.bubble');
+      loadingBubble.innerHTML =
+  `<img src="https://cdn.prod.website-files.com/67af0a7f5730375704f96216/682588f940a6776a7f6c138a_boywalkingg.gif" style="height:120px;margin-right:6px;vertical-align:middle;" alt="loading">` +
+  `<span>${t('pleaseWait')}</span>`;
+
+      lastGeneratedResult = loadingMsg;
+      
+
+      try {
+        let result = '';
+        const generated = await callDeepSeek(fullPrompt, (chunk) => {
+            // Update your UI here, e.g., append to a div or textarea
+            result += chunk;
+            loadingBubble.innerHTML = marked.parse(result);
+        }).then((completeContent) => {
+        		
+            return completeContent;
+        }).catch((error) => {
+            console.error('Error:', error);
+            return error;
+        });
+        let finalMd = generated;
+        loadingBubble.innerHTML += `<img src="https://cdn.prod.website-files.com/67af0a7f5730375704f96216/682588f940a6776a7f6c138a_boywalkingg.gif" style="width:96px;height:96px;margin-right:6px;vertical-align:middle;" alt="loading">` +
+  `<span>${t('pleaseWaitVA')}</span>`;
+
+        const imageLinks = await generateImageSearchLinksViaLLM(fullPrompt);
+        if (imageLinks.length) {
+          finalMd += '\n\n---\n### Suggested Visual Assets\n' +
+                    imageLinks.map(u => `- <${u}>`).join('\n');
+        }
+
+
+
+        renderMarkdown(loadingBubble, finalMd);
+        fullMarkdown = finalMd;
+        const exportMsg = appendMessage('', 'bot');
+        exportMsg.querySelector('.bubble').innerHTML = `<a id="exportbtn" href="#" class="btn-secondary w-inline-block" style="display: block;"><div class="flex-horizontal gap-column-6px"><div>${exportT[currentLang]}</div></div></a>`;
+        const exportBtn = document.getElementById('exportbtn');
+        exportBtn.addEventListener('click', function() {
+            const htmltext = marked.parse(fullMarkdown);
+            if (htmltext) {
+                const docxBlob = htmlDocx.asBlob(htmltext);
+                saveAs(docxBlob, 'plan.docx');
+            } else {
+                alert('No plan to export.');
+            }
+        });
+        setTimeout(askIfRefineNeeded, 500);
+      } catch (err) {
+        console.error(err);
+        loadingBubble.textContent = '❌ Generation failed. Please try again.';
+      }
+    }
+
+    const refineState = {
+      choiceContainer: null,
+      optionsContainer: null,
+      promptMsg: null,
+      botPromptMsg: null,
+      userAnswerMsg: null,
+      gotItMsg: null,
+      lastSelectedBtn: null,
+    };
+
+    function generateImageLinksFromText(text, maxLinks = 6) {
+      const words = text
+        .replace(/[^\w\u4e00-\u9fa5\s]/g, '')  
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(w => w.length >= 3);         
+
+      const freqMap = new Map();
+      words.forEach(w => freqMap.set(w, (freqMap.get(w) || 0) + 1));
+
+      const topKeywords = [...freqMap.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, maxLinks)
+        .map(([w]) => w);
+
+      const links = topKeywords.map(w =>
+        `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(w)}`
+      );
+
+      return links;
+    }
+
+
+    function cleanupRefineUI() {
+      const s = refineState;
+      [s.choiceContainer, s.optionsContainer, s.promptMsg,
+      s.botPromptMsg, s.userAnswerMsg, s.gotItMsg].forEach(node => node?.remove());
+      Object.keys(s).forEach(k => (s[k] = null));    
+    }
+
+
+    function askIfRefineNeeded() {
+      cleanupRefineUI();                         
+
+      const s = refineState;
+      s.promptMsg = appendMessage(t('question5'), 'bot');
+
+
+      const container = document.createElement('div');
+      container.className = 'message bot flex';
+      container.style.gap = '12px';
+      s.choiceContainer = container;
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = '🤖';
+
+      const btnGroup = document.createElement('div');
+      btnGroup.style.display = 'flex';
+      btnGroup.style.gap = '12px';
+      btnGroup.style.marginLeft = '44px';
+    }
+
+    function askIfRefineNeeded() {
+
+      cleanupRefineUI();                     // ← helper defined earlier
+
+      const s = refineState;                 // shorthand
+
+
+      s.promptMsg = appendMessage(t('question5'), 'bot');
+
+
+      const container = document.createElement('div');
+      container.className = 'message bot flex';
+      container.style.gap = '12px';
+      s.choiceContainer = container;         // keep a reference for later clean‑up
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = '🤖';
+
+
+      const btnGroup = document.createElement('div');
+      Object.assign(btnGroup.style, {
+        display:       'flex',
+        gap:           '12px',
+        marginLeft:    '44px',   // indented under the avatar
+      });
+
+  
+      ['yes', 'no'].forEach(key => {
+        const btn = createChoiceBtn(t(key));   // small helper, see below
+
+        btn.onclick = () => {
+          // 5a)  Highlight the button the user picked 
+          updateSelection(btn);                // toggles CSS fill
+
+          //5b)  Remove any previous user answer bubble & write a new one */
+          s.userAnswerMsg?.remove();
+          s.userAnswerMsg = appendMessage(
+            key === 'yes' ? t('pleaseRefine') : t('noThanks'),
+            'user'
+          );
+
+          // 5c  If they chose "Yes", show the checkbox list 
+          if (key === 'yes') {
+            s.gotItMsg?.remove();              // in case user switched from "No"
+            s.optionsContainer?.remove();
+            s.optionsContainer = askRefineSections();   // creates the list
+          } else {
+            // 5d)  If "No", hide the options list (if any) and show final message */
+            s.optionsContainer?.remove();
+            s.botPromptMsg?.remove();
+            s.botPromptMsg   = null;
+            s.optionsContainer = null;      
+            s.gotItMsg?.remove();
+            s.gotItMsg = appendMessage(t('done'), 'bot');
+          }
+        };
+
+        btnGroup.appendChild(btn);
+      });
+
+
+      container.append(avatar, btnGroup);
+      chat.appendChild(container);
+      chat.scrollTop = chat.scrollHeight;
+
+
+      function createChoiceBtn(text) {
+        const btn = document.createElement('button');
+        Object.assign(btn.style, {
+          padding:    '8px 14px',
+          borderRadius:'6px',
+          background: 'white',
+          color:      'black',
+          border:     '1px solid #ccc',
+          cursor:     'pointer',
+          transition: '0.2s',
+        });
+        btn.textContent = text;
+        return btn;
+      }
+
+
+      function updateSelection(btn) {
+        if (s.lastSelectedBtn) {
+          s.lastSelectedBtn.style.background = 'white';
+          s.lastSelectedBtn.style.color      = 'black';
+        }
+        btn.style.background = '#10a37f';
+        btn.style.color      = 'white';
+        s.lastSelectedBtn    = btn;
+      }
+    }
+
+    function refreshStage0UI() {
+      const promptBubble = document.querySelector('[data-stage-index="0"] .bubble');
+      if (promptBubble) promptBubble.textContent = t('question1');
+
+      document.querySelectorAll('button[data-opt-key]').forEach(btn => {
+        btn.textContent = trType(btn.dataset.optKey);
+      });
+    }
+
+
+    function renderMarkdown(bubble, md) {
+      md = md.trim().replace(/^```(markdown)?\n?/i, '').replace(/```$/, '');
+      md = md
+        .replace(/" | "/g, '"')
+        .replace(/' | '/g, "'")
+        .replace(/【/g, '[').replace(/】/g, ']')
+        .replace(/＊/g, '*')
+        .replace(/^[\s\t]*[•▪◦‣]\s+/gm, '* ')
+        .replace(/^[\s\t]*·\s+/gm, '* ')
+        .replace(
+          /(^|\n)(\s*[*-]\s+)(Slide|Round|Scenario|Step|Phase|Station)\s+([\dA-Za-z]+:)/g,
+          (_, brk, bullet, kw, rest) => `${brk}${bullet}**${kw} ${rest}**`
+        )
+        .replace(
+          /(^|\n)(\s{4,}[*-]\s+)([A-Za-z\u4e00-\u9fa5][^:\n]{1,40}?):/g,
+          (_, brk, bullet, heading) => `${brk}${bullet}**${heading}:**`
+        );
+              
+
+      bubble.innerHTML = DOMPurify.sanitize(marked.parse(md));
+
+      const openInNewTab = true;   
+
+      bubble.querySelectorAll('a').forEach(a => {
+        if (openInNewTab) {
+          a.target = '_blank';             
+          a.rel = 'noopener noreferrer';      
+        } else {
+          a.removeAttribute('target');     
+          a.rel = 'noopener';             
+        }
+      });
+
+    }
+
+    function handleChooseType(btn, optConst) {
+      const stageKey  = 'type';       // first question key
+      const oldChoice = answers[stageKey];
+      const newLabel  = trType(optConst);
+
+
+      if (oldChoice && oldChoice !== optConst) {
+        const ok = confirm(`${t('replaceConfirm', { filename: oldChoice })}\n→ ${newLabel}`);
+        if (!ok) return;
+      }
+
+
+      document.querySelectorAll('button[data-opt-key]').forEach(b => {
+        b.style.background = 'white';
+        b.style.color      = 'black';
+      });
+      btn.style.background = '#10a37f';
+      btn.style.color      = 'white';
+
+
+      answers[stageKey] = optConst;      
+
+      const oldBubble = document.querySelector('.message.user[data-stage-index="0"]');
+      if (oldBubble) oldBubble.remove();
+
+
+      appendMessage(newLabel, 'user', 0);
+
+
+      for (let i = 1; i < stages.length; i++) delete answers[stages[i].key];
+      const messages = Array.from(chat.children);
+      messages.forEach(el => {
+        const idx = Number(el.dataset?.stageIndex);
+        if (!isNaN(idx) && idx > 0) el.remove();
+      });
+
+
+      currentStage = 1;
+      showStage();
+    }
+
+
+		let askcount = 0;
+    function askRefineSections() {
+      const type   = answers['type'];
+      const fields = (templateSections[type] || {})[currentLang] ||
+                    templateSections[type].eng;
+      if (!fields?.length) return;
+
+      const s = refineState;
+      s.botPromptMsg = appendMessage(t('refineWhich'), 'bot');
+
+
+      const wrap = document.createElement('div');
+      wrap.className = 'message bot';
+      wrap.style.flexDirection = 'column';
+      wrap.style.marginLeft = '44px';
+      wrap.style.gap = '8px';
+      s.optionsContainer = wrap;
+
+      const cbGroup = document.createElement('div');
+      Object.assign(cbGroup.style, {
+        display: 'flex', flexDirection: 'column',
+        gap: '6px', marginLeft: '44px'
+      });
+
+      const selected = new Set();
+      fields.forEach(f => {
+        const lab = document.createElement('label');
+        lab.style.display = 'flex';
+        lab.style.alignItems = 'center'; lab.style.gap = '6px';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.onchange = () => cb.checked ? selected.add(f) : selected.delete(f);
+
+        const span = document.createElement('span');
+        span.textContent = f;
+
+        lab.append(cb, span);
+        cbGroup.appendChild(lab);
+      });
+
+ 
+      const okBtn = document.createElement('button');
+      okBtn.textContent = t('regenerateBtn');
+      Object.assign(okBtn.style, {
+        alignSelf: 'flex-start', marginLeft: '44px',
+        padding: '8px 14px', borderRadius: '6px',
+        background: '#10a37f', color: 'white',
+        border: 'none', cursor: 'pointer'
+      });
+
+      okBtn.onclick = async () => {
+        if (!selected.size) {
+          alert(t('atLeastOnePart'));
+          return;
+        }
+
+
+        const partList = [...selected];
+        appendMessage(
+          `${t('pleaseRefine')}\n- ${partList.join('\n- ')}`,
+          'user'
+        );
+
+
+        const loadingMsg    = appendMessage('⏳ Regenerating…', 'bot');
+        const loadingBubble = loadingMsg.querySelector('.bubble');
+        loadingBubble.innerHTML =
+  `<img src="https://cdn.prod.website-files.com/67af0a7f5730375704f96216/682588f940a6776a7f6c138a_boywalkingg.gif" style="width:48px;height:48px;margin-right:6px;vertical-align:middle;" alt="loading">` +
+  `<span>${t('pleaseWait')}</span>`;
+
+        const prompt = `
+        You are revising a teacher document.
+
+        ### Previous draft (markdown)
+        \`\`\`
+        ${fullMarkdown}
+        \`\`\`
+
+        ### Task
+        Rewrite **only** the following section(s) with richer detail, leaving everything else unchanged:
+
+        ${partList.map(p => '- ' + p).join('\n')}
+
+        Return **only those rewritten sections** in markdown, starting with their original headings.  
+        **Do not include triple backticks (\`\`\`) or any code blocks in your response.**
+        `;
+
+
+        try {
+          const refined = await callDeepSeek(prompt);
+          renderMarkdown(loadingBubble, refined); 
+          //loadingBubble.innerHTML = marked.parse(refined);
+          fullMarkdown = mergeSections(fullMarkdown, refined);
+          const exportMsg = appendMessage('', 'bot');
+          exportMsg.querySelector('.bubble').innerHTML = `<a id="exportbtn${askcount}" href="#" class="btn-secondary w-inline-block" style="display: block;"><div class="flex-horizontal gap-column-6px"><div>${exportT[currentLang]}</div></div></a>`;
+          const exportBtn = document.getElementById(`exportbtn${askcount}`);
+          exportBtn.addEventListener('click', function() {
+            const htmltext = loadingBubble.innerHTML;
+            if (htmltext) {
+              const docxBlob = htmlDocx.asBlob(htmltext);
+              saveAs(docxBlob, 'plan.docx');
+            } else {
+              alert('No plan to export.');
+            }
+          });
+          askIfRefineNeeded();
+        } catch (e) {
+          console.error(e);
+          loadingBubble.textContent = t('generationFailed');
+        }
+      };
+      askcount++;
+
+      wrap.append(cbGroup, okBtn);
+      chat.appendChild(wrap);
+      chat.scrollTop = chat.scrollHeight;
+      return wrap;
+    }
+
+
+
+
+    async function extractAndStore(fileRecord, file) {
+      fileRecord.text = '⌛ extracting…';
+      const extractionId = Symbol(`extraction-${file.name}`); // Unique ID for this operation
+
+      pendingExtractions.add(extractionId); // Mark as pending
+
+      try {
+        let accumulatedText = '';
+        let hasReceivedText = false;
+
+        // extractTextFromFile is the async generator from your Canvas
+        for await (const chunk of extractTextFromFile(file, {
+          /* tesseractLogger: (m) => console.log(`Tesseract Progress (${file.name}): ${m.status} - ${m.progress}`) */
+        })) {
+          if (chunk.startsWith('⚠️') || chunk.startsWith('ℹ️')) {
+            // Handle warnings or info messages, perhaps log them or display them differently
+            console.warn(`Extraction info/warning for ${file.name}: ${chunk.trim()}`);
+            // Optionally append to a separate log in fileRecord or display to user
+            // For now, we'll append it to the main text but you might want to separate it
+            accumulatedText += chunk;
+          } else {
+            accumulatedText += chunk;
+            hasReceivedText = true;
+          }
+          // Update UI progressively if desired, e.g., by setting fileRecord.text here
+          // For simplicity in this example, we'll update at the end,
+          // but for a live UI, you'd update it inside the loop.
+          // fileRecord.text = accumulatedText; // <-- Uncomment for progressive UI update
+        }
+
+        if (accumulatedText.trim() === '' && !hasReceivedText) {
+          // If no actual text content was yielded, but also no specific error messages from the stream itself
+          fileRecord.text = '(empty or no extractable text)';
+        } else if (accumulatedText.startsWith('⌛ extracting…') && accumulatedText.length > '⌛ extracting…'.length) {
+          // If we only got warnings/info messages appended to the initial status
+          fileRecord.text = accumulatedText.substring('⌛ extracting…'.length).trim();
+          if (fileRecord.text === '') fileRecord.text = '(extraction yielded warnings/info but no content)';
+        }
+        else {
+          fileRecord.text = accumulatedText.trim();
+        }
+
+        if (fileRecord.text === '⌛ extracting…') { // If it was never updated beyond initial
+            fileRecord.text = '(empty or no extractable text found)';
+        }
+
+
+      } catch (err) {
+        console.error('Extraction error in extractAndStore for file:', file.name, '→', err);
+        fileRecord.text = `❌ Failed: ${err.message || String(err)}`;
+      } finally {
+        pendingExtractions.delete(extractionId); // Clean up
+        // Final check if text is still the loading message
+        if (fileRecord.text === '⌛ extracting…') {
+            fileRecord.text = `❌ Extraction did not complete or yield text for ${file.name}.`;
+        }else{
+          console.log(fileRecord.text);
+        }
+      }
+    }
+
+    function makeInput(placeholder) {
+      const input = document.createElement('input');
+      Object.assign(input.style, {
+        width: '100%',
+        padding: '8px',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        fontSize: '14px'
+      });
+      input.placeholder = placeholder;
+      return input;
+    }
+
+    function handleUserInput() {
+      const stageKey = stages[currentStage]?.key;
+      const value = input.value.trim();
+      let advanced = false;
+
+      if (stageKey === 'have') {
+        const uploadedFiles = document.getElementById('user-upload').files;
+        const hasFiles = uploadedFiles.length > 0;
+        const hasText = value.length > 0;
+        const selectedFile = window.selectedDriveFile;
+
+        if (!hasFiles && !hasText && !selectedFile) {
+          alert(t('pleaseFill'));
+          return;
+        }
+
+        if (!answers[stageKey]) answers[stageKey] = [];
+
+        if (hasFiles) {
+          Array.from(uploadedFiles).forEach(file => {
+            const fileRecord = {
+              id: crypto.randomUUID(),
+              name: file.name,
+              note: '',
+              text: ''
+            };
+            answers[stageKey].push(fileRecord);
+            extractAndStore(fileRecord, file);
+          });
+        }
+
+        if (selectedFile) {
+          answers[stageKey].push({
+            id: selectedFile.fileId,
+            name: selectedFile.title,
+            note: '',
+            text: '(Database file)'
+          });
+        }
+
+        if (hasText) {
+          answers[stageKey].push({ description: value });
+        }
+
+        appendMessage(
+          [
+            ...(hasFiles ? Array.from(uploadedFiles).map(f => `📎 ${f.name}`) : []),
+            ...(selectedFile ? [`📚 ${selectedFile.title}`] : []),
+            ...(hasText ? [`📝 ${value}`] : [])
+          ].join('\n'),
+          'user',
+          currentStage
+        );
+
+        // Hide stage-3 container after file upload
+        document.getElementById('stage-3').style.display = 'none';
+
+        input.value = '';
+        advanced = true;
+      } else if (value) {
+        answers[stageKey] = value;
+        appendMessage(value, 'user', currentStage);
+        input.value = '';
+        advanced = true;
+      }
+
+      if (advanced) {
+        currentStage++;
+        if (currentStage < stages.length) {
+          if (stages[currentStage].key === 'more') {
+            renderMoreForm();
+          } else {
+            showStage();
+          }
+        } else {
+          generateContent();
+        }
+      }
+    }
+
+    input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault(); 
+      handleUserInput();
+    }
+  });
+
+
+
+
+    /**
+     * Extracts text from a DOCX file and streams it paragraph by paragraph.
+     * @param {File} file - The DOCX file object.
+     * @async
+     * @generator
+     * @yields {string} Chunks of text (paragraphs) from the DOCX file.
+     */
+    async function* extractTextFromDocx(file) {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const { value } = await mammoth.extractRawText({ arrayBuffer });
+        // Split the extracted text by paragraphs (two or more newlines, possibly with whitespace)
+        // or by single newlines if paragraphs are not distinct.
+        const paragraphs = value.split(/\n\s*\n/); // More robust paragraph splitting
+        for (const paragraph of paragraphs) {
+          const trimmedParagraph = paragraph.trim();
+          if (trimmedParagraph) {
+            yield trimmedParagraph + '\n'; // Add a newline for separation
+          }
+        }
+      } catch (error) {
+        console.error("Error extracting text from DOCX:", error);
+        yield `⚠️ Error extracting text from ${file.name}: ${error.message}\n`;
+      }
+    }
+
+    /**
+     * Extracts text from an image file using OCR and streams it line by line.
+     * @param {File} file - The image file object (e.g., PNG, JPG).
+     * @param {object} [options] - Optional parameters.
+     * @param {function} [options.logger] - Logger function for Tesseract progress.
+     * @async
+     * @generator
+     * @yields {string} Chunks of text (lines) from the image file.
+     */
+    async function* extractTextFromImage(file, options = {}) {
+      try {
+        const tesseractOptions = { logger: options.logger || (m => console.log(`Tesseract (${file.name}): ${m.status} (${(m.progress * 100).toFixed(2)}%)`)) };
+        const { data: { text } } = await Tesseract.recognize(
+          file,
+          'chi_sim+chi_tra+eng', // Standard languages from original code
+          tesseractOptions
+        );
+
+        const lines = text.split('\n');
+        for (const line of lines) {
+          // Optionally trim, but for OCR, preserving original spacing might be important sometimes.
+          // Here, we yield the line as is, consumers can trim if needed.
+          yield line + '\n';
+        }
+      } catch (error) {
+        console.error("Error extracting text from image:", error);
+        yield `⚠️ Error extracting text from ${file.name} (OCR): ${error.message}\n`;
+      }
+    }
+
+    /**
+     * Extracts text from a PDF file and streams it page by page.
+     * Falls back to OCR if text layer extraction fails or yields no text.
+     * @param {File} file - The PDF file object.
+     * @param {object} [options] - Optional parameters.
+     * @param {function} [options.tesseractLogger] - Logger function for Tesseract progress during OCR.
+     * @async
+     * @generator
+     * @yields {string} Chunks of text from the PDF file.
+     */
+    async function* extractTextFromPDF(file, options = {}) {
+      let arrayBuffer;
+      try {
+        arrayBuffer = await file.arrayBuffer();
+      } catch (readError) {
+        console.error(`Error reading file ${file.name}:`, readError);
+        yield `⚠️ Error reading file ${file.name}: ${readError.message}\n`;
+        return;
+      }
+
+      let textLayerExtractedSuccessfully = false;
+      let anyTextYieldedFromLayer = false;
+
+      // Attempt 1: Text Layer Extraction
+      try {
+        // Use slice(0) to ensure the buffer can be potentially reused if pdfjsLib modifies it (though it typically shouldn't)
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
+        if (pdf.numPages === 0) {
+            yield `⚠️ PDF file ${file.name} has no pages.\n`;
+        }
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          if (content.items.length > 0) {
+            const pageText = content.items.map(item => item.str).join(' ');
+            const trimmedPageText = pageText.trim();
+            if (trimmedPageText) {
+              yield trimmedPageText + '\n';
+              anyTextYieldedFromLayer = true;
+            }
+          }
+        }
+        textLayerExtractedSuccessfully = true; // Mark success if loop completes without error
+      } catch (err) {
+        console.warn(`Text layer extraction failed for ${file.name}: ${err.message}. Will attempt OCR.`);
+        // Error occurred, so text layer extraction was not successful. OCR fallback will be triggered.
+        textLayerExtractedSuccessfully = false;
+      }
+
+      // Attempt 2: OCR Fallback (if text layer extraction failed or yielded no text)
+      if (!textLayerExtractedSuccessfully || !anyTextYieldedFromLayer) {
+        if (textLayerExtractedSuccessfully && !anyTextYieldedFromLayer) {
+            console.warn(`No text found in text layer of ${file.name}. Attempting OCR.`);
+        }
+
+        let anyTextYieldedFromOcr = false;
+        try {
+          const pdfForOcr = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
+          // Limit OCR to the first 5 pages as in the original code, to avoid long processing times.
+          const numPagesToOcr = Math.min(pdfForOcr.numPages, 5);
+
+          if (pdfForOcr.numPages > 0 && numPagesToOcr === 0) {
+            // This case should ideally not be hit if numPages > 0, but as a safeguard.
+            yield `⚠️ PDF ${file.name} has pages, but OCR was configured to process 0 pages.\n`;
+          } else if (pdfForOcr.numPages === 0 && numPagesToOcr === 0) {
+            // This was already handled by the text layer check, but good to be explicit if we somehow reach here.
+            // yield `⚠️ PDF file ${file.name} has no pages for OCR.\n`; (already covered)
+          }
+
+
+          for (let i = 1; i <= numPagesToOcr; i++) {
+            const page = await pdfForOcr.getPage(i);
+            const viewport = page.getViewport({ scale: 2 }); // Scale 2 for better OCR accuracy
+            
+            // Create canvas dynamically. Ensure this runs in a browser-like environment.
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            await page.render({ canvasContext: context, viewport }).promise;
+            
+            const tesseractOptions = { logger: options.tesseractLogger || (m => console.log(`Tesseract (PDF Page ${i}, ${file.name}): ${m.status} (${(m.progress * 100).toFixed(2)}%)`)) };
+            const { data } = await Tesseract.recognize(canvas, 'chi_sim+chi_tra+eng', tesseractOptions);
+            
+            // Clean up canvas to free memory
+            canvas.width = 0;
+            canvas.height = 0;
+
+            const ocrPageText = data.text ? data.text.trim() : "";
+            if (ocrPageText) {
+              yield ocrPageText + '\n';
+              anyTextYieldedFromOcr = true;
+            }
+          }
+
+          if (numPagesToOcr > 0 && !anyTextYieldedFromOcr) {
+            yield `⚠️ OCR produced no text from the first ${numPagesToOcr} page(s) of ${file.name}.\n`;
+          }
+          if (pdfForOcr.numPages > numPagesToOcr) {
+            yield `ℹ️ OCR for ${file.name} was limited to the first ${numPagesToOcr} of ${pdfForOcr.numPages} pages.\n`;
+          }
+
+        } catch (ocrErr) {
+          console.error(`OCR process failed for ${file.name}:`, ocrErr);
+          yield `⚠️ OCR process for ${file.name} failed: ${ocrErr.message}\n`;
+        }
+      }
+    }
+
+    /**
+     * Main function to extract text from a file, routing to the appropriate extractor.
+     * Streams text content.
+     * @param {File} file - The file object.
+     * @param {object} [options] - Optional parameters for extractors (e.g., loggers).
+     * @async
+     * @generator
+     * @yields {string} Chunks of text from the file.
+     */
+    async function* extractTextFromFile(file, options = {}) {
+      if (!file || !file.name) {
+        yield `⚠️ Invalid file object provided.\n`;
+        return;
+      }
+      const name = file.name.toLowerCase();
+
+      if (name.endsWith('.pdf')) {
+        yield* extractTextFromPDF(file, options);
+      } else if (name.endsWith('.docx')) {
+        yield* extractTextFromDocx(file); // Options not currently used by docx extractor
+      } else if (/\.(png|jpg|jpeg)$/i.test(name)) {
+        yield* extractTextFromImage(file, { logger: options.tesseractLogger });
+      } else {
+        yield `⚠️ Unsupported file type: ${file.name}\n`;
+      }
+    }
+
+    function mergeSections(oldDoc, patchDoc) {
+
+      const blocks = patchDoc.split(/^###\s+/m).filter(b => b.trim());
+
+      blocks.forEach(block => {
+        const heading = block.split('\n')[0].trim();
+        const body    = block.replace(heading, '').trimStart();
+        const hEsc    = escapeRegExp(heading);
+        const re = new RegExp(`###\\s+${hEsc}[\\s\\S]*?(?=\\n###|$)`, 'm');
+
+        if (re.test(oldDoc)) {
+          oldDoc = oldDoc.replace(re, `### ${heading}\n${body}`);
+        } else {
+          oldDoc += `\n\n### ${heading}\n${body}`;
+        }
+      });
+      return oldDoc;
+    }
+
+
+
+      // hidden input reused for every replacement
+    const replaceInput = document.createElement('input');
+    replaceInput.type = 'file';
+    replaceInput.style.display = 'none';
+    document.body.appendChild(replaceInput);
+
+    function triggerReplace(fileRecord) {
+      replaceInput.onchange = () => {
+        const newFile = replaceInput.files[0];
+        if (!newFile) return;                       // user hit cancel
+
+        // wipe old text and restart extraction
+        fileRecord.name = newFile.name;
+        extractAndStore(fileRecord, newFile);
+
+        // update link text 
+        this.textContent = `📎 ${newFile.name}`;
+
+        // remove ALL chat messages that come after Q3 
+        pruneMessagesAfterStage(2);                
+
+        // delete answers for stages 3‑4‑5 so user must re‑fill 
+        ['more', 'refine'].forEach(k => delete answers[k]);
+
+        currentStage = 3;                           // back to Question 4
+        renderMoreForm();                           // re‑show Q4 form
+      };
+      replaceInput.value = '';                      // reset for next use
+      replaceInput.click();
+    }
+
+    function pruneMessagesAfterStage(stageIdx) {
+      const msgs = Array.from(chat.children);
+      for (let i = msgs.length - 1; i >= 0; i--) {
+        const idx = Number(msgs[i].dataset.stageIndex);
+        if (!isNaN(idx) && idx > stageIdx) msgs[i].remove();
+      }
+    }
+
+    updateUIText();
+    showStage();
+
+    function showUploadSection() {
+      // Update button states
+      document.querySelectorAll('.choice-btn').forEach(btn => {
+        btn.classList.remove('selected');
+        if (btn.textContent === t('uploadFiles')) {
+          btn.classList.add('selected');
+        }
+      });
+
+      // Show/hide sections
+      document.getElementById('upload-section').style.display = 'block';
+      document.getElementById('db-browser-container').style.display = 'none';
+    }
+
+    function showDatabaseSection() {
+      // Update button states
+      document.querySelectorAll('.choice-btn').forEach(btn => {
+        btn.classList.remove('selected');
+        if (btn.textContent === t('browseDatabase')) {
+          btn.classList.add('selected');
+        }
+      });
+
+      // Show/hide sections
+      document.getElementById('upload-section').style.display = 'none';
+      document.getElementById('db-browser-container').style.display = 'block';
+      
+      // Initialize the database browser if not already done
+      renderGroupedList(books);
+    }
+
+    document.getElementById('user-upload').addEventListener('change', function(e) {
+      const files = e.target.files;
+      if (files.length > 0) {
+        handleDroppedFiles(files);
+        
+        // Create message for uploaded files
+        const fileNames = Array.from(files).map(f => `📎 ${f.name}`).join('\n');
+        appendMessage(fileNames, 'user', currentStage);
+        
+        // Hide upload section and stage-3 container
+        document.getElementById('upload-section').style.display = 'none';
+        document.getElementById('stage-3').style.display = 'none';
+        
+        // Move to next stage
+        currentStage++;
+        if (stages[currentStage].key === 'more') {
+          renderMoreForm();
+        } else {
+          showStage();
+        }
+      }
+    });
+
+  </script>
+</body>
+</html>

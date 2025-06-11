@@ -214,15 +214,16 @@
       margin: 0 2px;
     }
     button.selected {
-      background: #10a37f !important; /* green */
-      border-color: #0d8c6d;
+      background: #10a37f !important;
+      border-color: #10a37f !important;
       color: white !important;
     }
 
      .book-item {
-    padding: 6px 10px;
+    padding: 8px 10px;
     border-bottom: 1px solid #f0f0f0;
     cursor: pointer;
+    transition: background-color 0.2s;
   }
   .book-item:hover {
     background: #f7f7f7;
@@ -234,7 +235,59 @@
     margin: 10px 0 4px;
     font-weight: bold;
     background: #f0f0f0;
-    padding: 4px 6px;
+    padding: 8px 10px;
+    border-radius: 4px;
+  }
+  .group-title:hover {
+    background: #e5e5e5;
+  }
+  
+  .region-title {
+    background: #e0e0e0;
+    padding: 12px 16px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .region-title:hover {
+    background: #d5d5d5;
+  }
+  
+  .region-title::after {
+    content: '▼';
+    font-size: 12px;
+    transition: transform 0.2s;
+  }
+  
+  .region-title.collapsed::after {
+    transform: rotate(-90deg);
+  }
+  
+  .region-content {
+    margin-left: 16px;
+    border-left: 2px solid #e0e0e0;
+    padding-left: 8px;
+  }
+  
+  #filter-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    font-size: 14px;
+  }
+  
+  #filter-input:focus {
+    outline: none;
+    border-color: #10a37f;
+    box-shadow: 0 0 0 2px rgba(16, 163, 127, 0.1);
   }
 
   .choice-btn {
@@ -253,9 +306,9 @@
   }
 
   .choice-btn.selected {
-    background: #10a37f !important;
-    color: white !important;
-    border-color: #0d8c6d;
+    background: #10a37f;
+    color: white;
+    border-color: #10a37f;
   }
 
   #stage-3 {
@@ -310,16 +363,92 @@
     background: #0d8c6d !important;
   }
 
+  .language-select {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    padding: 8px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: white;
+    font-size: 14px;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .language-select select {
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    cursor: pointer;
+    outline: none;
+    font-family: 'Inter', sans-serif;
+  }
+
   </style>
+
+  <script>
+    // 创建一个全局命名空间
+    window.APP = {
+      currentLang: 'eng',
+      worker: null,
+      pdfDoc: null,
+      currentPage: 1,
+      selectedBooks: [],
+      uploadedFiles: new Map(),
+      fileNotes: new Map()
+    };
+    
+    function switchLanguage(lang) {
+      // 更新标题
+      const title = document.querySelector('h2.centered-heading');
+      if (title) {
+        title.textContent = translations[lang].title;
+      }
+      
+      // 更新其他需要翻译的元素
+      document.getElementById('question3-title').textContent = translations[lang].question3;
+      document.getElementById('db-browser-label').textContent = translations[lang].browseFiles;
+      
+      // 更新按钮文本
+      const uploadBtn = document.querySelector('.choice-btn:first-child');
+      const browseBtn = document.querySelector('.choice-btn:last-child');
+      if (uploadBtn) uploadBtn.textContent = translations[lang].uploadFiles;
+      if (browseBtn) browseBtn.textContent = translations[lang].browseDatabase;
+      
+      // 保存当前语言设置
+      window.APP.currentLang = lang;
+    }
+
+    // 设置初始语言
+    document.addEventListener('DOMContentLoaded', () => {
+      switchLanguage('eng');
+    });
+  </script>
 </head>
-<select id="ocr-lang" style="margin-left: 12px; font-size: 14px; padding: 4px 8px; border-radius: 6px;">
-  <option value="eng">English</option>
-  <option value="chi_sim">简体中文</option>
-  <option value="chi_tra">繁體中文</option>
-</select>
+
 <body>
+  <select id="ocr-lang" style="margin-left: 12px; font-size: 14px; padding: 4px 8px; border-radius: 6px;">
+    <option value="eng">English</option>
+    <option value="chi_sim">简体中文</option>
+    <option value="chi_tra">繁體中文</option>
+  </select>
   <div id="chat">
-    <h2 class="centered-heading">👋 What do you wanna generate?</h2>
+    <h2 class="centered-heading" id="mainHeading">👋 What do you wanna generate?</h2>
+    <script>
+      const headingTranslations = {
+        'en': '👋 What do you wanna generate?',
+        'zh': '👋 你想要生成什么？',
+        'zh-Hant': '👋 你想要生成什麼？'
+      };
+
+      function updateHeading(lang) {
+        const heading = document.getElementById('mainHeading');
+        if (heading) {
+          heading.textContent = headingTranslations[lang] || headingTranslations['en'];
+        }
+      }
+    </script>
+
   </div>
   <div id="input-area">
     <div id="file-preview" class="input-top-files"></div>
@@ -361,7 +490,6 @@
   </div>
 
   <script>
-    // First, let's fix the translations object
     const translations = {
       eng: {
         title: "👋 What do you wanna generate?",
@@ -374,11 +502,13 @@
         morePrompt: "Question 4/5: ✏️  Add more details: Comment, Grade, Number of Students, Duration, Length",
         refineWhich: "🧩 Which part(s) would you like to be more specific?",
         done: "🎉 Got it! Let me know if you need anything else.",
+
         question1: "Question 1/5: 👇 Please select a type:",
         question2: "Question 2/5: 💭 Why do you need this?",
         question3: "Question 3/5: 📎 What do you have on hand?",
-        question4: "Question 4/5: ✏️ Add more details",
+        question4: "Question 4/5: ✏️  Add more details: Comment, Grade, Number of Students, Duration, Length",
         question5: "Question 5/5: 🔍 Do you want to make any part more specific?",
+        
         pleaseFill: "Please fill in at least one field.",
         noExtractedText: "No extracted text found – please upload a PDF / Word / image first.",
         noTemplateFound: "⚠️ No corresponding template was found to generate content!",
@@ -389,6 +519,7 @@
         replacedMsg: "🔄 \"{filename}\" replaced.",
         replaceConfirm: "Replace previously uploaded \"{filename}\"?",
         infoCollected: "✅ All info collected. Ready to generate!",
+
         type_lesson: "Lesson Plan",
         type_materials: "Class Materials (PPT/pictures)",
         type_report: "Report Card",
@@ -396,6 +527,7 @@
         type_bank: "Subject Question Bank / Assignment",
         type_activity: "Activity Plan / Extracurricular",
         type_admin: "Admin Helper (PPT / Word)",
+
         ph_comment: "Comment (optional)",
         ph_grade: "Grade (optional)",
         ph_students: "Number of Students",
@@ -404,12 +536,14 @@
         pleaseWait: "Please wait for 1 minute…",
         ph_input: "Type something...",
         details: "Details",
+
         label_comment: "Comment",
         label_grade: "Grade",
         label_students: "Number of Students",
         label_duration: "Duration",
         label_length: "Length",
         na: "N/A",
+
         browseFiles: "📁 Browse files from database:",
         uploadFiles: "Upload Files",
         browseDatabase: "Browse Database",
@@ -417,13 +551,60 @@
       }
     };
 
-    // Add Chinese translations
+    
     translations.chi_sim = Object.assign({}, translations.eng, {
       title: "👋 你想生成什么？",
       next: "下一步",
       upload: "上传文件",
       yes: "是",
       no: "否",
+      saveBtn: "保存",
+      regenerateBtn: "🔍 重新生成并丰富细节",
+      morePrompt: "问题 4/5：✏️  请补充更多信息：注释、年级、学生人数、时长、长度",
+      refineWhich: "🧩 你想让哪些部分更具体？",
+      done: "🎉 明白了！如有其他需求请告诉我。",
+
+      question1: "问题 1/5：👇 请选择一个类型：",
+      question2: "问题 2/5：💭 你为什么需要这个？（例如：为二年级学生上的数学课，或是下周的家长会）",
+      question3: "问题 3/5：📎 你现在手上有什么资料？（你可以上传文件，仅限 PDF 或 Word 文档，或是简单描述一下）",
+      question4: "问题 4/5：✏️ 请补充更多信息：注释、年级、学生人数、时长、长度",
+      question5: "问题 5/5：🔍 是否希望某些部分更具体？",
+
+      pleaseFill: "请至少填写一个字段。",
+      noExtractedText: "未找到提取的文本 – 请上传 PDF / Word / 图片文件。",
+      noTemplateFound: "⚠️ 找不到对应的生成模板！",
+      atLeastOnePart: "请至少选择一个要细化的部分。",
+      generationFailed: "❌ 生成失败。请重试。",
+      pleaseRefine: "✅ 是的，请细化。",
+      noThanks: "❌ 不用了。",
+      replacedMsg: "🔄 已替换\"{filename}\"。",
+      replaceConfirm: "是否替换之前上传的\"{filename}\"？",
+      infoCollected: "✅ 所有信息已收集，准备生成！",
+
+      type_lesson: "课程教案",
+      type_materials: "课堂素材 (PPT/图片)",
+      type_report: "成绩单",
+      type_feedback: "作品反馈",
+      type_bank: "题库 / 作业",
+      type_activity: "活动方案",
+      type_admin: "行政文档 (PPT/Word)",
+
+      ph_comment : "注释（可选）",
+      ph_grade   : "年级（可选）",
+      ph_students: "学生人数",
+      ph_duration: "时长（例如 45 分钟）",
+      ph_length  : "长度（短 / 中 / 长）",
+      pleaseWait : "请等待 1 分钟…",
+      ph_input: "请输入...",
+      details: "细节",
+
+      label_comment: "备注",
+      label_grade: "年级",
+      label_students: "学生人数",
+      label_duration: "时长",
+      label_length: "长度",
+      na: "无",
+
       uploadFiles: "上传文件",
       browseDatabase: "浏览数据库",
       browseFiles: "📁 从数据库中选择文件：",
@@ -431,16 +612,64 @@
     });
 
     translations.chi_tra = Object.assign({}, translations.eng, {
-      title: "👋 你想要生成什麼？",
+      title: "👋 您想要產生什麼內容？",
       next: "下一步",
       upload: "上傳檔案",
       yes: "是",
       no: "否",
+      saveBtn: "儲存",
+      regenerateBtn: "🔍 重新產生並補充細節",
+      morePrompt: "問題 4/5：✏️ 請補充更多細節：備註、年級、學生人數、時長、長度",
+      refineWhich: "🧩 您希望針對哪些部分進行細化？",
+      done: "🎉 收到！若有其他需要，請隨時告訴我。",
+
+      question1: "問題 1/5：👇 請選擇類型：",
+      question2: "問題 2/5：💭 您為什麼需要這個？",
+      question3: "問題 3/5：📎 您目前有什麼資料？",
+      question4: "問題 4/5：✏️  請補充更多細節：備註、年級、學生人數、時長、長度",
+      question5: "問題 5/5：🔍 是否想針對某些部分進一步具體化？",
+
+      pleaseFill: "請至少填寫一個欄位。",
+      noExtractedText: "找不到提取的文字內容，請先上傳 PDF / Word / 圖片。",
+      noTemplateFound: "⚠️ 未找到對應的範本，無法產生內容！",
+      atLeastOnePart: "請至少選擇一個部分進行細化。",
+      generationFailed: "❌ 產生失敗，請再試一次。",
+      pleaseRefine: "✅ 好的，請細化。",
+      noThanks: "❌ 不用了，這樣就好。",
+      replacedMsg: "🔄 \"{filename}\" 已被替換。",
+      replaceConfirm: "是否要替換先前上傳的 \"{filename}\"？",
+      infoCollected: "✅ 所有資料已收集，準備開始產生內容！",
+
+      type_lesson: "教學計畫",
+      type_materials: "課堂資料（PPT/圖片）",
+      type_report: "成績單",
+      type_feedback: "學生作品回饋",
+      type_bank: "題庫 / 作業",
+      type_activity: "活動計畫 / 課外活動",
+      type_admin: "行政助手（PPT / Word）",
+
+      ph_comment: "備註（選填）",
+      ph_grade: "年級（選填）",
+      ph_students: "學生人數",
+      ph_duration: "時長（例如：45分鐘）",
+      ph_length: "長度（簡短 / 中等 / 較長）",
+      pleaseWait: "請稍候 1 分鐘…",
+      ph_input: "請輸入內容...",
+      details: "詳細內容",
+
+      label_comment: "備註",
+      label_grade: "年級",
+      label_students: "學生人數",
+      label_duration: "時長",
+      label_length: "長度",
+      na: "不適用",
+
+      browseFiles: "📁 從資料庫中瀏覽檔案：",
       uploadFiles: "上傳檔案",
-      browseDatabase: "瀏覽數據庫",
-      browseFiles: "📁 從數據庫中選擇文件：",
-      confirmSelection: "確認選擇"
+      browseDatabase: "瀏覽資料庫",
+      confirmSelection: "確認選取"
     });
+
 
     const chat = document.getElementById('chat');
     const input = document.getElementById('user-input');
@@ -1013,6 +1242,9 @@
         container.className = 'message bot';
         container.dataset.stageIndex = currentStage;
         container.style.display = 'flex';
+        
+        // Store the current selection
+        const currentSelection = answers[stage.key];
 
         const avatar = document.createElement('div');
         avatar.className = 'avatar';
@@ -1035,11 +1267,16 @@
             padding: '10px 16px',
             border: '1px solid #ccc',
             borderRadius: '6px',
-            background: 'white',
+            background: optConst === currentSelection ? '#10a37f' : 'white',
+            color: optConst === currentSelection ? 'white' : 'black',
             cursor: 'pointer',
             fontFamily: 'Inter',
             transition: '0.2s'
           });
+          
+          if (optConst === currentSelection) {
+            btn.classList.add('selected');
+          }
 
           btn.onmouseover = () => {
             if (!btn.classList.contains('selected')) {
@@ -1216,15 +1453,18 @@
         answers['studentsGrade'] = `${students || 'N/A'} / ${grade || 'N/A'}`;
         
         appendMessage(t('infoCollected'), 'bot');
-        
+
+
         console.log('Moving to next stage after more form');
-        currentStage++;
-        if (currentStage < stages.length) {
-          showStage();
-        } else {
-          generateContent();
-        }
-      };
+        generateContent();
+      //   currentStage++;
+      //   if (currentStage < stages.length) {
+      //     showStage();
+      //   } else {
+      //     generateContent();
+      //   }
+      //
+       };
 
       form.appendChild(submitBtn);
       bubble.append(promptText, form);
@@ -1258,7 +1498,8 @@
     langSelector.addEventListener('change', () => {
       currentLang = langSelector.value;
       updateUIText(); 
-      refreshStage0UI();    
+      refreshStage0UI();
+      updateHeading(currentLang); 
     });
 
 
@@ -1417,34 +1658,59 @@
       const container = document.getElementById('item-list');
       container.innerHTML = '';
 
-      const groupMap = {};
-      bookList.forEach(book => {
-        const group = book.path || '未分类';
-        if (!groupMap[group]) groupMap[group] = [];
-        groupMap[group].push(book);
-      });
+      // First level: Regions
+      Object.entries(regions).forEach(([regionKey, regionData]) => {
+        // Create region header
+        const regionTitle = document.createElement('div');
+        regionTitle.className = 'region-title';
+        regionTitle.dataset.region = regionData.name;
+        regionTitle.textContent = `📚 ${regionData.name}`;
+        
+        // Create container for books in this region
+        const regionContent = document.createElement('div');
+        regionContent.className = 'region-content';
+        regionContent.style.display = 'none'; // Initially hidden
+        
+        // Toggle visibility on click
+        regionTitle.addEventListener('click', () => {
+          regionContent.style.display = regionContent.style.display === 'none' ? 'block' : 'none';
+          regionTitle.classList.toggle('collapsed');
+        });
 
-      const sortedGroupNames = Object.keys(groupMap).sort();
-      sortedGroupNames.forEach(group => {
-        const title = document.createElement('div');
-        title.className = 'group-title';
-        title.textContent = `📂 ${group}`;
-        container.appendChild(title);
+        container.appendChild(regionTitle);
+        container.appendChild(regionContent);
 
-        const sortedBooks = groupMap[group].sort((a, b) =>
-          parseGradeOrder(a.title) - parseGradeOrder(b.title) ||
-          a.title.localeCompare(b.title)
-        );
+        // Group books by path within each region
+        const groupMap = {};
+        regionData.books.forEach(book => {
+          const group = book.path || '香港教材类';
+          if (!groupMap[group]) groupMap[group] = [];
+          groupMap[group].push(book);
+        });
 
-        sortedBooks.forEach(book => {
-          const div = document.createElement('div');
-          div.className = 'book-item';
-          div.textContent = book.title;
-          const fileId = extractFileId(book.drive_url);
-          div.dataset.fileId = fileId;
+        // Sort and render groups
+        const sortedGroupNames = Object.keys(groupMap).sort();
+        sortedGroupNames.forEach(group => {
+          const title = document.createElement('div');
+          title.className = 'group-title';
+          title.textContent = `📂 ${group}`;
+          regionContent.appendChild(title);
 
-          div.addEventListener('click', () => onItemClick(div, fileId, book.title));
-          container.appendChild(div);
+          const sortedBooks = groupMap[group].sort((a, b) =>
+            parseGradeOrder(a.title) - parseGradeOrder(b.title) ||
+            a.title.localeCompare(b.title)
+          );
+
+          sortedBooks.forEach(book => {
+            const div = document.createElement('div');
+            div.className = 'book-item';
+            div.textContent = book.title;
+            const fileId = extractFileId(book.drive_url);
+            div.dataset.fileId = fileId;
+
+            div.addEventListener('click', () => onItemClick(div, fileId, book.title));
+            regionContent.appendChild(div);
+          });
         });
       });
     }
@@ -1456,7 +1722,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       updateUIText();
-      renderGroupedList(books);
+      renderGroupedList();
 
       document.querySelectorAll('input[placeholder]').forEach(inp => {
         switch (inp.placeholder) {
@@ -1472,10 +1738,35 @@
       if (filterInput) {
         filterInput.addEventListener('input', (e) => {
           const kw = e.target.value.trim().toLowerCase();
-          const filtered = books.filter(b =>
-            b.title.toLowerCase().includes(kw) || b.path.toLowerCase().includes(kw)
-          );
-          renderGroupedList(filtered);
+          
+          // Search through all books in all regions
+          Object.values(regions).forEach(region => {
+            const filtered = region.books.filter(book =>
+              book.title.toLowerCase().includes(kw) || 
+              (book.path && book.path.toLowerCase().includes(kw))
+            );
+            
+            // If there are matches in this region, show its content
+            const regionTitle = document.querySelector(`[data-region="${region.name}"]`);
+            const regionContent = regionTitle?.nextElementSibling;
+            if (regionTitle && regionContent) {
+              if (filtered.length > 0) {
+                regionContent.style.display = 'block';
+                regionTitle.classList.remove('collapsed');
+              } else {
+                regionContent.style.display = 'none';
+                regionTitle.classList.add('collapsed');
+              }
+            }
+            
+            // Show/hide individual books
+            document.querySelectorAll('.book-item').forEach(item => {
+              const matches = filtered.some(book => 
+                extractFileId(book.drive_url) === item.dataset.fileId
+              );
+              item.style.display = matches ? 'block' : 'none';
+            });
+          });
         });
       }
     });
@@ -1590,8 +1881,6 @@
           finalMd += '\n\n---\n### Suggested Visual Assets\n' +
                     imageLinks.map(u => `- <${u}>`).join('\n');
         }
-
-
 
         renderMarkdown(loadingBubble, finalMd);
         fullMarkdown = finalMd;
@@ -1751,10 +2040,12 @@
 
       function updateSelection(btn) {
         if (s.lastSelectedBtn) {
-          s.lastSelectedBtn.classList.remove('selected');
+          s.lastSelectedBtn.style.background = 'white';
+          s.lastSelectedBtn.style.color      = 'black';
         }
-        btn.classList.add('selected');
-        s.lastSelectedBtn = btn;
+        btn.style.background = '#10a37f';
+        btn.style.color      = 'white';
+        s.lastSelectedBtn    = btn;
       }
     }
 
@@ -1804,27 +2095,35 @@
     }
 
     function handleChooseType(btn, optConst) {
-      const stageKey = 'type';
+      const stageKey  = 'type';       // first question key
       const oldChoice = answers[stageKey];
-      const newLabel = trType(optConst);
+      const newLabel  = trType(optConst);
+
 
       if (oldChoice && oldChoice !== optConst) {
         const ok = confirm(`${t('replaceConfirm', { filename: oldChoice })}\n→ ${newLabel}`);
         if (!ok) return;
       }
 
-      // Remove selected class from all buttons and add it to the clicked one
+
       document.querySelectorAll('button[data-opt-key]').forEach(b => {
         b.classList.remove('selected');
+        b.style.background = 'white';
+        b.style.color = 'black';
       });
       btn.classList.add('selected');
+      btn.style.background = '#10a37f';
+      btn.style.color = 'white';
 
-      answers[stageKey] = optConst;
+
+      answers[stageKey] = optConst;      
 
       const oldBubble = document.querySelector('.message.user[data-stage-index="0"]');
       if (oldBubble) oldBubble.remove();
 
+
       appendMessage(newLabel, 'user', 0);
+
 
       for (let i = 1; i < stages.length; i++) delete answers[stages[i].key];
       const messages = Array.from(chat.children);
@@ -1832,6 +2131,7 @@
         const idx = Number(el.dataset?.stageIndex);
         if (!isNaN(idx) && idx > 0) el.remove();
       });
+
 
       currentStage = 1;
       showStage();
@@ -2234,22 +2534,20 @@
     }
 
     function showDatabaseSection() {
-      // Update button states
-      document.querySelectorAll('.choice-btn').forEach(btn => {
-        btn.classList.remove('selected');
-        if (btn.textContent === t('browseDatabase')) {
-          btn.classList.add('selected');
-        }
-      });
-
-      // Show/hide sections
+      // Hide upload section
       document.getElementById('upload-section').style.display = 'none';
-      document.getElementById('db-browser-container').style.display = 'block';
       
-      // Initialize the database browser if not already done
-      renderGroupedList(books);
+      // Show database browser
+      const dbBrowser = document.getElementById('db-browser-container');
+      dbBrowser.style.display = 'block';
+      
+      // Reset any previous selections
+      document.querySelectorAll('.book-item.selected').forEach(el => el.classList.remove('selected'));
+      document.getElementById('pdf-preview').style.display = 'none';
+      
+      // Initialize the list with all books
+      renderGroupedList();
     }
-
   </script>
 </body>
 </html>

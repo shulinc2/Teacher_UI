@@ -32,3 +32,4 @@ yarn-error.log*
 backend/token.json
 token.json
 credentials.json .DS_Store
+/backend/node_modules

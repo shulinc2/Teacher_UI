@@ -66,7 +66,7 @@
       transition: all 0.3s ease;
       font-size: 15px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      width: 290px;
+      width: 180px;
       text-align: center;
     }
     .mode-button:hover {
@@ -169,6 +169,23 @@
       align-items: center;
       width: 600px;
     }
+    .mode-button.selected {
+      background: #2196F3;
+      color: white;
+      border-color: #2196F3;
+    }
+    /* 只让 submitBtn.active 是绿色 */
+    #submitBtn.active {
+      background: #4CAF50;
+      color: white;
+      border-color: #4CAF50;
+    }
+    /* 防止模式按钮和 submitBtn 同时有 active 时颜色冲突 */
+    .mode-button.active:not(#submitBtn) {
+      background: #2196F3;
+      color: white;
+      border-color: #2196F3;
+    }
   </style>
 </head>
 <body>
@@ -192,6 +209,10 @@
     <div class="mode-switch">
       <button id="transcriptBtn" class="mode-button" onclick="switchMode('transcript')">📝 Show Full Text</button>
       <button id="summaryBtn" class="mode-button" onclick="switchMode('summary')">🧑‍🏫 Generate Summary</button>
+      <button id="minutesBtn"
+        class="mode-button"
+        onclick="switchMode('minutes')">📝 Minutes</button>
+
     </div>
     <button onclick="processMedia()" id="submitBtn">Submit</button>
   </div>
@@ -205,6 +226,8 @@
     </div>
     <div class="result-content">Waiting for input...</div>
   </div>
+
+  <div id="minutesBox" class="markdown-content" style="display:none"></div>
 
   <script>
     // 语言配置
@@ -253,193 +276,219 @@
       }
     };
 
+    let activeLang ='en';
+
     // 缓存数据
-    let cachedData = {
-      transcript: null,
-      summary: null,
-      currentMode: null,  // 初始状态为null
-      currentLang: null   // 初始状态为null
-    };
+    const cachedData = {
+    transcript : null,  // { id, transcript, engine }
+    summary    : null,  // { summary, transcript, engine }
+    minutes    : null,  // { minutes, transcript, engine }
+    currentMode: 'transcript',
+    currentLang: null
+  };
 
-    function switchLanguage(lang) {
-      if (!lang) return; // 如果是默认的空选项，直接返回
-      
-      // 更新当前语言
-      cachedData.currentLang = lang;
-      
-      // 更新界面文本
-      const t = translations[lang];
-      document.getElementById('title').textContent = t.title;
-      document.getElementById('videoLink').placeholder = t.videoLinkPlaceholder;
-      document.getElementById('transcriptBtn').textContent = t.transcriptBtn;
-      document.getElementById('summaryBtn').textContent = t.summaryBtn;
-      document.getElementById('submitBtn').textContent = t.submitBtn;
-      document.getElementById('loading').textContent = t.loading;
-      
-      // 如果有缓存的数据，重新显示结果
-      if (cachedData[cachedData.currentMode]) {
-        displayResult(cachedData.currentMode, cachedData[cachedData.currentMode]);
-      } else {
-        document.getElementById('out').innerHTML = marked.parse(t.waiting);
-      }
+  /***************** 3. DOM 引用 *****************/
+  const transcriptBtn = document.getElementById('transcriptBtn');
+  const summaryBtn    = document.getElementById('summaryBtn');
+  const minutesBtn    = document.getElementById('minutesBtn');
+  const modeButtons   = [transcriptBtn, summaryBtn, minutesBtn];
+  const loadingEl     = document.getElementById('loading');
+  const outDiv        = document.getElementById('out');
 
-      // 更新提交按钮状态
-      updateSubmitButtonState();
+  /***************** 4. 语言切换 *****************/
+  function switchLanguage(lang) {
+    if (!lang) return;
+    activeLang = lang;
+    cachedData.currentLang = lang;
+
+    const t = translations[lang];
+    document.getElementById('title').textContent              = t.title;
+    document.getElementById('videoLink').placeholder          = t.videoLinkPlaceholder;
+    document.getElementById('transcriptBtn').textContent      = t.transcriptBtn;
+    document.getElementById('summaryBtn').textContent         = t.summaryBtn;
+    document.getElementById('submitBtn').textContent          = t.submitBtn;
+    loadingEl.textContent                                     = t.loading;
+
+    // 如果当前模式有缓存就刷新
+    if (cachedData[cachedData.currentMode])
+      displayResult(cachedData.currentMode, cachedData[cachedData.currentMode]);
+    else
+      outDiv.innerHTML = marked.parse(t.waiting);
+
+    updateSubmitButtonState();
+  }
+
+  /***************** 5. 模式切换 *****************/
+  function setMode(mode) {
+    cachedData.currentMode = mode;
+    modeButtons.forEach(b => b.classList.remove('selected'));
+    (mode === 'transcript' ? transcriptBtn : mode === 'summary' ? summaryBtn : minutesBtn)
+      .classList.add('selected');
+  }
+
+  function switchMode(mode) {
+    setMode(mode);
+
+    // ① 已有对应缓存，直接展示
+    if (cachedData[mode]) return displayResult(mode, cachedData[mode]);
+
+    // ② Summary / Minutes 需要全文但尚未生成
+    if (mode === 'summary' && cachedData.transcript)
+      return getSummary(cachedData.transcript);
+
+    if (mode === 'minutes' && cachedData.transcript)
+      return getMinutes(cachedData.transcript);
+
+    // ③ 其余情况让用户点 Submit
+    if (mode === 'summary' || mode === 'minutes') return processMedia();
+    updateSubmitButtonState();
+  }
+
+  /***************** 6. 渲染结果 *****************/
+  function displayResult(mode, data) {
+    let content = '';
+
+    if (mode === 'transcript') {
+      content = `<div class="result-header"><span class="emoji">📝</span><span class="title">Full Text</span></div>
+                 <div class="result-content">${data.transcript || 'No transcript available'}</div>`;
     }
 
-    function switchMode(mode) {
-      // 更新按钮状态
-      document.getElementById('transcriptBtn').classList.toggle('active', mode === 'transcript');
-      document.getElementById('summaryBtn').classList.toggle('active', mode === 'summary');
-      cachedData.currentMode = mode;
-
-      // 如果已经有缓存的数据，直接显示
-      if (cachedData[mode]) {
-        displayResult(mode, cachedData[mode]);
-      } else if (mode === 'summary' && cachedData.transcript) {
-        // 如果切换到摘要模式且有转录文本，则获取摘要
-        getSummary(cachedData.transcript);
-      }
-
-      // 更新提交按钮状态
-      updateSubmitButtonState();
+    if (mode === 'summary') {
+      const text = typeof data.summary === 'object'
+                   ? data.summary[activeLang] || 'No content'
+                   : data.summary || 'No summary available';
+      content = `<div class="result-header"><span class="emoji">🧑‍🏫</span><span class="title">Summary</span></div>
+                 <div class="result-content">${marked.parse(text)}</div>`;
     }
 
-    function updateSubmitButtonState() {
-      // 只有当选择了语言和模式后，提交按钮才会变成绿色
-      const submitBtn = document.getElementById('submitBtn');
-      if (cachedData.currentLang && cachedData.currentMode) {
-        submitBtn.classList.add('active');
-      } else {
-        submitBtn.classList.remove('active');
-      }
+    if (mode === 'minutes') {
+      const text = typeof data.minutes === 'object'
+                   ? data.minutes[activeLang] || 'No content'
+                   : data.minutes || 'No minutes available';
+      content = `<div class="result-header"><span class="emoji">📝</span><span class="title">Minutes</span></div>
+                 <div class="result-content">${marked.parse(text)}</div>`;
     }
 
-    async function getSummary(transcript) {
-      const output = document.getElementById('out');
-      const loading = document.getElementById('loading');
-      const t = translations[cachedData.currentLang];
-      
-      loading.style.display = 'block';
-      output.innerHTML = marked.parse(`⏳ ${t.loading}`);
+    outDiv.innerHTML = content;
+  }
 
-      try {
-        const response = await fetch('/api/process', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            mode: 'summary',
-            transcript: transcript,
-            language: cachedData.currentLang
-          })
-        });
+  /***************** 7. Summary / Minutes 生成 *****************/
+  async function getSummary(transcriptObj) {
+    const { transcript, id } = transcriptObj;
+    const t = translations[activeLang];
 
-        const result = await response.json();
-        if (result.error) {
-          output.innerHTML = marked.parse(`❌ ${t.error}${result.error}`);
-        } else {
-          cachedData.summary = result.summary;
-          displayResult('summary', result.summary);
-        }
-      } catch (err) {
-        output.innerHTML = marked.parse(`❌ ${t.processingError}${err.message}`);
-      } finally {
-        loading.style.display = 'none';
-      }
+    loadingEl.style.display = 'block';
+    outDiv.innerHTML = marked.parse(`⏳ ${t.loading}`);
+
+    try {
+      const res = await fetch('/api/process', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ mode:'summary', reuseId:id, language:activeLang })
+      }).then(r=>r.json());
+
+      if (res.error) throw new Error(res.error);
+
+      cachedData.summary = {
+        summary   : res.summary,
+        transcript: transcript,
+        engine    : res.engine
+      };
+      displayResult('summary', cachedData.summary);
+
+    } catch(e) {
+      outDiv.innerHTML = marked.parse(`❌ ${t.error}${e.message}`);
+    } finally {
+      loadingEl.style.display = 'none';
     }
+  }
 
-    function displayResult(mode, content) {
-      const outDiv = document.getElementById('out');
-      const t = translations[cachedData.currentLang];
-      
-      let headerEmoji, headerTitle;
-      if (mode === 'transcript') {
-        headerEmoji = '📝';
-        headerTitle = t.transcriptBtn.replace('📝', '').trim();
-      } else {
-        headerEmoji = '🧑‍🏫';
-        headerTitle = t.summaryBtn.replace('🧑‍🏫', '').trim();
-      }
+  async function getMinutes(transcriptObj) {
+    const { transcript, id } = transcriptObj;
+    const t = translations[activeLang];
 
-      outDiv.innerHTML = `
-        <div class="result-header">
-          <span class="emoji">${headerEmoji}</span>
-          <span class="title">${headerTitle}</span>
-        </div>
-        <div class="result-content">${marked.parse(content)}</div>
-      `;
-    }
+    loadingEl.style.display = 'block';
+    outDiv.innerHTML = marked.parse(`⏳ ${t.loading}`);
 
-    async function processMedia() {
+    try {
       const form = new FormData();
-      const file = document.getElementById('media').files[0];
-      const videoUrl = document.getElementById('videoLink').value.trim();
-      const output = document.getElementById('out');
-      const loading = document.getElementById('loading');
-      const t = translations[cachedData.currentLang];
+      form.append('mode','minutes');
+      form.append('language',activeLang);
+      //form.append('transcript',transcript);
+      form.append('reuseId',id);
 
-      // 重置缓存
-      cachedData.transcript = null;
-      cachedData.summary = null;
+      const res = await fetch('/api/process',{method:'POST',body:form}).then(r=>r.json());
+      if (res.error) throw new Error(res.error);
 
-      loading.style.display = 'block';
-      output.innerHTML = marked.parse(`⏳ ${t.loading}`);
+      cachedData.minutes = {
+        minutes   : res.minutes,
+        transcript: transcript,
+        engine    : res.engine
+      };
+      displayResult('minutes', cachedData.minutes);
 
-      if (!file && !videoUrl) {
-        alert(t.noInput);
-        output.innerHTML = marked.parse(`❌ ${t.noMedia}`);
-        loading.style.display = 'none';
-        return;
-      }
-
-      if (file) form.append('media', file);
-      else form.append('videoUrl', videoUrl);
-
-      form.append('mode', 'transcript');
-      form.append('language', cachedData.currentLang);
-
-      try {
-        const res = await fetch('/api/process', {
-          method: 'POST',
-          body: form
-        });
-
-        const result = await res.json();
-
-        if (result.error) {
-          output.innerHTML = marked.parse(`❌ ${t.error}${result.error}`);
-        } else {
-          // 缓存转录文本
-          cachedData.transcript = result.transcript;
-          
-          // 根据当前模式显示结果
-          if (cachedData.currentMode === 'transcript') {
-            displayResult('transcript', result.transcript);
-          } else {
-            // 如果当前是摘要模式，立即获取摘要
-            await getSummary(result.transcript);
-          }
-        }
-      } catch (err) {
-        output.innerHTML = marked.parse(`❌ ${t.processingError}${err.message}`);
-      } finally {
-        loading.style.display = 'none';
-      }
+    } catch(e) {
+      outDiv.innerHTML = marked.parse(`❌ ${t.error}${e.message}`);
+    } finally {
+      loadingEl.style.display = 'none';
     }
+  }
 
-    // 初始化界面
-    document.addEventListener('DOMContentLoaded', function() {
-      // 清除所有按钮的激活状态
-      document.querySelectorAll('.mode-button').forEach(btn => {
-        btn.classList.remove('active');
-      });
-      // 重置语言选择
-      document.getElementById('languageSelect').value = '';
-      // 更新提交按钮状态
-      updateSubmitButtonState();
-    });
+  /***************** 8. 上传 / 转录 *****************/
+  async function processMedia() {
+    const lang   = document.getElementById('languageSelect').value;
+    const media  = document.getElementById('media').files[0];
+    const link   = document.getElementById('videoLink').value;
+    const t      = translations[lang || activeLang];
+
+    if (!lang) return alert(t.selectLanguage || 'Select language first!');
+    if (!media && !link) return alert(t.noInput);
+
+    loadingEl.style.display = 'block';
+    outDiv.innerHTML = marked.parse(`⏳ ${t.loading}`);
+    cachedData.transcript = cachedData.summary = cachedData.minutes = null;
+
+    const form = new FormData();
+    form.append('mode','transcript');
+    form.append('language',lang);
+    media ? form.append('media',media) : form.append('videoUrl',link);
+
+    try {
+      const res = await fetch('/api/process',{method:'POST',body:form}).then(r=>r.json());
+      if (res.error) throw new Error(res.error);
+
+      cachedData.transcript = {
+        id:res.id, transcript:res.transcript, engine:res.engine
+      };
+      if (cachedData.currentMode === 'transcript')
+        displayResult('transcript', cachedData.transcript);
+      else if (cachedData.currentMode === 'summary')
+        await getSummary(cachedData.transcript);
+      else if (cachedData.currentMode === 'minutes')
+        await getMinutes(cachedData.transcript);
+
+    } catch(e) {
+      outDiv.innerHTML = marked.parse(`❌ ${t.error}${e.message}`);
+    } finally {
+      loadingEl.style.display = 'none';
+    }
+  }
+
+  /***************** 9. 按钮状态初始化 *****************/
+  function updateSubmitButtonState() {
+    const sub = document.getElementById('submitBtn');
+    cachedData.currentLang && cachedData.currentMode
+      ? sub.classList.add('active')
+      : sub.classList.remove('active');
+  }
+
+  // 默认初始化
+  document.addEventListener('DOMContentLoaded',()=>{
+    document.getElementById('languageSelect').value='';
+    switchLanguage('en');
+    updateSubmitButtonState();
+    setMode('transcript');
+  });
   </script>
 </body>
 </html>

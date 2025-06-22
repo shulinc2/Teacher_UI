@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Storytelling Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    .lang-switch{position:fixed;top:16px;left:16px;font-size:14px}
+    body{font-family:Inter,Arial,Helvetica,sans-serif;background:#f5f7fa;margin:0;padding:2rem;display:flex;flex-direction:column;align-items:center}
+    h1{font-size:1.8rem;margin-bottom:1rem}
+    .card{background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);border-radius:12px;padding:1.5rem;max-width:640px;width:100%}
+    label{display:block;font-weight:600;margin-top:1rem}
+    select,input[type=text],textarea{width:100%;padding:.6rem .8rem;font-size:1rem;border:1px solid #ccc;border-radius:6px;margin-top:.4rem;box-sizing:border-box}
+    textarea{resize:vertical;height:120px}
+    button{margin-top:1.5rem;padding:.75rem 1.2rem;font-size:1rem;font-weight:600;border:none;border-radius:8px;cursor:pointer;background:#0077ff;color:#fff;transition:background .2s}
+    button:hover{background:#005fce}
+    #output{margin-top:2rem;background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:1rem 1.5rem;line-height:1.6;font-size:1.05rem;max-width:640px;max-height:500px;overflow-y:auto;box-shadow:0 2px 6px rgba(0,0,0,.05)}
+    #output h3{margin:1em 0 .6em;font-size:1.2rem}
+    #output blockquote{margin:0 0 1em;padding-left:1em;border-left:4px solid #0077ff;background:#f0f6ff}
+    #output ul{padding-left:1.2em}
+  </style>
+</head>
+<body>
+  <h1>🪄 Storytelling Generator</h1>
+
+  <!-- 左上角语言切换 -->
+  <div class="lang-switch">
+    🌐 <select id="uiLang">
+      <option value="en">English</option>
+      <option value="zh">中文</option>
+      <option value="zh-Hant">繁體</option>
+    </select>
+  </div>
+
+  <div class="card">
+    <label for="purpose"><span class="lbl">Purpose</span>
+      <select id="purpose">
+        <option value="academic">Academic</option>
+        <option value="leisure">Leisure</option>
+      </select>
+    </label>
+
+    <label for="topic"><span class="lbl">Topic</span>
+      <input id="topic" type="text" placeholder="e.g. Space Exploration" />
+    </label>
+
+    <label for="grade"><span class="lbl">Grade</span>
+      <input id="grade" type="text" placeholder="e.g. 3" />
+    </label>
+
+    <label for="duration"><span class="lbl">Duration (minutes)</span>
+      <input id="duration" type="text" placeholder="e.g. 10" />
+    </label>
+
+    <label for="language"><span class="lbl">Story language</span>
+      <select id="language">
+        <option value="English">English</option>
+        <option value="Chinese">中文</option>
+        <option value="chi_tra">繁體中文</option>
+      </select>
+    </label>
+
+    <label for="details"><span class="lbl">Prompt details</span><br><small style="font-weight:400">(characters, setting, tone…)</small>
+      <textarea id="details" placeholder="Two siblings on Mars, friendly robot companion…"></textarea>
+    </label>
+
+    <button id="generateBtn">Generate</button>
+  </div>
+
+  <div id="output">📝 The story will appear here.</div>
+
+  <script>
+    /* ===== 多语言字典 ===== */
+    const i18n = {
+      en:{purpose:'Purpose',topic:'Topic',grade:'Grade',duration:'Duration (minutes)',language:'Story language',details:'Prompt details',
+          generate:'Generate',placeholderDetails :'Specify: difficulty, number of problems, target skill…',
+          storyHere:'📝 The story will appear here.', academicLabel: 'Academic', leisureLabel : 'Leisure', placeholderTopic: 'e.g. Multiplication practice'},
+      zh:{purpose:'目的',topic:'主题',grade:'年级',duration:'时长（分钟）',language:'生成语言',details:'提示细节',
+          generate:'生成',placeholderTopic:'例如：成语故事：狐假虎威',placeholderDetails:'请说明：难度、题目数量、教学目标…',
+          storyHere:'📝 生成的故事将显示在此', academicLabel: '学术', leisureLabel : '休闲'},
+      'zh-Hant':{purpose:'目的',topic:'主題',grade:'年級',duration:'時長（分鐘）',language:'生成語言',details:'提示細節',
+          generate:'生成',placeholderTopic: '例如：成語故事：狐假虎威',placeholderDetails:'請說明：難度、題目數量、教學目標…',
+          storyHere:'📝 生成的故事將顯示在此', academicLabel: '學術',leisureLabel : '休閒'}
+    };
+
+    /* ===== 替换静态 UI 文本 ===== */
+    function applyUI(lang){
+      const t=i18n[lang]||i18n.en;
+      const map={purpose:t.purpose,topic:t.topic,grade:t.grade,duration:t.duration,language:t.language,details:t.details};
+      for(const id in map){
+        const span=document.querySelector(`label[for="${id}"] .lbl`);
+        if(span) span.textContent=map[id];
+      }
+      document.getElementById('topic').placeholder=t.placeholderTopic;
+      document.getElementById('details').placeholder=t.placeholderDetails;
+      document.getElementById('generateBtn').textContent=t.generate;
+      document.getElementById('output').innerHTML=t.storyHere;
+      document.querySelector('#purpose option[value="academic"]').textContent = t.academicLabel;
+      document.querySelector('#purpose option[value="leisure"]').textContent  = t.leisureLabel;
+
+    }
+
+    /* ===== DeepSeek 通用函数 ===== */
+    const apiKey='sk-816d9a802e5f4c8ab73459a40791d7db';
+    async function callDeepSeek(promptText){
+      const res=await fetch('https://api.deepseek.com/v1/chat/completions',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+apiKey,'Content-Type':'application/json'},
+        body:JSON.stringify({
+          model:'deepseek-reasoner',
+          temperature:0.7,
+          max_tokens:1024,
+          messages:[
+            {role:'system',content:'You are an experienced AI education specialist, skilled at explaining complex concepts…'},
+            {role:'user',content:promptText}
+          ]
+        })
+      });
+      if(!res.ok)throw new Error('DeepSeek API error '+res.status);
+      const data=await res.json();
+      return data.choices?.[0]?.message?.content??'No content returned.';
+    }
+
+    /* ===== 语言代码→文字 ===== */
+    function langLabel(code){
+      return {English:'English',Chinese:'中文',chi_tra:'繁體中文'}[code]||code;
+    }
+
+    /* ===== 生成按钮逻辑 ===== */
+    document.getElementById('generateBtn').addEventListener('click',async()=>{
+      const purpose=document.getElementById('purpose').value;
+      const topic=document.getElementById('topic').value.trim();
+      const grade=document.getElementById('grade').value.trim();
+      const duration=document.getElementById('duration').value.trim();
+      const langCode=document.getElementById('language').value;
+      const language=langLabel(langCode);
+      const details=document.getElementById('details').value.trim();
+      if(!topic||!grade||!duration){alert('Topic, Grade, and Duration are required.');return;}
+
+      const prompt=`Please answer in **${language}**.
+Write a ${duration}-minute ${language} story for grade ${grade} students.
+Purpose: ${purpose}. Topic: ${topic}.
+Incorporate these details: ${details||'(no extra details)'}.
+Use clear language and an engaging narrative arc (beginning, conflict, resolution).`;
+
+      const out=document.getElementById('output');
+      out.textContent='⏳ Generating story…';
+      try{
+        const md=await callDeepSeek(prompt);
+        out.innerHTML=marked.parse(md);
+      }catch(err){
+        out.textContent=err.message;
+      }
+    });
+
+    /* ===== 初始化并监听 UI 语言切换 ===== */
+    document.addEventListener('DOMContentLoaded',()=>{
+      applyUI(document.getElementById('uiLang').value);          // 初次渲染
+      document.getElementById('uiLang')
+              .addEventListener('change',e=>applyUI(e.target.value));
+    });
+  </script>
+</body>
+</html>

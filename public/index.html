@@ -269,7 +269,17 @@
   <div id="chat">
     <h2 class="centered-heading">👋 What do you wanna generate?</h2>
   </div>
-
+   <div id="input-area">
+    <div class="input-wrapper">
+      <textarea id="user-input" rows="2"></textarea>
+      <div class="tooltip-wrapper">
+        <button id="file-button" onclick="document.getElementById('file-upload').click()">＋</button>
+        <span class="tooltip-text">Upload File</span>
+      </div>
+      <input type="file" id="file-upload" multiple style="display:none;" />
+      <button class="next-button" onclick="handleUserInput()">Next</button>
+    </div>
+  </div>
   <div id="stage-3-ui" style="display: none;">
     <h3 id="question3-title"></h3>
     <div class="source-choice">
@@ -292,17 +302,6 @@
     </div>
   </div>
 
-  <div id="input-area">
-    <div class="input-wrapper">
-      <textarea id="user-input" rows="2"></textarea>
-      <div class="tooltip-wrapper">
-        <button id="file-button" onclick="document.getElementById('file-upload').click()">＋</button>
-        <span class="tooltip-text">Upload File</span>
-      </div>
-      <input type="file" id="file-upload" multiple style="display:none;" />
-      <button class="next-button" onclick="handleUserInput()">Next</button>
-    </div>
-  </div>
 
   <!-- Script Part 1: Data and Configuration -->
   <script>
@@ -562,7 +561,7 @@
       if (stage.key === 'have') {
         appendMessage(promptTxt, 'bot', currentStage);
         document.getElementById('stage-3-ui').style.display = 'block';
-        inputArea.style.display = 'none';
+        //inputArea.style.display = 'none';
         showUploadSection(); 
         return; 
       }

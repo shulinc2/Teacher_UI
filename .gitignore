@@ -32,4 +32,11 @@ yarn-error.log*
 backend/token.json
 token.json
 credentials.json .DS_Store
-/backend/node_modules
+
+# New additions
+node_modules/
+.DS_Store
+backend/node_modules/@xenova/transformers/.cache/
+backend/uploads/
+*.onnx
+.cache/

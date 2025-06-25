@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Teacher All in One AI Chat</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" />
+  
+  <!-- Required Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -17,11 +19,8 @@
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
   <script src="https://unpkg.com/html-docx-js-typescript/dist/html-docx.js"></script>
   
-  <!-- This script is from the incoming version, required for the database browser -->
-  <script src="books.js"></script>
-
   <style>
-    /* --- Base Styles from Previous Version --- */
+    /* --- Base Styles from Webflow Version --- */
     * { box-sizing: border-box; }
     body {
       font-family: 'Inter', sans-serif;
@@ -71,6 +70,7 @@
       justify-content: center;
       font-size: 18px;
       margin: 0 8px;
+      flex-shrink: 0;
     }
     #input-area {
       display: flex;
@@ -78,42 +78,6 @@
       padding: 10px;
       background: white;
       border-top: 1px solid #ccc;
-    }
-    .input-top-files {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      margin-bottom: 6px;
-    }
-    .file-item {
-      display: flex;
-      align-items: center;
-      background: #f0f0f0;
-      padding: 6px 8px;
-      border-radius: 6px;
-      font-size: 14px;
-      margin-bottom: 6px;
-      gap: 10px;
-    }
-    .file-item span {
-      max-width: 160px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .file-note {
-      flex: 1;
-      padding: 4px 8px;
-      font-size: 13px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    .file-item button {
-      background: none;
-      border: none;
-      color: red;
-      font-size: 16px;
-      cursor: pointer;
     }
     .input-wrapper {
       display: flex;
@@ -177,16 +141,6 @@
       text-align: center;
       width: 100%;
     }
-    .select-inline {
-      margin-left: 12px;
-      margin-top: 4px;
-      font-size: 16px;
-      font-family: 'Inter', sans-serif;
-      padding: 6px;
-      border-radius: 6px;
-      width: fit-content;
-      max-width: 400px;
-    }
     .uploaded-file {
       color: rgb(41, 96, 198);
       text-decoration: underline;
@@ -203,11 +157,12 @@
       color: white !important;
     }
 
-    /* --- Merged Styles from Incoming Version --- */
+    /* --- Merged Styles from Local Version --- */
     .book-item {
-      padding: 6px 10px;
+      padding: 8px 10px;
       border-bottom: 1px solid #f0f0f0;
       cursor: pointer;
+      transition: background-color 0.2s;
     }
     .book-item:hover { background: #f7f7f7; }
     .book-item.selected { background: #d2f0ff; }
@@ -215,7 +170,32 @@
       margin: 10px 0 4px;
       font-weight: bold;
       background: #f0f0f0;
-      padding: 4px 6px;
+      padding: 8px 10px;
+      border-radius: 4px;
+    }
+    .region-title {
+        background: #e0e0e0;
+        padding: 12px 16px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .region-title:hover { background: #d5d5d5; }
+    .region-title::after {
+        content: '▼';
+        font-size: 12px;
+        transition: transform 0.2s;
+    }
+    .region-title.collapsed::after { transform: rotate(-90deg); }
+    .region-content {
+        margin-left: 16px;
+        border-left: 2px solid #e0e0e0;
+        padding-left: 8px;
     }
     .choice-btn {
       padding: 10px 20px;
@@ -228,12 +208,7 @@
       min-width: 120px;
     }
     .choice-btn:hover { background: #f0f0f0; }
-    .choice-btn.selected {
-      background: #10a37f;
-      color: white;
-      border-color: #10a37f;
-    }
-    #stage-3-ui { /* Renamed to avoid conflicts */
+    #stage-3-ui {
       padding: 20px;
       background: white;
       border-radius: 8px;
@@ -252,6 +227,19 @@
       padding: 16px;
       border: 1px solid #eee;
       border-radius: 8px;
+    }
+    #filter-input {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        margin-bottom: 12px;
+        font-size: 14px;
+    }
+    #filter-input:focus {
+        outline: none;
+        border-color: #10a37f;
+        box-shadow: 0 0 0 2px rgba(16, 163, 127, 0.1);
     }
     .source-choice {
       display: flex;
@@ -282,7 +270,6 @@
     <h2 class="centered-heading">👋 What do you wanna generate?</h2>
   </div>
 
-  <!-- This UI container is from the incoming version, for Stage 3 -->
   <div id="stage-3-ui" style="display: none;">
     <h3 id="question3-title"></h3>
     <div class="source-choice">
@@ -290,13 +277,12 @@
       <button class="choice-btn" onclick="showDatabaseSection()">Browse Database</button>
     </div>
     <div id="upload-section" style="display: none;">
-      <!-- This input is specifically for the Stage 3 UI -->
       <input type="file" id="stage-3-file-upload" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" multiple onchange="handleStage3FileUpload(this.files)" />
       <p>Drag & drop files here or click to select.</p>
     </div>
     <div id="db-browser-container" style="display: none;">
       <strong id="db-browser-label"></strong>
-      <input type="text" id="filter-input" placeholder="🔍 Search…" style="width:100%; padding:4px; margin:6px 0;" />
+      <input type="text" id="filter-input" placeholder="🔍 Search…" />
       <div id="item-list" style="max-height: 300px; overflow-y:auto; border: 1px solid #eee; padding: 4px;"></div>
       <div id="pdf-preview" style="display: none; margin-top: 20px;">
         <h4 style="margin-bottom: 10px;">Selected File Preview:</h4>
@@ -307,45 +293,38 @@
   </div>
 
   <div id="input-area">
-    <div id="file-preview" class="input-top-files"></div>
     <div class="input-wrapper">
       <textarea id="user-input" rows="2"></textarea>
       <div class="tooltip-wrapper">
         <button id="file-button" onclick="document.getElementById('file-upload').click()">＋</button>
         <span class="tooltip-text">Upload File</span>
       </div>
-      <!-- This file input is for general purpose uploads outside of Stage 3 -->
-      <input type="file" id="file-upload" multiple />
+      <input type="file" id="file-upload" multiple style="display:none;" />
       <button class="next-button" onclick="handleUserInput()">Next</button>
     </div>
   </div>
 
-  <!-- too large for webflow embed code, so I separate it by 2 part for script code -->
-   <!-- here is part 1 -->
-<script>
-    // --- Element References ---
-    const chat = document.getElementById('chat');
-    const input = document.getElementById('user-input');
-    const fileInput = document.getElementById('file-upload');
-    const filePreview = document.getElementById('file-preview');
-    const inputArea = document.getElementById('input-area');
+  <!-- Script Part 1: Data and Configuration -->
+  <script>
+    // Embedded book data from book.js
+    const regions = { "mainland": { "name": "内地小学数学教材", "books": [ { "title": "【北师大版】一年级上册数学电子课本", "path": "北师大版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1JVKwSxf45OM2t-r54tLqAqS_PQpLFCqA/view?usp=sharing" }, { "title": "【北师大版】一年级下册数学电子课本", "path": "北师大版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1-nLQz68MPEAMUVHqkdlZCjRdGcaRFroX/view?usp=sharing" }, { "title": "【北师大版】六年级上册数学电子课本", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/1QZKWDRvtIJf_8BqfGc9ya91_sl3X7G40/view?usp=sharing" }, { "title": "【北师大版】四年级下册数学电子课本", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/1tVJgggU_-rH6rGRKvWhghWcG2xm5-wnw/view?usp=sharing" }, { "title": "【北师大版】一年级下册(2025春版)数学电子课本-社学整理", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/1OQcVP1o_H_CqmDpK4td_UVmk-PeFs6DM/view?usp=sharing" }, { "title": "【北师大版】二年级下册数学电子课本", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/1aEZYqrLFBgyhc3F4rIBUm1SZOJUjj8fc/view?usp=sharing" }, { "title": "【北师大版】一年级上册(2024秋版)数学电子课本", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/1uqsZ0hKMHffdNWIVLFQZBAl6ckEfhymB/view?usp=sharing" }, { "title": "【北师大版】四年级上册数学电子课本", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/1IpIdyohBj0XOharN18Rw2jMQVWVzwDn1/view?usp=sharing" }, { "title": "【北师大版】三年级下册数学电子课本", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/1ZMn628sFQIoLOGZ4Gskg78Hkw5pgnP1r/view?usp=sharing" }, { "title": "【北师大版】六年级下册数学电子课本", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/1iOdi0rFYq8vWKRAvOsu3Uk7e405LW_Fr/view?usp=sharing" }, { "title": "【北师大版】三年级上册数学电子课本", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/13NDvwcKWojZBRV1-7UP56q1fnHj8vdMQ/view?usp=sharing" }, { "title": "【北师大版】二年级上册数学电子课本", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/1XLqh8wPznU3zMnWYC0tkMxwJOVADZTud/view?usp=sharing" }, { "title": "【北师大版】五年级下册数学电子课本", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/1ry0e6mG8nc1RgZxSqnTJ-VNanEKwGcAF/view?usp=sharing" }, { "title": "【北师大版】五年级上册数学电子课本-社学整理", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/1ytvPdIbhjRA_xJjr_w66GcOqJeTKCSli/view?usp=sharing" }, { "title": "【人教版】一年级下册数学电子课本", "path": "人教版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1wt1niMm_JdCTLMSV1O9M6ATFoABUvNPL/view?usp=sharing" }, { "title": "【人教版】一年级上册数学电子课本", "path": "人教版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1_d_zBT33RDqnAje1zkQAb1NwvNWC74lH/view?usp=sharing" }, { "title": "【人教版】三年级上册数学电子课本", "path": "人教版", "drive_url": "https://drive.google.com/file/d/1K7ZEThBsx0hhy9RY_C81ms6hi-ILC12k/view?usp=sharing" }, { "title": "【人教版】五年级下册数学电子课本", "path": "人教版", "drive_url": "https://drive.google.com/file/d/1CIiSoVf2FmJXXVoUB1X2sayNBxTl31Tf/view?usp=sharing" }, { "title": "【人教版】一年级下册(2025春版)数学电子课本", "path": "人教版", "drive_url": "https://drive.google.com/file/d/1nKHaHsik_5yXxjV2ABMmz4YTp7WBLkXa/view?usp=sharing" }, { "title": "【人教版】六年级上册数学电子课本", "path": "人教版", "drive_url": "https://drive.google.com/file/d/14r4RTPZ0F4UCLIH-cYDxbBeoFpHXDzIi/view?usp=sharing" }, { "title": "【人教版】四年级下册数学电子课本", "path": "人教版", "drive_url": "https://drive.google.com/file/d/1UwpKfwUPvAS17eSzpi48brQ2AWbUdQYI/view?usp=sharing" }, { "title": "【人教版】四年级上册数学电子课本", "path": "人教版", "drive_url": "https://drive.google.com/file/d/1-fsn3zR86xvGOafXlg0fGzyco3MEFyfv/view?usp=sharing" }, { "title": "【人教版】五年级上册数学电子课本", "path": "人教版", "drive_url": "https://drive.google.com/file/d/1eTOM29T90xpN_naTDY-Iof67DPAJCoH_/view?usp=sharing" }, { "title": "【人教版】三年级下册数学电子课本", "path": "人教版", "drive_url": "https://drive.google.com/file/d/1ZtqLOrEDjBuDeDjvnwFy41SbQhN8kysA/view?usp=sharing" }, { "title": "【人教版】六年级下册数学电子课本", "path": "人教版", "drive_url": "https://drive.google.com/file/d/13ScZM_Z1WNIM3Tj2_KNZlGYTrtOywqOr/view?usp=sharing" }, { "title": "【人教版】二年级上册数学电子课本-社学整理", "path": "人教版", "drive_url": "https://drive.google.com/file/d/17yBbF3Dw1OYW774PfrRcewX_MN11oRUt/view?usp=sharing" }, { "title": "【人教版】一年级上册(2024秋版)数学电子课本", "path": "人教版", "drive_url": "https://drive.google.com/file/d/1AlU6JnHnr8-dlyIbzJrgEjPP0W738TiX/view?usp=sharing" }, { "title": "【人教版】二年级下册数学电子课本", "path": "人教版", "drive_url": "https://drive.google.com/file/d/1LOMwLkmPWUMjhvYNnGslRmf_ziV7x0DQ/view?usp=sharing" }, { "title": "【苏教版】一年级上册数学电子课本", "path": "苏教版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1iXlgrMov2D5dSR-B6_UhW1jHND7JVcnd/view?usp=sharing" }, { "title": "【苏教版】一年级下册数学电子课本", "path": "苏教版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1GE-VPGGWcjFLBT_MNlPmotGxszk64Leg/view?usp=sharing" }, { "title": "【苏教版】三年级上册数学电子课本", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1Wj_CKslWcX9kAh-jFWOEsD-6d1lWwr_h/view?usp=sharing" }, { "title": "【苏教版】二年级下册数学电子课本", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1a_0_wb88J_6JnEitpX7KIIjWl4n8gtXe/view?usp=sharing" }, { "title": "【苏教版】一年级上册(2024秋版)数学电子课本", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1YGnICLQn7m2oPNbjGsfHpfkrF-oA-5an/view?usp=sharing" }, { "title": "【苏教版】五年级下册数学电子课本", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1LAJEfqIkmZ7BBH9O7isgfpEe_BgYUJvK/view?usp=sharing" }, { "title": "【苏教版】三年级下册数学电子课本-社学整理", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1j7VWIUwGocZZharVHapEl8tlhlcWzmql/view?usp=sharing" }, { "title": "【苏教版】六年级下册数学电子课本", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1pLFV9Jh0pRR60yCmCNuVi9qfizfPmLK6/view?usp=sharing" }, { "title": "【苏教版】六年级上册数学电子课本", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1Mki_DVxSvgNyJu62OuXtPBb4T5nH19dY/view?usp=sharing" }, { "title": "【苏教版】五年级上册数学电子课本", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1ewRcjq6_gIBLS0D1TKCp_15nzaXvK42N/view?usp=sharing" }, { "title": "【苏教版】二年级上册数学电子课本", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1ac7gxIGPuo1hYhK4nAd2Nt5DGSwuLi5p/view?usp=sharing" }, { "title": "【苏教版】一年级下册(2025春版)数学电子课本", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1mjK9rpNpPjXdzNEXH9slcAQ3fNJ1deZC/view?usp=sharing" }, { "title": "【苏教版】四年级上册数学电子课本", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1lZZ2ZCfLiP16DT3BJNcWSlOBALrKnXvX/view?usp=sharing" }, { "title": "【苏教版】四年级下册数学电子课本", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1ZOuNtxD_L-ONWCkeJpCrQ_b8poTthCqf/view?usp=sharing" }, { "title": "【苏教版】二年级上册(2025秋版)数学电子课本（提前预习）", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/16oCxNHP8QwxWPu61D-KTWg8CChi35M4l/view?usp=sharing" }, { "title": "【西南大学版】一年级下册数学电子课本", "path": "西南大学版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1Y6F0L0nJgyHKKIB-yIELh2V1ovMZxvBa/view?usp=sharing" }, { "title": "【西南大学版】一年级上册数学电子课本-社学整理", "path": "西南大学版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1Xzqo07hA-PJ0xCWNqoy3HMzAxQn6dUgJ/view?usp=sharing" }, { "title": "【西南大学版】一年级上册(2024秋版)数学电子课本", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/1Ijq_aQox_dVsQ4_JAh6CltbN2Ukzg3ox/view?usp=sharing" }, { "title": "【西南大学版】六年级上册数学电子课本-社学整理", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/16g7FJca65FH5zC03iAKjhaYhWWUb_2m_/view?usp=sharing" }, { "title": "【西南大学版】二年级下册数学电子课本", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/1DamFf2p9IpMA65_bdsTcTrBH2swaaLrD/view?usp=sharing" }, { "title": "【西南大学版】四年级上册数学电子课本", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/1JNkmf47d-4iGuDKJ_WM4MSRWCpzHDpK9/view?usp=sharing" }, { "title": "【西南大学版】三年级下册数学电子课本", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/1oyWtpMMIANpKHOpsl2HTLjeNTrCYR0Dg/view?usp=sharing" }, { "title": "【西南大学版】一年级下册(2025春版)数学电子课本", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/1B5tPhB4w1cmhwZZLRW356zkxKNdFHsgk/view?usp=sharing" }, { "title": "【西南大学版】五年级上册数学电子课本", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/16pn2aY5ndxQGnbp_ILCSbour0BvKOaFn/view?usp=sharing" }, { "title": "【西南大学版】五年级下册数学电子课本", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/1TdUkHp0g80XRWV2wIPbZvQtG3qsYCTLZ/view?usp=sharing" }, { "title": "【西南大学版】二年级上册数学电子课本", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/1iyhwkyV3w-0iYQx3YygY8TQtOXY6e-5m/view?usp=sharing" }, { "title": "【西南大学版】三年级上册数学电子课本", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/1KMLeOBSX7mCmLxsBH0qgB0wV-UYK22cl/view?usp=sharing" }, { "title": "【西南大学版】六年级下册数学电子课本", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/1T7usDibsMKJCbDTDjWik_DvIWff2CR1q/view?usp=sharing" }, { "title": "【西南大学版】四年级下册数学电子课本", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/1yDtSj8yblZP2cWtouiUj_5aZKEp5UUEI/view?usp=sharing" }, { "title": "【北京版】一年级下册数学电子课本", "path": "北京版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1u-GOoSWf9HjtUEkNFARC2dxv61spGCtI/view?usp=sharing" }, { "title": "【北京版】一年级上册数学电子课本", "path": "北京版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1axFBj5V0EI2-H4yCSUlwoaIWuh6wlNTM/view?usp=sharing" }, { "title": "【北京版】一年级上册(2024秋版)数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/18LBU0Gp8w85tVBvTCAKmTnMBTnpuPWwE/view?usp=sharing" }, { "title": "【北京版】四年级上册数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/1MH4s6oeaAiGhRj4AonP66HizaOG2aZW1/view?usp=sharing" }, { "title": "【北京版】五年级上册数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/1XcUphuF761fRK4YEULsQr4uV4lGDaVRy/view?usp=sharing" }, { "title": "【北京版】三年级上册数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/1kO6SfkjBVQuYCMlkEnfN4r0bYkya8wgn/view?usp=sharing" }, { "title": "【北京版】二年级下册数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/1p46ThGNFwOZDtk6dbVKu5xBurV_0kSaH/view?usp=sharing" }, { "title": "【北京版】三年级下册数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/1ok35VKBX8T_T2Vfj2Sv1HfjOWb_faHC9/view?usp=sharing" }, { "title": "【北京版】六年级下册数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/1SQteb8onT-_6SMe1Jg_0o-b4bwaMVwba/view?usp=sharing" }, { "title": "【北京版】六年级上册数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/1f2ymmYhZn10Oyc-MWU2uhUanFjO26gxP/view?usp=sharing" }, { "title": "【北京版】五年级下册数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/170Z6c1ysjeyoXmWCHsC6PZJqThsw3xZT/view?usp=sharing" }, { "title": "【北京版】二年级上册数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/1tUFLUUtEfqK-2eTrotHPMrNUVJgDVFZy/view?usp=sharing" }, { "title": "【北京版】一年级下册(2025春版)数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/1BR9XwRtIDPSpkSKhfP7e-wNM7QR2pszb/view?usp=sharing" }, { "title": "【北京版】四年级下册数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/1pCq0clGJqE3Yr_uf_A-1U_YSwNk0fFtn/view?usp=sharing" }, { "title": "【青岛版】一年级下册数学电子课本", "path": "青岛版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1ntTh8SAHc6KYtVNHhBcHDXBUUepaZL_z/view?usp=sharing" }, { "title": "【青岛版】一年级上册数学电子课本-社学整理", "path": "青岛版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1xjHdtvQIxZ2YgNfcpZt1DfD-S4pGbBNQ/view?usp=sharing" }, { "title": "【青岛版】一年级上册(2024秋版)数学电子课本", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/1SwTqGMVxARw2HZ1dkXM1wZ9Y3NeZcMwr/view?usp=sharing" }, { "title": "【青岛版】一年级下册(2025春版)数学电子课本", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/1iylJeY8inyLpkaNP7dd3bmdE4xCMqErt/view?usp=sharing" }, { "title": "【青岛版】三年级下册数学电子课本", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/1TXyPnveT-9yUj4O3HRBfDKX1kuG7eYvx/view?usp=sharing" }, { "title": "【青岛版】四年级上册数学电子课本", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/1BApw2WTy7m2PL1-SzJmZZ-eBfHZup8ur/view?usp=sharing" }, { "title": "【青岛版】二年级上册数学电子课本", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/1-lNPTeRDOMDgeAq9b8BqUK6jgcmruhDf/view?usp=sharing" }, { "title": "【青岛版】五年级下册数学电子课本-社学整理", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/1pfbNKKCXsYMU7aSDr50ctgYRXrxeMxdr/view?usp=sharing" }, { "title": "【青岛版】五年级上册数学电子课本", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/10pZlEQ56KQzEu0SLpPKWtPxbEitIYWOM/view?usp=sharing" }, { "title": "【青岛版】三年级上册数学电子课本", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/1G0cjowxKri_bS4K5lf1sqBS9-UzYz_8e/view?usp=sharing" }, { "title": "【青岛版】六年级下册数学电子课本", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/1t4Etrz-tm5cWAeGhY_zq_NCwe6lHncDP/view?usp=sharing" }, { "title": "【青岛版】二年级下册数学电子课本", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/1Z-lMB8kjoszLcT33hGNO2JqwXerPecev/view?usp=sharing" }, { "title": "【青岛版】六年级上册数学电子课本", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/1sH0Hz0BE66hY-KwohH8G1mT7ldusskS3/view?usp=sharing" }, { "title": "【青岛版】四年级下册数学电子课本", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/187i0bxzyfSj38m_015CAp-L52rXWO34Z/view?usp=sharing" }, { "title": "【青岛版五四制】一年级下册数学电子课本", "path": "青岛版【五四制】/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1i8Oi1CFZZmwrUVQ73qO6k31dIFkWdWUQ/view?usp=sharing" }, { "title": "【青岛版五四制】一年级上册数学电子课本", "path": "青岛版【五四制】/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1yWHJQ-hRu5FVsvvhtwj33p_1UNlPKKXC/view?usp=sharing" }, { "title": "【青岛版五四制】一年级上册(2024秋版)数学电子课本", "path": "青岛版【五四制】", "drive_url": "https://drive.google.com/file/d/1g49KiexEOK_yOG4SzsWdPC_Waq__aUvt/view?usp=sharing" }, { "title": "【青岛版五四制】一年级下册(2025春版)数学电子课本", "path": "青岛版【五四制】", "drive_url": "https://drive.google.com/file/d/1jrKnw7cEJmQmF5IibvlqhWJSTqZIhU3f/view?usp=sharing" }, { "title": "【青岛版五四制】二年级下册数学电子课本-社学整理", "path": "青岛版【五四制】", "drive_url": "https://drive.google.com/file/d/1zCLosTCn9eD7p4cPvqgQIjkS_UClJ8t2/view?usp=sharing" }, { "title": "【青岛版五四制】二年级上册数学电子课本", "path": "青岛版【五四制】", "drive_url": "https://drive.google.com/file/d/1nJNuJk9pH6E3wkicv-zgfMB_FX0Y8jrr/view?usp=sharing" }, { "title": "【青岛版五四制】五年级下册数学电子课本", "path": "青岛版【五四制】", "drive_url": "https://drive.google.com/file/d/1AwF1vGwrM8KnMugN-hD-LiFUfC5Qsdc-/view?usp=sharing" }, { "title": "【青岛版五四制】五年级上册数学电子课本", "path": "青岛版【五四制】", "drive_url": "https://drive.google.com/file/d/1wC8mTYQ2TuVttS2sut1MKi5t1uOLsccC/view?usp=sharing" }, { "title": "【青岛版五四制】四年级上册数学电子课本-社学整理", "path": "青岛版【五四制】", "drive_url": "https://drive.google.com/file/d/1LmKVCkMYMRfmtCDQB9Am1NuEAl3S7Cey/view?usp=sharing" }, { "title": "【青岛版五四制】三年级下册数学电子课本", "path": "青岛版【五四制】", "drive_url": "https://drive.google.com/file/d/12N8YXoeYuV35_P8y8bqLjHD7sUJBMbfY/view?usp=sharing" }, { "title": "【青岛版五四制】四年级下册数学电子课本", "path": "青岛版【五四制】", "drive_url": "https://drive.google.com/file/d/1ofDAyom1YyYlFXINs7aPTMy8IZ17CIxz/view?usp=sharing" }, { "title": "【青岛版五四制】三年级上册数学电子课本", "path": "青岛版【五四制】", "drive_url": "https://drive.google.com/file/d/1jBQiN2z5QUrseePMn1PLOIkpwnBRRvHZ/view?usp=sharing" }, { "title": "【冀教版】一年级上册数学电子课本", "path": "冀教版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1YQSRP-KUZntxqIGLhTYTQeEsxAwPpWHX/view?usp=sharing" }, { "title": "【冀教版】一年级下册数学电子课本", "path": "冀教版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1uzdJW0kKJ0VUbCda4mB98IQ8qJWcd_DY/view?usp=sharing" }, { "title": "【冀教版】六年级下册数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/1Os3dFkBpMHF3g3r5mxie27trAamWSSxm/view?usp=sharing" }, { "title": "【冀教版】一年级下册(2025春版)数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/1T-bu984EiOdD-oIGoJlBCCjlPKG_krtT/view?usp=sharing" }, { "title": "【冀教版】五年级上册数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/1oC3PdNCAi1dMQNt_nFKssZHpmvuTR9fa/view?usp=sharing" }, { "title": "【冀教版】四年级上册数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/1FKuehQFsELPlTnnwNO4RsxmolK8rCMv2/view?usp=sharing" }, { "title": "【冀教版】四年级下册数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/1wSSQqPVHz9dGQ4hFItdLyEiek3Q4kNVu/view?usp=sharing" }, { "title": "【冀教版】一年级上册(2024秋版)数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/17s1C6AhnnQB7bk7j8Kxvfa6JRqnUfCUD/view?usp=sharing" }, { "title": "【冀教版】六年级上册数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/1m_6kHHBBE6o761prbMwaAuu0uSMCZiuE/view?usp=sharing" }, { "title": "【冀教版】三年级上册数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/1RnwJPPcqCjWaG6bGcawGBUnpZn-xHOnG/view?usp=sharing" }, { "title": "【冀教版】二年级下册数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/1bAMip8TCPA-Azm34mtq6vSQZKm27jVsY/view?usp=sharing" }, { "title": "【冀教版】三年级下册数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/1jU8nsVN3DQDz_v-eix1d_SzDXOkYWQCe/view?usp=sharing" }, { "title": "【冀教版】二年级上册数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/15h_RhT7wSHs6EOFFseYGvV1dOvYlMnYr/view?usp=sharing" }, { "title": "【冀教版】五年级下册数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/1Ak8EKai-WN8KG_Wvb1c_wCVO2KLyCIbE/view?usp=sharing" }, { "title": "【沪教版五四制】一年级下册(2025春版)数学电子课本", "path": "沪教版【五四制】", "drive_url": "https://drive.google.com/file/d/1PcOsI7rb5Lqap4hkIsj-oLCT4KmiPeQc/view?usp=sharing" }, { "title": "【沪教版五四制】一年级上册(2024秋版)数学电子课本", "path": "沪教版【五四制】", "drive_url": "https://drive.google.com/file/d/1GbhcYUpGW28tTSc-2iWpzRPeiVPQs0z5/view?usp=sharing" }] }, "hongkong": { "name": "香港教材", "books": [ { "title": "Student Profile", "path": "", "drive_url": "https://drive.google.com/file/d/1bnHUfa-rAmLPtbk91CHRgc7aehrJP396/view?usp=sharing" }, { "title": "Math Syllabus Chinese HK", "path": "", "drive_url": "https://drive.google.com/file/d/1OshpG5aGYvXgVWFaJUM1Vfd3p5agjepA/view?usp=sharing" }, { "title": "Lesson Plan English", "path": "", "drive_url": "https://drive.google.com/file/d/177674WEEnodKAfAqBNPDPiuBOrn1OWbB/view?usp=sharing" }, { "title": "Lesson Plan Traditional Chinese", "path": "", "drive_url": "https://drive.google.com/file/d/1tvhWDvfSaGbjv5ZrrFLmVs-mU_U3pU-M/view?usp=sharing" }, { "title": "Lesson Plan Traditional Chinese 2", "path": "", "drive_url": "https://drive.google.com/file/d/1nawxEpxd-HmbU8FwE9q-qcZdqRZMdf5t/view?usp=sharing" }, { "title": "IEP Feb 2020", "path": "", "drive_url": "https://drive.google.com/file/d/1vk9wQA9RUJkb1azjE6TClwCdF60MKUZm/view?usp=sharing" }, { "title": "IEP 教育局樣本", "path": "", "drive_url": "https://drive.google.com/file/d/1frYrJwTC1QkZNloNg-GCqtn5R5_uaWAf/view?usp=sharing" }, { "title": "IEP April 2024", "path": "", "drive_url": "https://drive.google.com/file/d/1aoO2OGCZ6cO-ce1Gx9b-pt2VxgvIToEt/view?usp=sharing" }] } };
     
     // --- State Management ---
     let currentStage = 0;
     const answers = { have: [] }; // Central state for user answers
     const pendingExtractions = new Set();
-    let currentLang = document.documentElement.lang;
+    let currentLang = document.documentElement.lang; // Use browser/Webflow language
     let fullMarkdown = '';
     let lastGeneratedForm = null;
     let lastUserMoreMessage = null;
     const refineState = {
-        choiceContainer: null,
-        optionsContainer: null,
-        promptMsg: null,
-        botPromptMsg: null,
-        userAnswerMsg: null,
-        gotItMsg: null,
-        lastSelectedBtn: null,
+      choiceContainer: null,
+      optionsContainer: null,
+      promptMsg: null,
+      botPromptMsg: null,
+      userAnswerMsg: null,
+      gotItMsg: null,
+      lastSelectedBtn: null,
     };
 
     // --- Configuration ---
@@ -354,9 +333,9 @@
     const stages = [
       { promptKey: 'question1', key: 'type', type: 'dropdown',
         options: [
-            'Lesson Plan', 'Class Materials (PPT/pictures)', 'Report Card',
-            'Student-Work Feedback', 'Subject Question Bank / Assignment',
-            'Activity Plan / Extracurricular', 'Admin Helper (PPT / Word)'
+          'Lesson Plan', 'Class Materials (PPT/pictures)', 'Report Card',
+          'Student-Work Feedback', 'Subject Question Bank / Assignment',
+          'Activity Plan / Extracurricular', 'Admin Helper (PPT / Word)'
         ]
       },
       { promptKey: 'question2', key: 'why', type: 'text' },
@@ -367,74 +346,42 @@
 
     // --- Translations (Merged & Standardized) ---
     const translations = {
-        eng: {
+        en: {
             title: "👋 What do you wanna generate?",
-            next: "Next",
-            upload: "Upload File",
-            yes: "Yes",
-            no: "No",
-            saveBtn: "Save",
+            next: "Next", upload: "Upload File", yes: "Yes", no: "No", saveBtn: "Save",
             regenerateBtn: "🔍 Regenerate with More Detail",
-            morePrompt: "Question 4/5: ✏️ Add more details: Comment, Grade, Number of Students, Duration, Length",
-            refineWhich: "🧩 Which part(s) would you like to be more specific?",
-            done: "🎉 Got it! Let me know if you need anything else.",
+            refineWhich: "🧩 Which part(s) would you like to be more specific?", done: "🎉 Got it! Let me know if you need anything else.",
             question1: "Question 1/5: 👇 Please select a type:",
             question2: "Question 2/5: 💭 Why do you need this? (e.g. for student of grade 2 to have maths class, for parents meeting next week)",
             question3: "Question 3/5: 📎 What do you have on hand? (You can upload files or browse our database)",
             question4: "Question 4/5: ✏️ Add more details: Comment, Grade, Number of Students, Duration, Length",
             question5: "Question 5/5: 🔍 Do you want to make any part more specific?",
-            pleaseFill: "Please provide some input or select a file.",
-            noExtractedText: "No extracted text found – please upload a PDF / Word / image first.",
-            noTemplateFound: "⚠️ No corresponding template was found to generate content!",
-            atLeastOnePart: "Please select at least one part to refine.",
-            generationFailed: "❌ Generation failed. Please try again.",
-            pleaseRefine: "✅ Yes, please refine.",
-            noThanks: "❌ No, that’s enough.",
-            replacedMsg: "🔄 \"{filename}\" replaced.",
-            replaceConfirm: "Replace previously uploaded \"{filename}\"?",
-            infoCollected: "✅ All info collected. Ready to generate!",
-            type_lesson: "Lesson Plan",
-            type_materials: "Class Materials (PPT/pictures)",
-            type_report: "Report Card",
-            type_feedback: "Student‑Work Feedback",
-            type_bank: "Subject Question Bank / Assignment",
-            type_activity: "Activity Plan / Extracurricular",
-            type_admin: "Admin Helper (PPT / Word)",
-            ph_comment: "Comment (optional)",
-            ph_grade: "Grade (optional)",
-            ph_students: "Number of Students",
-            ph_duration: "Duration (e.g., 45 mins)",
-            ph_length: "Length (Short / Medium / Long)",
-            pleaseWait: "Please wait for 1 minute…",
-            pleaseWaitVA: "Your Visual Assets is delivering…",
-            ph_input: "Type something...",
-            details: "Details",
-            label_comment: "Comment",
-            label_grade: "Grade",
-            label_students: "Number of Students",
-            label_duration: "Duration",
-            label_length: "Length",
-            na: "N/A",
-            browseFiles: "📁 Browse files from database:",
-            uploadFiles: "Upload Files",
-            browseDatabase: "Browse Database",
-            confirmSelection: "Confirm Selection",
-            exportDocx: "Export to .docx"
+            pleaseFill: "Please provide some input or select a file.", noExtractedText: "No extracted text found – please upload a PDF / Word / image first.",
+            noTemplateFound: "⚠️ No corresponding template was found to generate content!", atLeastOnePart: "Please select at least one part to refine.", generationFailed: "❌ Generation failed. Please try again.",
+            pleaseRefine: "✅ Yes, please refine.", noThanks: "❌ No, that’s enough.", replacedMsg: "🔄 \"{filename}\" replaced.",
+            replaceConfirm: "Replace previously selected \"{filename}\"?", infoCollected: "✅ All info collected. Ready to generate!",
+            type_lesson: "Lesson Plan", type_materials: "Class Materials (PPT/pictures)", type_report: "Report Card", type_feedback: "Student‑Work Feedback",
+            type_bank: "Subject Question Bank / Assignment", type_activity: "Activity Plan / Extracurricular", type_admin: "Admin Helper (PPT / Word)",
+            ph_comment: "Comment (optional)", ph_grade: "Grade (optional)", ph_students: "Number of Students", ph_duration: "Duration (e.g., 45 mins)",
+            ph_length: "Length (Short / Medium / Long)", pleaseWait: "Please wait for 1 minute…", pleaseWaitVA: "Your Visual Assets is delivering…",
+            ph_input: "Type something...", details: "Details", label_comment: "Comment", label_grade: "Grade", label_students: "Number of Students",
+            label_duration: "Duration", label_length: "Length", na: "N/A",
+            browseFiles: "📁 Browse files from database:", uploadFiles: "Upload Files", browseDatabase: "Browse Database",
+            confirmSelection: "Confirm Selection", exportDocx: "Export to .docx"
         },
-        zh: {},
-        "zh-HK": {}
+        zh: {}, "zh-HK": {}
     };
-    translations.zh = { ...translations.eng,
+    translations.zh = { ...translations.en,
         title: "👋 你想生成什么？", next: "下一步", upload: "上传文件", yes: "是", no: "否", saveBtn: "保存",
-        regenerateBtn: "🔍 重新生成并丰富细节", morePrompt: "问题 4/5：✏️ 请补充更多信息：注释、年级、学生人数、时长、长度",
+        regenerateBtn: "🔍 重新生成并丰富细节",
         refineWhich: "🧩 你想让哪些部分更具体？", done: "🎉 明白了！如有其他需求请告诉我。",
-        question1: "问题 1/5：👇 请选择一个类型：", question2: "问题 2/5：💭 你为什么需要这个？（例如：为二年级学生上的数学课，或是下周的家长会）",
+        question1: "问题 1/5：� 请选择一个类型：", question2: "问题 2/5：💭 你为什么需要这个？（例如：为二年级学生上的数学课，或是下周的家长会）",
         question3: "问题 3/5：📎 你现在手上有什么资料？（你可以上传文件或浏览我们的数据库）",
         question4: "问题 4/5：✏️ 请补充更多信息：注释、年级、学生人数、时长、长度", question5: "问题 5/5：🔍 是否希望某些部分更具体？",
         pleaseFill: "请提供一些输入或选择一个文件。", noExtractedText: "未找到提取的文本 – 请上传 PDF / Word / 图片文件。",
         noTemplateFound: "⚠️ 找不到对应的生成模板！", atLeastOnePart: "请至少选择一个要细化的部分。", generationFailed: "❌ 生成失败。请重试。",
         pleaseRefine: "✅ 是的，请细化。", noThanks: "❌ 不用了。", replacedMsg: "🔄 已替换\"{filename}\"。",
-        replaceConfirm: "是否替换之前上传的\"{filename}\"？", infoCollected: "✅ 所有信息已收集，准备生成！",
+        replaceConfirm: "是否替换之前选择的\"{filename}\"？", infoCollected: "✅ 所有信息已收集，准备生成！",
         type_lesson: "课程教案", type_materials: "课堂素材 (PPT/图片)", type_report: "成绩单", type_feedback: "作品反馈",
         type_bank: "题库 / 作业", type_activity: "活动方案", type_admin: "行政文档 (PPT/Word)",
         ph_comment: "注释（可选）", ph_grade: "年级（可选）", ph_students: "学生人数", ph_duration: "时长（例如 45 分钟）",
@@ -444,9 +391,9 @@
         browseFiles: "📁 从数据库中选择文件：", uploadFiles: "上传文件", browseDatabase: "浏览数据库",
         confirmSelection: "确认选择", exportDocx: "导出到 .docx"
     };
-    translations["zh-HK"] = { ...translations.eng,
+    translations["zh-HK"] = { ...translations.en,
         title: "👋 你想要生成什麼？", next: "下一步", upload: "上傳檔案", yes: "是", no: "否", saveBtn: "儲存",
-        regenerateBtn: "🔍 重新生成並豐富細節", morePrompt: "問題 4/5：✏️ 請補充更多細節：註解、年級、學生人數、時長、長度",
+        regenerateBtn: "🔍 重新生成並豐富細節",
         refineWhich: "🧩 你想讓哪些部分更具體？", done: "🎉 明白！如有其他需要請告訴我。",
         question1: "問題 1/5：👇 請選擇一個類型：", question2: "問題 2/5：💭 你為什麼需要這個？（例如：為二年級學生上的數學課，或是下週的家長會）",
         question3: "問題 3/5：📎 你現在手上有什麼資料 (你可以上傳檔案或瀏覽我們的數據庫)",
@@ -454,7 +401,7 @@
         pleaseFill: "請提供一些輸入或選擇一個文件。", noExtractedText: "未找到提取內容 – 請先上傳 PDF / Word / 圖片。",
         noTemplateFound: "⚠️ 找不到對應的生成模板！", atLeastOnePart: "請至少選擇一個需要細化的部分。", generationFailed: "❌ 生成失敗。請再試一次。",
         pleaseRefine: "✅ 是的，請細化。", noThanks: "❌ 不用了。", replacedMsg: "🔄 已替換\"{filename}\"。",
-        replaceConfirm: "是否替換之前上傳的\"{filename}\"？", infoCollected: "✅ 所有資訊已收集，準備生成！",
+        replaceConfirm: "是否替換之前選擇的\"{filename}\"？", infoCollected: "✅ 所有資訊已收集，準備生成！",
         type_lesson: "課程教案", type_materials: "課堂素材 (PPT/圖片)", type_report: "成績單", type_feedback: "作品回饋",
         type_bank: "題庫 / 作業", type_activity: "活動計畫", type_admin: "行政文件 (PPT/Word)",
         ph_comment: "註解（可選）", ph_grade: "年級（可選）", ph_students: "學生人數", ph_duration: "時長（例如 45 分鐘）",
@@ -466,38 +413,42 @@
     };
 
     const templateSections = {
-      "Lesson Plan": { eng: [ "Lesson Title / Subject Area", "Learning Goals & Measurable Objectives", "Prerequisite Knowledge", "Materials / Resources List", "Step‑by‑step Procedure & Timing", "Assessment / Evidence of Learning", "Differentiation / Accommodations", "Anticipated Difficulties/ Challenges → Solution", "Follow‑up / Reflection box" ], zh: [ "课题 / 学科领域", "学习目标 & 可测量指标", "先备知识", "材料 / 资源清单", "课堂步骤 & 时间分配", "评估方式 / 学习证据", "差异化教学 / 适应策略", "预判难点 / 挑战 → 解决方案", "课后跟进 / 反思" ], "zh-HK": [ "課程標題 / 科目領域", "學習目標 & 可衡量指標", "先備知識", "材料 / 資源清單", "步驟流程 & 時間配置", "評量方式 / 學習證據", "差異化教學 / 調整方案", "預期困難 / 挑戰 → 解決策略", "後續追蹤 / 反思" ] },
-      "Class Materials (PPT/pictures)": { eng: [ "Presentation Topic / Focus Question", "Expected Audience (Grade or Course)", "Key Points / Slide Outline", "Desired Visual Assets (images, charts, video links)", "Desired Audio Assets (music, sound clips)", "Branding Elements (school logo, colors, fonts)", "Speaker‑note Depth (none / bullet / full script)" ], zh: [ "演示主题 / 关注问题", "目标受众（年级或课程）", "关键要点 / 幻灯片大纲", "视觉素材需求（图片、图表、视频链接）", "音频素材需求（音乐、音效）", "品牌元素（校徽、色彩、字体）", "演讲者备注深度（无 / 要点 / 全脚本）" ], "zh-HK": [ "簡報主題 / 焦點問題", "預期受眾（年級或課程）", "重點 / 投影片大綱", "視覺素材需求（圖片、圖表、影片鏈接）", "音訊素材需求（音樂、音效）", "品牌元素（校徽、色彩、字體）", "講者備註深度（無 / 要點 / 完整稿）" ] },
-      "Report Card": { eng: [ "Student & Class Identifiers", "Term / Grading Period", "Subject List & Grade Scale", "Attendance Figures", "Behavior /Work‑Habit Ratings", "Other Learning Experience/ Extra-curricular activities", "Award", "Teacher Narrative Comments", "Parent signature flag" ], zh: [ "学生与班级信息", "学期 / 成绩周期", "科目列表与评分标准", "出勤数据", "行为 / 学习习惯评分", "其他学习经历 / 课外活动", "奖励", "教师评语", "家长签名项" ], "zh-HK": [ "學生與班級資訊", "學期 / 成績週期", "科目清單與評分標準", "出勤數據", "行為 / 學習習慣評分", "其他學習經驗 / 課外活動", "獎勵", "教師評語", "家長簽名項" ] },
-      "Student-Work Feedback": { eng: [ "Student / Assignment ID", "Rubric criteria or \"Glow & Grow\" fields (Strengths, Needs, Next Steps)", "Performance level or score", "Inline examples / Quotes", "Overall Comment", "Next-check-in Date" ], zh: [ "学生 / 作业编号", "评分标准或“优点与改进”字段（优势、需改进、下一步）", "表现等级或分数", "文中示例 / 引语", "整体评语", "下次回顾日期" ], "zh-HK": [ "學生 / 作業編號", "評分標準或「亮點與改進」欄位（優勢、需改善、後續步驟）", "表現等級或分數", "內文示例 / 引語", "整體評論", "下次檢視日期" ] },
-      "Subject Question Bank / Assignment": { eng: [ "Subject & Topic Tags", "Standard Alignment", "Question Type (MCQ, open, etc.)", "Difficulty Level", "Question Text", "Answer Choices & Correct Answer", "Explanation / Feedback", "Time Limit Per Item", "Category Folder" ], zh: [ "学科与主题标签", "课程标准对齐", "题型（选择题、开放题等）", "难度等级", "题干", "选项与正确答案", "解析 / 反馈", "每题时间限制", "分类文件夹" ], "zh-HK": [ "學科與主題標籤", "課綱對應", "題型（選擇題、開放題等）", "難度等級", "題目內容", "選項與正確答案", "解析 / 回饋", "每題時間限制", "分類資料夾" ] },
-      "Activity Plan / Extracurricular": { eng: [ "Activity Name & Purpose", "Date(s) / Time block", "Location & Access notes", "Target Group / # Students", "Required materials & Equipment", "Action plan", "Roles & supervision: resources allocation/ responsibilities", "Risk / safety considerations", "Assessment or reflection Method" ], zh: [ "活动名称与目的", "日期 / 时间段", "地点与进入说明", "目标群体 / 学生人数", "所需材料与设备", "行动计划", "职责与监督：资源配置 / 分工", "风险 / 安全考量", "评估或反思方式" ], "zh-HK": [ "活動名稱與目的", "日期 / 時段", "地點與進出說明", "目標對象 / 學生人數", "所需材料與設備", "行動計畫", "職責與監督：資源分配 / 任務分工", "風險 / 安全考量", "評估或反思方式" ] },
-      "Admin Helper (PPT / Word)": { eng: [ "Document Type (agenda, newsletter, handbook, policy)", "Audience", "Key Sections / Talking Points", "Attachments / Links", "Header-footer Branding", "Distribution Date" ], zh: [ "文档类型（议程、简报、手册、政策等）", "目标读者", "重点部分 / 要点", "附件 / 链接", "页眉页脚品牌标识", "发布日期" ], "zh-HK": [ "文件類型（議程、簡報、手冊、政策等）", "目標讀者", "重點內容 / 討論要點", "附件 / 鏈結", "頁首頁尾品牌標誌", "發布日期" ] }
+      "Lesson Plan": { en: [ "Lesson Title / Subject Area", "Learning Goals & Measurable Objectives", "Prerequisite Knowledge", "Materials / Resources List", "Step‑by‑step Procedure & Timing", "Assessment / Evidence of Learning", "Differentiation / Accommodations", "Anticipated Difficulties/ Challenges → Solution", "Follow‑up / Reflection box" ], zh: [ "课题 / 学科领域", "学习目标 & 可测量指标", "先备知识", "材料 / 资源清单", "课堂步骤 & 时间分配", "评估方式 / 学习证据", "差异化教学 / 适应策略", "预判难点 / 挑战 → 解决方案", "课后跟进 / 反思" ], "zh-HK": [ "課程標題 / 科目領域", "學習目標 & 可衡量指標", "先備知識", "材料 / 資源清單", "步驟流程 & 時間配置", "評量方式 / 學習證據", "差異化教學 / 調整方案", "預期困難 / 挑戰 → 解決策略", "後續追蹤 / 反思" ] },
+      "Class Materials (PPT/pictures)": { en: [ "Presentation Topic / Focus Question", "Expected Audience (Grade or Course)", "Key Points / Slide Outline", "Desired Visual Assets (images, charts, video links)", "Desired Audio Assets (music, sound clips)", "Branding Elements (school logo, colors, fonts)", "Speaker‑note Depth (none / bullet / full script)" ], zh: [ "演示主题 / 关注问题", "目标受众（年级或课程）", "关键要点 / 幻灯片大纲", "视觉素材需求（图片、图表、视频链接）", "音频素材需求（音乐、音效）", "品牌元素（校徽、色彩、字体）", "演讲者备注深度（无 / 要点 / 全脚本）" ], "zh-HK": [ "簡報主題 / 焦點問題", "預期受眾（年級或課程）", "重點 / 投影片大綱", "視覺素材需求（圖片、圖表、影片鏈接）", "音訊素材需求（音樂、音效）", "品牌元素（校徽、色彩、字體）", "講者備註深度（無 / 要點 / 完整稿）" ] },
+      "Report Card": { en: [ "Student & Class Identifiers", "Term / Grading Period", "Subject List & Grade Scale", "Attendance Figures", "Behavior /Work‑Habit Ratings", "Other Learning Experience/ Extra-curricular activities", "Award", "Teacher Narrative Comments", "Parent signature flag" ], zh: [ "学生与班级信息", "学期 / 成绩周期", "科目列表与评分标准", "出勤数据", "行为 / 学习习惯评分", "其他学习经历 / 课外活动", "奖励", "教师评语", "家长签名项" ], "zh-HK": [ "學生與班級資訊", "學期 / 成績週期", "科目清單與評分標準", "出勤數據", "行為 / 學習習慣評分", "其他學習經驗 / 課外活動", "獎勵", "教師評語", "家長簽名項" ] },
+      "Student-Work Feedback": { en: [ "Student / Assignment ID", "Rubric criteria or \"Glow & Grow\" fields (Strengths, Needs, Next Steps)", "Performance level or score", "Inline examples / Quotes", "Overall Comment", "Next-check-in Date" ], zh: [ "学生 / 作业编号", "评分标准或“优点与改进”字段（优势、需改进、下一步）", "表现等级或分数", "文中示例 / 引语", "整体评语", "下次回顾日期" ], "zh-HK": [ "學生 / 作業編號", "評分標準或「亮點與改進」欄位（優勢、需改善、後續步驟）", "表現等級或分數", "內文示例 / 引語", "整體評論", "下次檢視日期" ] },
+      "Subject Question Bank / Assignment": { en: [ "Subject & Topic Tags", "Standard Alignment", "Question Type (MCQ, open, etc.)", "Difficulty Level", "Question Text", "Answer Choices & Correct Answer", "Explanation / Feedback", "Time Limit Per Item", "Category Folder" ], zh: [ "学科与主题标签", "课程标准对齐", "题型（选择题、开放题等）", "难度等级", "题干", "选项与正确答案", "解析 / 反馈", "每题时间限制", "分类文件夹" ], "zh-HK": [ "學科與主題標籤", "課綱對應", "題型（選擇題、開放題等）", "難度等級", "題目內容", "選項與正確答案", "解析 / 回饋", "每題時間限制", "分類資料夾" ] },
+      "Activity Plan / Extracurricular": { en: [ "Activity Name & Purpose", "Date(s) / Time block", "Location & Access notes", "Target Group / # Students", "Required materials & Equipment", "Action plan", "Roles & supervision: resources allocation/ responsibilities", "Risk / safety considerations", "Assessment or reflection Method" ], zh: [ "活动名称与目的", "日期 / 时间段", "地点与进入说明", "目标群体 / 学生人数", "所需材料与设备", "行动计划", "职责与监督：资源配置 / 分工", "风险 / 安全考量", "评估或反思方式" ], "zh-HK": [ "活動名稱與目的", "日期 / 時段", "地點與進出說明", "目標對象 / 學生人數", "所需材料與設備", "行動計畫", "職責與監督：資源分配 / 任務分工", "風險 / 安全考量", "評估或反思方式" ] },
+      "Admin Helper (PPT / Word)": { en: [ "Document Type (agenda, newsletter, handbook, policy)", "Audience", "Key Sections / Talking Points", "Attachments / Links", "Header-footer Branding", "Distribution Date" ], zh: [ "文档类型（议程、简报、手册、政策等）", "目标读者", "重点部分 / 要点", "附件 / 链接", "页眉页脚品牌标识", "发布日期" ], "zh-HK": [ "文件類型（議程、簡報、手冊、政策等）", "目標讀者", "重點內容 / 討論要點", "附件 / 鏈結", "頁首頁尾品牌標誌", "發布日期" ] }
     };
     
     const topicTemplates = {
-        "Lesson Plan": "Please generate a detailed Lesson Plan using the following template:\n• Lesson Title / Subject Area\n• Learning Goals & Measurable Objectives\n• Prerequisite Knowledge\n• Materials / Resources List\n• Step‑by‑step Procedure & Timing\n• Assessment / Evidence of Learning\n• Differentiation / Accommodations\n• Anticipated Difficulties/ Challenges → Solution\n• Follow‑up / Reflection box",
-        "Class Materials (PPT/pictures)": "Please generate detailed Class Materials based on this template:\n• Presentation Topic / Focus Question\n• Expected Audience (Grade or Course)\n• Key Points / Slide Outline\n• Desired Visual Assets (images, charts, video links)\n• Desired Audio Assets (music, sound clips)\n• Branding Elements (school logo, colors, fonts)\n• Speaker‑note Depth (none / bullet / full script)\nList each slide and suggest a relevant explanatory image for each to help student comprehension.",
-        "Report Card": "Please generate a detailed Report Card using this template:\n• Student & Class Identifiers\n• Term / Grading Period\n• Subject List & Grade Scale\n• Attendance Figures\n• Behavior /Work‑Habit Ratings\n• Other Learning Experience/ Extra-curricular activities\n• Award\n• Teacher Narrative Comments\n• Parent signature flag",
-        "Student-Work Feedback": "Please generate detailed Student Work Feedback using this template:\n• Student / Assignment ID\n• Rubric criteria or \"Glow & Grow\" fields (Strengths, Needs, Next Steps)\n• Performance level or score\n• Inline examples / Quotes\n• Overall Comment\n• Next-check-in Date",
-        "Subject Question Bank / Assignment": "Please generate a Subject Question Bank / Assignment using this template:\n• Subject & Topic Tags\n• Standard Alignment\n• Question Type (MCQ, open, etc.)\n• Difficulty Level\n• Question Text\n• Answer Choices & Correct Answer\n• Explanation / Feedback\n• Time Limit Per Item\n• Category Folder",
-        "Activity Plan / Extracurricular": "Please generate a detailed Activity Plan using this template:\n• Activity Name & Purpose\n• Date(s) / Time block\n• Location & Access notes\n• Target Group / # Students\n• Required materials & Equipment\n• Action plan\n• Roles & supervision: resources allocation/ responsibilities\n• Risk / safety considerations\n• Assessment or reflection Method",
-        "Admin Helper (PPT / Word)": "Please generate an Admin Helper document using this template:\n• Document Type (agenda, newsletter, handbook, policy)\n• Audience\n• Key Sections / Talking Points\n• Attachments / Links\n• Header-footer Branding\n• Distribution Date"
+      "Lesson Plan": "Please generate a detailed Lesson Plan using the following template:\n• Lesson Title / Subject Area\n• Learning Goals & Measurable Objectives\n• Prerequisite Knowledge\n• Materials / Resources List\n• Step‑by‑step Procedure & Timing\n• Assessment / Evidence of Learning\n• Differentiation / Accommodations\n• Anticipated Difficulties/ Challenges → Solution\n• Follow‑up / Reflection box",
+      "Class Materials (PPT/pictures)": "Please generate detailed Class Materials based on this template:\n• Presentation Topic / Focus Question\n• Expected Audience (Grade or Course)\n• Key Points / Slide Outline\n• Desired Visual Assets (images, charts, video links)\n• Desired Audio Assets (music, sound clips)\n• Branding Elements (school logo, colors, fonts)\n• Speaker‑note Depth (none / bullet / full script)\nList each slide and suggest a relevant explanatory image for each to help student comprehension.",
+      "Report Card": "Please generate a detailed Report Card using this template:\n• Student & Class Identifiers\n• Term / Grading Period\n• Subject List & Grade Scale\n• Attendance Figures\n• Behavior /Work‑Habit Ratings\n• Other Learning Experience/ Extra-curricular activities\n• Award\n• Teacher Narrative Comments\n• Parent signature flag",
+      "Student-Work Feedback": "Please generate detailed Student Work Feedback using this template:\n• Student / Assignment ID\n• Rubric criteria or \"Glow & Grow\" fields (Strengths, Needs, Next Steps)\n• Performance level or score\n• Inline examples / Quotes\n• Overall Comment\n• Next-check-in Date",
+      "Subject Question Bank / Assignment": "Please generate a Subject Question Bank / Assignment using this template:\n• Subject & Topic Tags\n• Standard Alignment\n• Question Type (MCQ, open, etc.)\n• Difficulty Level\n• Question Text\n• Answer Choices & Correct Answer\n• Explanation / Feedback\n• Time Limit Per Item\n• Category Folder",
+      "Activity Plan / Extracurricular": "Please generate a detailed Activity Plan using this template:\n• Activity Name & Purpose\n• Date(s) / Time block\n• Location & Access notes\n• Target Group / # Students\n• Required materials & Equipment\n• Action plan\n• Roles & supervision: resources allocation/ responsibilities\n• Risk / safety considerations\n• Assessment or reflection Method",
+      "Admin Helper (PPT / Word)": "Please generate an Admin Helper document using this template:\n• Document Type (agenda, newsletter, handbook, policy)\n• Audience\n• Key Sections / Talking Points\n• Attachments / Links\n• Header-footer Branding\n• Distribution Date"
     };
-    
-    </script>
+  </script>
 
-    <script>
-    const books = [{"title": "【北师大版】一年级上册数学电子课本", "path": "北师大版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1JVKwSxf45OM2t-r54tLqAqS_PQpLFCqA/view?usp=sharing"}, {"title": "【北师大版】一年级下册数学电子课本", "path": "北师大版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1-nLQz68MPEAMUVHqkdlZCjRdGcaRFroX/view?usp=sharing"}, {"title": "【北师大版】六年级上册数学电子课本", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/1QZKWDRvtIJf_8BqfGc9ya91_sl3X7G40/view?usp=sharing"}, {"title": "【北师大版】四年级下册数学电子课本", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/1tVJgggU_-rH6rGRKvWhghWcG2xm5-wnw/view?usp=sharing"}, {"title": "【北师大版】一年级下册(2025春版)数学电子课本-社学整理", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/1OQcVP1o_H_CqmDpK4td_UVmk-PeFs6DM/view?usp=sharing"}, {"title": "【北师大版】二年级下册数学电子课本", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/1aEZYqrLFBgyhc3F4rIBUm1SZOJUjj8fc/view?usp=sharing"}, {"title": "【北师大版】一年级上册(2024秋版)数学电子课本", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/1uqsZ0hKMHffdNWIVLFQZBAl6ckEfhymB/view?usp=sharing"}, {"title": "【北师大版】四年级上册数学电子课本", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/1IpIdyohBj0XOharN18Rw2jMQVWVzwDn1/view?usp=sharing"}, {"title": "【北师大版】三年级下册数学电子课本", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/1ZMn628sFQIoLOGZ4Gskg78Hkw5pgnP1r/view?usp=sharing"}, {"title": "【北师大版】六年级下册数学电子课本", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/1iOdi0rFYq8vWKRAvOsu3Uk7e405LW_Fr/view?usp=sharing"}, {"title": "【北师大版】三年级上册数学电子课本", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/13NDvwcKWojZBRV1-7UP56q1fnHj8vdMQ/view?usp=sharing"}, {"title": "【北师大版】二年级上册数学电子课本", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/1XLqh8wPznU3zMnWYC0tkMxwJOVADZTud/view?usp=sharing"}, {"title": "【北师大版】五年级下册数学电子课本", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/1ry0e6mG8nc1RgZxSqnTJ-VNanEKwGcAF/view?usp=sharing"}, {"title": "【北师大版】五年级上册数学电子课本-社学整理", "path": "北师大版", "drive_url": "https://drive.google.com/file/d/1ytvPdIbhjRA_xJjr_w66GcOqJeTKCSli/view?usp=sharing"}, {"title": "【人教版】一年级下册数学电子课本", "path": "人教版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1wt1niMm_JdCTLMSV1O9M6ATFoABUvNPL/view?usp=sharing"}, {"title": "【人教版】一年级上册数学电子课本", "path": "人教版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1_d_zBT33RDqnAje1zkQAb1NwvNWC74lH/view?usp=sharing"}, {"title": "【人教版】三年级上册数学电子课本", "path": "人教版", "drive_url": "https://drive.google.com/file/d/1K7ZEThBsx0hhy9RY_C81ms6hi-ILC12k/view?usp=sharing"}, {"title": "【人教版】五年级下册数学电子课本", "path": "人教版", "drive_url": "https://drive.google.com/file/d/1CIiSoVf2FmJXXVoUB1X2sayNBxTl31Tf/view?usp=sharing"}, {"title": "【人教版】一年级下册(2025春版)数学电子课本", "path": "人教版", "drive_url": "https://drive.google.com/file/d/1nKHaHsik_5yXxjV2ABMmz4YTp7WBLkXa/view?usp=sharing"}, {"title": "【人教版】六年级上册数学电子课本", "path": "人教版", "drive_url": "https://drive.google.com/file/d/14r4RTPZ0F4UCLIH-cYDxbBeoFpHXDzIi/view?usp=sharing"}, {"title": "【人教版】四年级下册数学电子课本", "path": "人教版", "drive_url": "https://drive.google.com/file/d/1UwpKfwUPvAS17eSzpi48brQ2AWbUdQYI/view?usp=sharing"}, {"title": "【人教版】四年级上册数学电子课本", "path": "人教版", "drive_url": "https://drive.google.com/file/d/1-fsn3zR86xvGOafXlg0fGzyco3MEFyfv/view?usp=sharing"}, {"title": "【人教版】五年级上册数学电子课本", "path": "人教版", "drive_url": "https://drive.google.com/file/d/1eTOM29T90xpN_naTDY-Iof67DPAJCoH_/view?usp=sharing"}, {"title": "【人教版】三年级下册数学电子课本", "path": "人教版", "drive_url": "https://drive.google.com/file/d/1ZtqLOrEDjBuDeDjvnwFy41SbQhN8kysA/view?usp=sharing"}, {"title": "【人教版】六年级下册数学电子课本", "path": "人教版", "drive_url": "https://drive.google.com/file/d/13ScZM_Z1WNIM3Tj2_KNZlGYTrtOywqOr/view?usp=sharing"}, {"title": "【人教版】二年级上册数学电子课本-社学整理", "path": "人教版", "drive_url": "https://drive.google.com/file/d/17yBbF3Dw1OYW774PfrRcewX_MN11oRUt/view?usp=sharing"}, {"title": "【人教版】一年级上册(2024秋版)数学电子课本", "path": "人教版", "drive_url": "https://drive.google.com/file/d/1AlU6JnHnr8-dlyIbzJrgEjPP0W738TiX/view?usp=sharing"}, {"title": "【人教版】二年级下册数学电子课本", "path": "人教版", "drive_url": "https://drive.google.com/file/d/1LOMwLkmPWUMjhvYNnGslRmf_ziV7x0DQ/view?usp=sharing"}, {"title": "【苏教版】一年级上册数学电子课本", "path": "苏教版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1iXlgrMov2D5dSR-B6_UhW1jHND7JVcnd/view?usp=sharing"}, {"title": "【苏教版】一年级下册数学电子课本", "path": "苏教版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1GE-VPGGWcjFLBT_MNlPmotGxszk64Leg/view?usp=sharing"}, {"title": "【苏教版】三年级上册数学电子课本", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1Wj_CKslWcX9kAh-jFWOEsD-6d1lWwr_h/view?usp=sharing"}, {"title": "【苏教版】二年级下册数学电子课本", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1a_0_wb88J_6JnEitpX7KIIjWl4n8gtXe/view?usp=sharing"}, {"title": "【苏教版】一年级上册(2024秋版)数学电子课本", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1YGnICLQn7m2oPNbjGsfHpfkrF-oA-5an/view?usp=sharing"}, {"title": "【苏教版】五年级下册数学电子课本", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1LAJEfqIkmZ7BBH9O7isgfpEe_BgYUJvK/view?usp=sharing"}, {"title": "【苏教版】三年级下册数学电子课本-社学整理", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1j7VWIUwGocZZharVHapEl8tlhlcWzmql/view?usp=sharing"}, {"title": "【苏教版】六年级下册数学电子课本", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1pLFV9Jh0pRR60yCmCNuVi9qfizfPmLK6/view?usp=sharing"}, {"title": "【苏教版】六年级上册数学电子课本", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1Mki_DVxSvgNyJu62OuXtPBb4T5nH19dY/view?usp=sharing"}, {"title": "【苏教版】五年级上册数学电子课本", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1ewRcjq6_gIBLS0D1TKCp_15nzaXvK42N/view?usp=sharing"}, {"title": "【苏教版】二年级上册数学电子课本", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1ac7gxIGPuo1hYhK4nAd2Nt5DGSwuLi5p/view?usp=sharing"}, {"title": "【苏教版】一年级下册(2025春版)数学电子课本", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1mjK9rpNpPjXdzNEXH9slcAQ3fNJ1deZC/view?usp=sharing"}, {"title": "【苏教版】四年级上册数学电子课本", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1lZZ2ZCfLiP16DT3BJNcWSlOBALrKnXvX/view?usp=sharing"}, {"title": "【苏教版】四年级下册数学电子课本", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/1ZOuNtxD_L-ONWCkeJpCrQ_b8poTthCqf/view?usp=sharing"}, {"title": "【苏教版】二年级上册(2025秋版)数学电子课本（提前预习）", "path": "苏教版", "drive_url": "https://drive.google.com/file/d/16oCxNHP8QwxWPu61D-KTWg8CChi35M4l/view?usp=sharing"}, {"title": "【西南大学版】一年级下册数学电子课本", "path": "西南大学版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1Y6F0L0nJgyHKKIB-yIELh2V1ovMZxvBa/view?usp=sharing"}, {"title": "【西南大学版】一年级上册数学电子课本-社学整理", "path": "西南大学版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1Xzqo07hA-PJ0xCWNqoy3HMzAxQn6dUgJ/view?usp=sharing"}, {"title": "【西南大学版】一年级上册(2024秋版)数学电子课本", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/1Ijq_aQox_dVsQ4_JAh6CltbN2Ukzg3ox/view?usp=sharing"}, {"title": "【西南大学版】六年级上册数学电子课本-社学整理", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/16g7FJca65FH5zC03iAKjhaYhWWUb_2m_/view?usp=sharing"}, {"title": "【西南大学版】二年级下册数学电子课本", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/1DamFf2p9IpMA65_bdsTcTrBH2swaaLrD/view?usp=sharing"}, {"title": "【西南大学版】四年级上册数学电子课本", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/1JNkmf47d-4iGuDKJ_WM4MSRWCpzHDpK9/view?usp=sharing"}, {"title": "【西南大学版】三年级下册数学电子课本", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/1oyWtpMMIANpKHOpsl2HTLjeNTrCYR0Dg/view?usp=sharing"}, {"title": "【西南大学版】一年级下册(2025春版)数学电子课本", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/1B5tPhB4w1cmhwZZLRW356zkxKNdFHsgk/view?usp=sharing"}, {"title": "【西南大学版】五年级上册数学电子课本", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/16pn2aY5ndxQGnbp_ILCSbour0BvKOaFn/view?usp=sharing"}, {"title": "【西南大学版】五年级下册数学电子课本", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/1TdUkHp0g80XRWV2wIPbZvQtG3qsYCTLZ/view?usp=sharing"}, {"title": "【西南大学版】二年级上册数学电子课本", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/1iyhwkyV3w-0iYQx3YygY8TQtOXY6e-5m/view?usp=sharing"}, {"title": "【西南大学版】三年级上册数学电子课本", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/1KMLeOBSX7mCmLxsBH0qgB0wV-UYK22cl/view?usp=sharing"}, {"title": "【西南大学版】六年级下册数学电子课本", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/1T7usDibsMKJCbDTDjWik_DvIWff2CR1q/view?usp=sharing"}, {"title": "【西南大学版】四年级下册数学电子课本", "path": "西南大学版", "drive_url": "https://drive.google.com/file/d/1yDtSj8yblZP2cWtouiUj_5aZKEp5UUEI/view?usp=sharing"}, {"title": "【北京版】一年级下册数学电子课本", "path": "北京版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1u-GOoSWf9HjtUEkNFARC2dxv61spGCtI/view?usp=sharing"}, {"title": "【北京版】一年级上册数学电子课本", "path": "北京版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1axFBj5V0EI2-H4yCSUlwoaIWuh6wlNTM/view?usp=sharing"}, {"title": "【北京版】一年级上册(2024秋版)数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/18LBU0Gp8w85tVBvTCAKmTnMBTnpuPWwE/view?usp=sharing"}, {"title": "【北京版】四年级上册数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/1MH4s6oeaAiGhRj4AonP66HizaOG2aZW1/view?usp=sharing"}, {"title": "【北京版】五年级上册数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/1XcUphuF761fRK4YEULsQr4uV4lGDaVRy/view?usp=sharing"}, {"title": "【北京版】三年级上册数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/1kO6SfkjBVQuYCMlkEnfN4r0bYkya8wgn/view?usp=sharing"}, {"title": "【北京版】二年级下册数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/1p46ThGNFwOZDtk6dbVKu5xBurV_0kSaH/view?usp=sharing"}, {"title": "【北京版】三年级下册数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/1ok35VKBX8T_T2Vfj2Sv1HfjOWb_faHC9/view?usp=sharing"}, {"title": "【北京版】六年级下册数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/1SQteb8onT-_6SMe1Jg_0o-b4bwaMVwba/view?usp=sharing"}, {"title": "【北京版】六年级上册数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/1f2ymmYhZn10Oyc-MWU2uhUanFjO26gxP/view?usp=sharing"}, {"title": "【北京版】五年级下册数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/170Z6c1ysjeyoXmWCHsC6PZJqThsw3xZT/view?usp=sharing"}, {"title": "【北京版】二年级上册数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/1tUFLUUtEfqK-2eTrotHPMrNUVJgDVFZy/view?usp=sharing"}, {"title": "【北京版】一年级下册(2025春版)数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/1BR9XwRtIDPSpkSKhfP7e-wNM7QR2pszb/view?usp=sharing"}, {"title": "【北京版】四年级下册数学电子课本", "path": "北京版", "drive_url": "https://drive.google.com/file/d/1pCq0clGJqE3Yr_uf_A-1U_YSwNk0fFtn/view?usp=sharing"}, {"title": "【青岛版】一年级下册数学电子课本", "path": "青岛版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1ntTh8SAHc6KYtVNHhBcHDXBUUepaZL_z/view?usp=sharing"}, {"title": "【青岛版】一年级上册数学电子课本-社学整理", "path": "青岛版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1xjHdtvQIxZ2YgNfcpZt1DfD-S4pGbBNQ/view?usp=sharing"}, {"title": "【青岛版】一年级上册(2024秋版)数学电子课本", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/1SwTqGMVxARw2HZ1dkXM1wZ9Y3NeZcMwr/view?usp=sharing"}, {"title": "【青岛版】一年级下册(2025春版)数学电子课本", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/1iylJeY8inyLpkaNP7dd3bmdE4xCMqErt/view?usp=sharing"}, {"title": "【青岛版】三年级下册数学电子课本", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/1TXyPnveT-9yUj4O3HRBfDKX1kuG7eYvx/view?usp=sharing"}, {"title": "【青岛版】四年级上册数学电子课本", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/1BApw2WTy7m2PL1-SzJmZZ-eBfHZup8ur/view?usp=sharing"}, {"title": "【青岛版】二年级上册数学电子课本", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/1-lNPTeRDOMDgeAq9b8BqUK6jgcmruhDf/view?usp=sharing"}, {"title": "【青岛版】五年级下册数学电子课本-社学整理", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/1pfbNKKCXsYMU7aSDr50ctgYRXrxeMxdr/view?usp=sharing"}, {"title": "【青岛版】五年级上册数学电子课本", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/10pZlEQ56KQzEu0SLpPKWtPxbEitIYWOM/view?usp=sharing"}, {"title": "【青岛版】三年级上册数学电子课本", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/1G0cjowxKri_bS4K5lf1sqBS9-UzYz_8e/view?usp=sharing"}, {"title": "【青岛版】六年级下册数学电子课本", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/1t4Etrz-tm5cWAeGhY_zq_NCwe6lHncDP/view?usp=sharing"}, {"title": "【青岛版】二年级下册数学电子课本", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/1Z-lMB8kjoszLcT33hGNO2JqwXerPecev/view?usp=sharing"}, {"title": "【青岛版】六年级上册数学电子课本", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/1sH0Hz0BE66hY-KwohH8G1mT7ldusskS3/view?usp=sharing"}, {"title": "【青岛版】四年级下册数学电子课本", "path": "青岛版", "drive_url": "https://drive.google.com/file/d/187i0bxzyfSj38m_015CAp-L52rXWO34Z/view?usp=sharing"}, {"title": "【青岛版五四制】一年级下册数学电子课本", "path": "青岛版【五四制】/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1i8Oi1CFZZmwrUVQ73qO6k31dIFkWdWUQ/view?usp=sharing"}, {"title": "【青岛版五四制】一年级上册数学电子课本", "path": "青岛版【五四制】/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1yWHJQ-hRu5FVsvvhtwj33p_1UNlPKKXC/view?usp=sharing"}, {"title": "【青岛版五四制】一年级上册(2024秋版)数学电子课本", "path": "青岛版【五四制】", "drive_url": "https://drive.google.com/file/d/1g49KiexEOK_yOG4SzsWdPC_Waq__aUvt/view?usp=sharing"}, {"title": "【青岛版五四制】一年级下册(2025春版)数学电子课本", "path": "青岛版【五四制】", "drive_url": "https://drive.google.com/file/d/1jrKnw7cEJmQmF5IibvlqhWJSTqZIhU3f/view?usp=sharing"}, {"title": "【青岛版五四制】二年级下册数学电子课本-社学整理", "path": "青岛版【五四制】", "drive_url": "https://drive.google.com/file/d/1zCLosTCn9eD7p4cPvqgQIjkS_UClJ8t2/view?usp=sharing"}, {"title": "【青岛版五四制】二年级上册数学电子课本", "path": "青岛版【五四制】", "drive_url": "https://drive.google.com/file/d/1nJNuJk9pH6E3wkicv-zgfMB_FX0Y8jrr/view?usp=sharing"}, {"title": "【青岛版五四制】五年级下册数学电子课本", "path": "青岛版【五四制】", "drive_url": "https://drive.google.com/file/d/1AwF1vGwrM8KnMugN-hD-LiFUfC5Qsdc-/view?usp=sharing"}, {"title": "【青岛版五四制】五年级上册数学电子课本", "path": "青岛版【五四制】", "drive_url": "https://drive.google.com/file/d/1wC8mTYQ2TuVttS2sut1MKi5t1uOLsccC/view?usp=sharing"}, {"title": "【青岛版五四制】四年级上册数学电子课本-社学整理", "path": "青岛版【五四制】", "drive_url": "https://drive.google.com/file/d/1LmKVCkMYMRfmtCDQB9Am1NuEAl3S7Cey/view?usp=sharing"}, {"title": "【青岛版五四制】三年级下册数学电子课本", "path": "青岛版【五四制】", "drive_url": "https://drive.google.com/file/d/12N8YXoeYuV35_P8y8bqLjHD7sUJBMbfY/view?usp=sharing"}, {"title": "【青岛版五四制】四年级下册数学电子课本", "path": "青岛版【五四制】", "drive_url": "https://drive.google.com/file/d/1ofDAyom1YyYlFXINs7aPTMy8IZ17CIxz/view?usp=sharing"}, {"title": "【青岛版五四制】三年级上册数学电子课本", "path": "青岛版【五四制】", "drive_url": "https://drive.google.com/file/d/1jBQiN2z5QUrseePMn1PLOIkpwnBRRvHZ/view?usp=sharing"}, {"title": "【冀教版】一年级上册数学电子课本", "path": "冀教版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1YQSRP-KUZntxqIGLhTYTQeEsxAwPpWHX/view?usp=sharing"}, {"title": "【冀教版】一年级下册数学电子课本", "path": "冀教版/2011年课标旧版", "drive_url": "https://drive.google.com/file/d/1uzdJW0kKJ0VUbCda4mB98IQ8qJWcd_DY/view?usp=sharing"}, {"title": "【冀教版】六年级下册数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/1Os3dFkBpMHF3g3r5mxie27trAamWSSxm/view?usp=sharing"}, {"title": "【冀教版】一年级下册(2025春版)数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/1T-bu984EiOdD-oIGoJlBCCjlPKG_krtT/view?usp=sharing"}, {"title": "【冀教版】五年级上册数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/1oC3PdNCAi1dMQNt_nFKssZHpmvuTR9fa/view?usp=sharing"}, {"title": "【冀教版】四年级上册数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/1FKuehQFsELPlTnnwNO4RsxmolK8rCMv2/view?usp=sharing"}, {"title": "【冀教版】四年级下册数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/1wSSQqPVHz9dGQ4hFItdLyEiek3Q4kNVu/view?usp=sharing"}, {"title": "【冀教版】一年级上册(2024秋版)数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/17s1C6AhnnQB7bk7j8Kxvfa6JRqnUfCUD/view?usp=sharing"}, {"title": "【冀教版】六年级上册数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/1m_6kHHBBE6o761prbMwaAuu0uSMCZiuE/view?usp=sharing"}, {"title": "【冀教版】三年级上册数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/1RnwJPPcqCjWaG6bGcawGBUnpZn-xHOnG/view?usp=sharing"}, {"title": "【冀教版】二年级下册数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/1bAMip8TCPA-Azm34mtq6vSQZKm27jVsY/view?usp=sharing"}, {"title": "【冀教版】三年级下册数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/1jU8nsVN3DQDz_v-eix1d_SzDXOkYWQCe/view?usp=sharing"}, {"title": "【冀教版】二年级上册数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/15h_RhT7wSHs6EOFFseYGvV1dOvYlMnYr/view?usp=sharing"}, {"title": "【冀教版】五年级下册数学电子课本", "path": "冀教版", "drive_url": "https://drive.google.com/file/d/1Ak8EKai-WN8KG_Wvb1c_wCVO2KLyCIbE/view?usp=sharing"}, {"title": "【沪教版五四制】一年级下册(2025春版)数学电子课本", "path": "沪教版【五四制】", "drive_url": "https://drive.google.com/file/d/1PcOsI7rb5Lqap4hkIsj-oLCT4KmiPeQc/view?usp=sharing"}, {"title": "【沪教版五四制】一年级上册(2024秋版)数学电子课本", "path": "沪教版【五四制】", "drive_url": "https://drive.google.com/file/d/1GbhcYUpGW28tTSc-2iWpzRPeiVPQs0z5/view?usp=sharing"}];
-    </script>
-    <!-- End of part 1 -->
+  <!-- Script Part 2: Application Logic -->
+  <script>
+    // --- Element References ---
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('user-input');
+    const fileInput = document.getElementById('file-upload');
+    const stage3FileInput = document.getElementById('stage-3-file-upload');
+    const inputArea = document.getElementById('input-area');
 
-
-    <!-- Here is part 2-->
-    <script>
     // --- Utility Functions ---
     const t = (key, vars = {}) => {
-        let s = translations[currentLang]?.[key] || translations.eng[key] || key;
+        let lang = currentLang.split('-')[0];
+        if (!translations[lang]) {
+            lang = 'en'; // Fallback to english
+        }
+        let s = translations[lang]?.[key] || translations.en[key] || key;
         for (const [k, v] of Object.entries(vars)) s = s.replace(`{${k}}`, v);
         return s;
     };
@@ -523,7 +474,6 @@
         document.querySelector('.tooltip-text').textContent = t('upload');
         document.getElementById('user-input').placeholder = t('ph_input');
         
-        // Update stage prompts already in the chat
         document.querySelectorAll('[data-stage-index] .bubble').forEach(b => {
             const idx = Number(b.parentElement.dataset.stageIndex);
             const isBot = b.parentElement.classList.contains('bot');
@@ -532,20 +482,24 @@
             }
         });
 
-        // Update Stage 3 UI specifically
         document.getElementById('question3-title').textContent = t('question3');
         document.getElementById('db-browser-label').textContent = t('browseFiles');
         const [uploadBtn, browseBtn] = document.querySelectorAll('#stage-3-ui .choice-btn');
         if (uploadBtn) uploadBtn.textContent = t('uploadFiles');
         if (browseBtn) browseBtn.textContent = t('browseDatabase');
+        refreshStage0UI();
     }
 
     function refreshStage0UI() {
-        const promptBubble = document.querySelector('[data-stage-index="0"].bot .bubble');
-        if (promptBubble) promptBubble.textContent = t('question1');
-        document.querySelectorAll('button[data-opt-key]').forEach(btn => {
-            btn.textContent = trType(btn.dataset.optKey);
-        });
+        const promptMsg = document.querySelector('.message.bot[data-stage-index="0"] .bubble');
+        if (promptMsg) promptMsg.textContent = t('question1');
+        
+        const btnContainer = document.querySelector('.message.bot[data-stage-index="0"] + .message.bot');
+        if(btnContainer) {
+            btnContainer.querySelectorAll('button[data-opt-key]').forEach(btn => {
+                btn.textContent = trType(btn.dataset.optKey);
+            });
+        }
     }
 
     // --- Core UI Logic ---
@@ -574,74 +528,81 @@
     }
 
     function renderMarkdown(bubble, md) {
-      md = (md || '').trim().replace(/^```(markdown)?\n?/i, '').replace(/```$/, '');
-      bubble.innerHTML = DOMPurify.sanitize(marked.parse(md));
-      bubble.querySelectorAll('a').forEach(a => {
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-      });
+        md = (md || '').trim().replace(/^```(markdown)?\n?/i, '').replace(/```$/, '');
+        md = md
+            .replace(/" | "/g, '"')
+            .replace(/' | '/g, "'")
+            .replace(/【/g, '[').replace(/】/g, ']')
+            .replace(/＊/g, '*')
+            .replace(/^[\s\t]*[•▪◦‣]\s+/gm, '* ')
+            .replace(/^[\s\t]*·\s+/gm, '* ')
+            .replace(/(^|\n)(\s*[*-]\s+)(Slide|Round|Scenario|Step|Phase|Station)\s+([\dA-Za-z]+:)/g, (_, brk, bullet, kw, rest) => `${brk}${bullet}**${kw} ${rest}**`)
+            .replace(/(^|\n)(\s{4,}[*-]\s+)([A-Za-z\u4e00-\u9fa5][^:\n]{1,40}?):/g, (_, brk, bullet, heading) => `${brk}${bullet}**${heading}:**`);
+            
+        bubble.innerHTML = DOMPurify.sanitize(marked.parse(md));
+        bubble.querySelectorAll('a').forEach(a => {
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+        });
     }
 
     // --- Main Conversational Flow (Stages) ---
     function showStage() {
-        if (currentStage >= stages.length) {
-            generateContent();
-            return;
-        }
+      if (currentStage >= stages.length) {
+        generateContent();
+        return;
+      }
 
-        const stage = stages[currentStage];
-        const promptTxt = t(stage.promptKey);
-        
-        // Hide all special UI sections by default
-        document.getElementById('stage-3-ui').style.display = 'none';
-        inputArea.style.display = 'flex';
+      const stage = stages[currentStage];
+      const promptTxt = t(stage.promptKey);
+      
+      document.getElementById('stage-3-ui').style.display = 'none';
+      inputArea.style.display = 'flex';
 
-        if (stage.key === 'have') {
-            appendMessage(promptTxt, 'bot', currentStage);
-            document.getElementById('stage-3-ui').style.display = 'block';
-            inputArea.style.display = 'none'; // Hide main input area during this stage
-            showUploadSection(); // Default to upload view
-            return; // Stop further execution, wait for user action in Stage 3 UI
-        }
+      if (stage.key === 'have') {
+        appendMessage(promptTxt, 'bot', currentStage);
+        document.getElementById('stage-3-ui').style.display = 'block';
+        inputArea.style.display = 'none';
+        showUploadSection(); 
+        return; 
+      }
 
-        if (stage.type === 'dropdown') {
-            appendMessage(promptTxt, 'bot', currentStage);
-            const container = document.createElement('div');
-            container.className = 'message bot';
-            const avatar = document.createElement('div');
-            avatar.className = 'avatar';
-            avatar.textContent = '🤖';
-            const btnGroup = document.createElement('div');
-            Object.assign(btnGroup.style, { display: 'flex', flexDirection: 'column', gap: '8px', marginLeft: '44px' });
+      if (stage.type === 'dropdown') {
+        appendMessage(promptTxt, 'bot', currentStage);
+        const container = document.createElement('div');
+        container.className = 'message bot';
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar';
+        avatar.textContent = '🤖';
+        const btnGroup = document.createElement('div');
+        Object.assign(btnGroup.style, { display: 'flex', flexDirection: 'column', gap: '8px', marginLeft: '40px' });
 
-            stage.options.forEach(optConst => {
-                const btn = document.createElement('button');
-                btn.dataset.optKey = optConst;
-                btn.textContent = trType(optConst);
-                Object.assign(btn.style, { padding: '10px 16px', border: '1px solid #ccc', borderRadius: '6px', background: 'white', cursor: 'pointer', fontFamily: 'Inter', transition: '0.2s' });
-                btn.onclick = () => handleChooseType(btn, optConst);
-                btnGroup.appendChild(btn);
-            });
+        stage.options.forEach(optConst => {
+          const btn = document.createElement('button');
+          btn.dataset.optKey = optConst;
+          btn.textContent = trType(optConst);
+          Object.assign(btn.style, { padding: '10px 16px', border: '1px solid #ccc', borderRadius: '6px', background: 'white', cursor: 'pointer', fontFamily: 'Inter', transition: '0.2s' });
+          btn.onclick = () => handleChooseType(btn, optConst);
+          btnGroup.appendChild(btn);
+        });
 
-            container.append(avatar, btnGroup);
-            chat.appendChild(container);
-        } else if (stage.type === 'yesno') {
-            // This logic is now part of askIfRefineNeeded
-            return; 
-        } else if (stage.key === 'more') {
-            renderMoreForm();
-        } else {
-            appendMessage(promptTxt, 'bot', currentStage);
-        }
-        chat.scrollTop = chat.scrollHeight;
+        container.append(avatar, btnGroup);
+        chat.appendChild(container);
+      } else if (stage.type === 'yesno') {
+        return;
+      } else if (stage.key === 'more') {
+        renderMoreForm();
+      } else {
+        appendMessage(promptTxt, 'bot', currentStage);
+      }
+      chat.scrollTop = chat.scrollHeight;
     }
 
     function handleUserInput() {
         const stage = stages[currentStage];
-        if (!stage) return;
+        if (!stage || stage.key === 'type' || stage.key === 'have') return;
         const value = input.value.trim();
-        
-        if (!value) return; // Only process if there is text input
+        if (!value) return;
         
         answers[stage.key] = value;
         appendMessage(value, 'user', currentStage);
@@ -657,14 +618,13 @@
         const newLabel = trType(optConst);
 
         if (oldChoice && oldChoice !== optConst) {
-            if (!confirm(`${t('replaceConfirm', { filename: oldChoice })}\n→ ${newLabel}`)) return;
+            if (!confirm(t('replaceConfirm', { filename: oldChoice }))) return;
         }
 
-        // Reset all buttons and messages after this point
-        pruneMessagesAfterStage(-1); // Clear everything after greeting
-        showStage(); // Restart from Stage 0 UI
+        pruneMessagesAfterStage(-1);
+        currentStage = 0;
+        showStage(); 
         
-        // Now apply selection
         const newBtnGroup = chat.lastChild;
         const buttons = newBtnGroup.querySelectorAll('button');
         buttons.forEach(b => b.classList.remove('selected'));
@@ -679,50 +639,44 @@
     }
 
     function pruneMessagesAfterStage(stageIdx) {
-        // Remove answers from state
-        for (let i = stageIdx + 1; i < stages.length; i++) {
-            delete answers[stages[i].key];
-        }
-        if (stageIdx < 2) delete answers.have; // specifically clear 'have' if going back before it
+      for (let i = stageIdx + 1; i < stages.length; i++) {
+        delete answers[stages[i].key];
+      }
+      if (stageIdx < 2) answers.have = [];
 
-        // Remove messages from UI
-        const messages = Array.from(document.querySelectorAll('#chat .message'));
-        for (let i = messages.length - 1; i >= 0; i--) {
-            const el = messages[i];
-            const idx = parseInt(el.dataset.stageIndex, 10);
-            if (!isNaN(idx) && idx > stageIdx) {
-                el.remove();
-            }
-        }
-        
-        // Also remove non-stage-indexed messages that appear after the prune point
-        const allChatChildren = Array.from(chat.children);
-        const lastMessageToKeep = Array.from(allChatChildren).reverse().find(el => {
-            const idx = parseInt(el.dataset.stageIndex, 10);
-            return !isNaN(idx) && idx <= stageIdx;
-        });
+      const messages = Array.from(document.querySelectorAll('#chat .message'));
+      let lastMessageToKeep = null;
+      for (let i = messages.length - 1; i >= 0; i--) {
+        const el = messages[i];
+        const idx = parseInt(el.dataset.stageIndex, 10);
+        if (el.matches('h2')) continue;
 
-        if (lastMessageToKeep) {
-            let nextEl = lastMessageToKeep.nextSibling;
-            while(nextEl) {
-                const toRemove = nextEl;
-                nextEl = nextEl.nextSibling;
-                toRemove.remove();
-            }
-        } else { // If nothing to keep (e.g., pruning after stage -1)
-             const heading = chat.querySelector('h2');
-             chat.innerHTML = '';
-             if(heading) chat.appendChild(heading);
+        if (!isNaN(idx) && idx > stageIdx) {
+          el.remove();
+        } else if (!isNaN(idx) && idx <= stageIdx && !lastMessageToKeep) {
+          lastMessageToKeep = el;
         }
+      }
 
-        // Clean up UI state
-        cleanupRefineUI();
-        lastGeneratedForm?.remove();
-        lastUserMoreMessage?.remove();
-        document.getElementById('stage-3-ui').style.display = 'none';
-        inputArea.style.display = 'flex';
+      if (lastMessageToKeep) {
+        let nextEl = lastMessageToKeep.nextSibling;
+        while(nextEl) {
+          const toRemove = nextEl;
+          nextEl = nextEl.nextSibling;
+          toRemove.remove();
+        }
+      } else { 
+        const heading = chat.querySelector('h2');
+        chat.innerHTML = '';
+        if(heading) chat.appendChild(heading);
+      }
+
+      cleanupRefineUI();
+      lastGeneratedForm?.remove();
+      lastUserMoreMessage?.remove();
+      document.getElementById('stage-3-ui').style.display = 'none';
+      inputArea.style.display = 'flex';
     }
-
 
     // --- Stage 3: File Input (Upload/Browse) ---
     function showUploadSection() {
@@ -737,7 +691,7 @@
         document.querySelector('#stage-3-ui .choice-btn:last-child').classList.add('selected');
         document.getElementById('upload-section').style.display = 'none';
         document.getElementById('db-browser-container').style.display = 'block';
-        if (typeof books !== 'undefined') renderGroupedList(books);
+        renderGroupedList(Object.values(regions).flatMap(r => r.books));
     }
     
     function handleStage3FileUpload(fileList) {
@@ -747,11 +701,12 @@
             const fileRecord = { id: crypto.randomUUID(), name: f.name, note: '', text: '', source: 'upload' };
             if (!answers.have) answers.have = [];
             answers.have.push(fileRecord);
-            extractAndStore(fileRecord, f); // Use streaming extraction
+            extractAndStore(fileRecord, f);
             return `📎 ${f.name}`;
         }).join('\n');
         
         appendMessage(fileNames, 'user', currentStage);
+        stage3FileInput.value = ''; // Reset file input
 
         document.getElementById('stage-3-ui').style.display = 'none';
         inputArea.style.display = 'flex';
@@ -773,37 +728,67 @@
         showStage();
     }
 
-    // --- Database Browser UI ---
+    // --- Database Browser UI (from local) ---
+    function parseGradeOrder(title) {
+        const match = title.match(/([一二三四五六])年级([上下])册/);
+        if (!match) return 999;
+        const gradeMap = { 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6 };
+        const termMap = { 上: 0, 下: 1 };
+        return (gradeMap[match[1]] || 0) * 10 + (termMap[match[2]] || 0);
+    }
+
     function renderGroupedList(bookList) {
         const container = document.getElementById('item-list');
         container.innerHTML = '';
-        const groupMap = {};
-        bookList.forEach(book => {
-            const group = book.path || 'Uncategorized';
-            if (!groupMap[group]) groupMap[group] = [];
-            groupMap[group].push(book);
-        });
+        Object.entries(regions).forEach(([regionKey, regionData]) => {
+            const regionTitle = document.createElement('div');
+            regionTitle.className = 'region-title collapsed';
+            regionTitle.textContent = `📚 ${regionData.name}`;
+            
+            const regionContent = document.createElement('div');
+            regionContent.className = 'region-content';
+            regionContent.style.display = 'none';
+            
+            regionTitle.onclick = () => {
+                const isCollapsed = regionContent.style.display === 'none';
+                regionContent.style.display = isCollapsed ? 'block' : 'none';
+                regionTitle.classList.toggle('collapsed', !isCollapsed);
+            };
+            container.appendChild(regionTitle);
+            container.appendChild(regionContent);
 
-        Object.keys(groupMap).sort().forEach(group => {
-            const titleEl = document.createElement('div');
-            titleEl.className = 'group-title';
-            titleEl.textContent = `📂 ${group}`;
-            container.appendChild(titleEl);
+            const groupMap = {};
+            regionData.books.forEach(book => {
+                if(bookList.includes(book)) { // Only render books from the filtered list
+                    const group = book.path || regionData.name;
+                    if (!groupMap[group]) groupMap[group] = [];
+                    groupMap[group].push(book);
+                }
+            });
 
-            groupMap[group].sort((a, b) => a.title.localeCompare(b.title)).forEach(book => {
-                const div = document.createElement('div');
-                div.className = 'book-item';
-                div.textContent = book.title;
-                const fileId = extractFileId(book.drive_url);
-                if(fileId) div.onclick = () => onItemClick(div, fileId, book.title);
-                container.appendChild(div);
+            Object.keys(groupMap).sort().forEach(group => {
+                const titleEl = document.createElement('div');
+                titleEl.className = 'group-title';
+                titleEl.textContent = `📂 ${group}`;
+                regionContent.appendChild(titleEl);
+
+                groupMap[group]
+                    .sort((a, b) => parseGradeOrder(a.title) - parseGradeOrder(b.title) || a.title.localeCompare(b.title))
+                    .forEach(book => {
+                        const div = document.createElement('div');
+                        div.className = 'book-item';
+                        div.textContent = book.title;
+                        const fileId = extractFileId(book.drive_url);
+                        if(fileId) div.onclick = () => onItemClick(div, fileId, book.title);
+                        regionContent.appendChild(div);
+                    });
             });
         });
     }
 
     function extractFileId(driveUrl) {
         const m = (driveUrl || '').match(/\/d\/([^/]+)\//);
-        return m ? m[1] : '';
+        return m ? m[1] : null;
     }
 
     function onItemClick(divEl, fileId, title) {
@@ -812,10 +797,11 @@
         const pdfPreview = document.getElementById('pdf-preview');
         pdfPreview.style.display = 'block';
         const pdfContainer = document.getElementById('pdf-container');
+        pdfContainer.innerHTML = `<p style="padding: 20px;">Loading preview...</p>`;
         pdfContainer.innerHTML = `<iframe src="https://drive.google.com/file/d/${fileId}/preview" style="width:100%; height:100%; border:none;"></iframe>`;
         
         const confirmBtn = document.getElementById('confirm-selection');
-        const newConfirmBtn = confirmBtn.cloneNode(true); // To remove old listeners
+        const newConfirmBtn = confirmBtn.cloneNode(true);
         confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
         newConfirmBtn.textContent = t('confirmSelection');
         newConfirmBtn.onclick = () => handleDatabaseFileSelection(fileId, title);
@@ -828,10 +814,10 @@
 
         const container = appendMessage('', 'bot', currentStage);
         const bubble = container.querySelector('.bubble');
-        bubble.innerHTML = ''; // Clear default content
+        bubble.innerHTML = ''; 
 
         const promptText = document.createElement('div');
-        promptText.textContent = t('morePrompt');
+        promptText.textContent = t('question4');
         promptText.style.marginBottom = '8px';
 
         const form = document.createElement('div');
@@ -858,12 +844,7 @@
                 duration: inputs.duration.value.trim(),
                 length: inputs.length.value.trim(),
             };
-
-            if (Object.values(moreData).every(v => !v)) {
-                alert(t('pleaseFill'));
-                return;
-            }
-
+            
             answers['more'] = moreData;
             const na = t('na');
             const userInfo = `
@@ -875,7 +856,7 @@
                 - **${t('label_length')}**: ${moreData.length || na}
             `.trim();
             
-            container.remove(); // Remove the form
+            container.remove(); 
             lastUserMoreMessage = appendMessage(userInfo, 'user', currentStage, true);
             
             currentStage++;
@@ -896,14 +877,9 @@
     }
 
 
-    // --- File Extraction (Streaming version from 'previous') ---
+    // --- File Extraction ---
     async function* extractTextFromFile(file, options = {}) {
-        if (!file || !file.name) {
-            yield `⚠️ Invalid file object provided.\n`;
-            return;
-        }
         const name = file.name.toLowerCase();
-
         if (name.endsWith('.pdf')) {
             yield* extractTextFromPDF(file, options);
         } else if (name.endsWith('.docx')) {
@@ -917,32 +893,19 @@
 
     async function* extractTextFromDocx(file) {
         try {
-            const arrayBuffer = await file.arrayBuffer();
-            const { value } = await mammoth.extractRawText({ arrayBuffer });
-            const paragraphs = value.split(/\n\s*\n/);
-            for (const paragraph of paragraphs) {
-                const trimmedParagraph = paragraph.trim();
-                if (trimmedParagraph) {
-                    yield trimmedParagraph + '\n';
-                }
-            }
+            const { value } = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+            yield value;
         } catch (error) {
-            console.error("Error extracting text from DOCX:", error);
-            yield `⚠️ Error extracting text from ${file.name}: ${error.message}\n`;
+            yield `⚠️ Error extracting from ${file.name}: ${error.message}\n`;
         }
     }
 
     async function* extractTextFromImage(file, options = {}) {
         try {
-            const tesseractOptions = { logger: options.logger || (m => console.log(`Tesseract (${file.name}): ${m.status} (${(m.progress * 100).toFixed(2)}%)`)) };
-            const { data: { text } } = await Tesseract.recognize(file, 'chi_sim+chi_tra+eng', tesseractOptions);
-            const lines = text.split('\n');
-            for (const line of lines) {
-                yield line + '\n';
-            }
+            const { data: { text } } = await Tesseract.recognize(file, 'chi_sim+chi_tra+en', { logger: options.logger });
+            yield text;
         } catch (error) {
-            console.error("Error extracting text from image:", error);
-            yield `⚠️ Error extracting text from ${file.name} (OCR): ${error.message}\n`;
+            yield `⚠️ OCR error for ${file.name}: ${error.message}\n`;
         }
     }
 
@@ -954,7 +917,6 @@
             yield `⚠️ Error reading file ${file.name}: ${readError.message}\n`;
             return;
         }
-
         let anyTextYieldedFromLayer = false;
         try {
             const pdf = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
@@ -963,36 +925,30 @@
                 const content = await page.getTextContent();
                 if (content.items.length > 0) {
                     const pageText = content.items.map(item => item.str).join(' ');
-                    const trimmedPageText = pageText.trim();
-                    if (trimmedPageText) {
-                        yield trimmedPageText + '\n';
+                    if (pageText.trim()) {
+                        yield pageText.trim() + '\n';
                         anyTextYieldedFromLayer = true;
                     }
                 }
             }
-        } catch (err) {
-            console.warn(`Text layer extraction failed for ${file.name}: ${err.message}. Will attempt OCR.`);
-        }
+        } catch (err) { /* OCR fallback will run */ }
 
         if (!anyTextYieldedFromLayer) {
-            console.warn(`No text found in text layer of ${file.name}. Attempting OCR.`);
             try {
                 const pdfForOcr = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
-                const numPagesToOcr = Math.min(pdfForOcr.numPages, 5);
-                for (let i = 1; i <= numPagesToOcr; i++) {
+                for (let i = 1; i <= Math.min(pdfForOcr.numPages, 3); i++) { // Limit OCR pages
                     const page = await pdfForOcr.getPage(i);
-                    const viewport = page.getViewport({ scale: 2 });
+                    const viewport = page.getViewport({ scale: 1.5 });
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
-                    canvas.width = viewport.width;
                     canvas.height = viewport.height;
+                    canvas.width = viewport.width;
                     await page.render({ canvasContext: context, viewport }).promise;
-                    const { data } = await Tesseract.recognize(canvas, 'chi_sim+chi_tra+eng', { logger: options.tesseractLogger });
+                    const { data } = await Tesseract.recognize(canvas, 'chi_sim+chi_tra+en', { logger: options.tesseractLogger });
                     if (data.text) yield data.text.trim() + '\n';
                 }
             } catch (ocrErr) {
-                console.error(`OCR process failed for ${file.name}:`, ocrErr);
-                yield `⚠️ OCR process for ${file.name} failed: ${ocrErr.message}\n`;
+                yield `⚠️ OCR failed for ${file.name}: ${ocrErr.message}\n`;
             }
         }
     }
@@ -1000,7 +956,6 @@
     async function extractAndStore(fileRecord, file) {
         const extractionId = Symbol(`extraction-${file.name}`);
         pendingExtractions.add(extractionId);
-
         try {
             let accumulatedText = '';
             for await (const chunk of extractTextFromFile(file)) {
@@ -1008,15 +963,13 @@
             }
             fileRecord.text = accumulatedText.trim() || '(empty or no extractable text)';
         } catch (err) {
-            console.error('Extraction error in extractAndStore for file:', file.name, '→', err);
             fileRecord.text = `❌ Failed: ${err.message || String(err)}`;
         } finally {
             pendingExtractions.delete(extractionId);
-            console.log(`Extraction complete for ${file.name}. Text length: ${fileRecord.text.length}`);
         }
     }
 
-    // --- Content Generation & AI Call (Streaming version from 'previous') ---
+    // --- Content Generation & AI Call ---
     async function callDeepSeek(promptText, onChunkReceived) {
         const postData = { promptText, locale: currentLang };
         let reader;
@@ -1056,15 +1009,13 @@
                             } else if (eventType === 'end' && parsedData.status === 'completed') {
                                 isCompletedSuccessfully = true;
                                 resolve(completeContent);
-                                return true; // Stop reading
+                                return true;
                             } else if (eventType === 'error') {
                                 throw new Error(parsedData.error);
                             }
-                        } catch (e) {
-                            console.error('Error parsing SSE data:', e, "Raw block:", messageBlock);
-                        }
+                        } catch (e) { console.error('Error parsing SSE:', e); }
                     }
-                    return false; // Continue reading
+                    return false;
                 };
 
                 while (true) {
@@ -1072,7 +1023,7 @@
                     if (done) {
                         if (buffer.trim()) processSseEvents();
                         if (!isCompletedSuccessfully) {
-                           if (completeContent) resolve(completeContent); // Resolve with what we have
+                           if (completeContent) resolve(completeContent);
                            else reject(new Error('Stream ended prematurely.'));
                         }
                         break;
@@ -1081,21 +1032,20 @@
                     if (processSseEvents()) break;
                 }
             } catch (error) {
-                console.error('Fetch or stream processing error:', error);
                 reject(error);
             } finally {
-                if (reader) reader.cancel().catch(e => console.warn("Error cancelling reader:", e));
+                if (reader) reader.cancel().catch(() => {});
             }
         });
     }
-    
+
     async function generateContent() {
-        await Promise.allSettled([...pendingExtractions]); // Wait for all file extractions
+        await Promise.allSettled([...pendingExtractions]);
         
         const uploads = answers['have'] || [];
         const fileTexts = uploads
             .filter(f => f.source === 'upload')
-            .map(f => (f.text ?? '').trim().slice(0, 8000)) // Limit token usage per file
+            .map(f => (f.text ?? '').trim().slice(0, 8000))
             .filter(Boolean).join('\n\n---\n\n');
             
         const dbRefs = uploads
@@ -1125,7 +1075,6 @@
         
         const docSection = fileTexts ? `📄 Uploaded Document Content:\n\`\`\`\n${fileTexts}\n\`\`\`` : '';
         const dbSection = dbRefs ? `📚 Referenced Database Files:\n${dbRefs}` : '';
-
         const fullPrompt = [docSection, dbSection, extraDetails, basePrompt].filter(Boolean).join('\n\n');
         console.log('📝 Prompt sent to AI:\n', fullPrompt);
 
@@ -1139,7 +1088,7 @@
                 tempResult += chunk;
                 renderMarkdown(loadingBubble, tempResult);
             });
-            fullMarkdown = tempResult; // Final complete markdown
+            fullMarkdown = tempResult;
             
             appendExportButton(fullMarkdown);
             askIfRefineNeeded();
@@ -1176,23 +1125,23 @@
         cleanupRefineUI();
         refineState.promptMsg = appendMessage(t('question5'), 'bot');
         const container = appendMessage('', 'bot');
-        container.querySelector('.avatar').remove(); // No avatar for button group
+        container.querySelector('.avatar').remove();
         const btnGroup = container.querySelector('.bubble');
         btnGroup.style.background = 'none';
         btnGroup.style.padding = '0';
-        btnGroup.style.marginLeft = '44px';
+        btnGroup.style.marginLeft = '40px';
         btnGroup.innerHTML = '';
         
         ['yes', 'no'].forEach(key => {
             const btn = document.createElement('button');
-            btn.textContent = t(key);
+            btn.textContent = t(key === 'yes' ? 'pleaseRefine' : 'noThanks');
             Object.assign(btn.style, { padding: '8px 14px', borderRadius: '6px', background: 'white', border: '1px solid #ccc', cursor: 'pointer', marginRight: '10px' });
             btn.onclick = () => {
                 btnGroup.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
                 btn.classList.add('selected');
                 
                 refineState.userAnswerMsg?.remove();
-                refineState.userAnswerMsg = appendMessage(key === 'yes' ? t('pleaseRefine') : t('noThanks'), 'user');
+                refineState.userAnswerMsg = appendMessage(btn.textContent, 'user');
                 
                 if (key === 'yes') {
                     refineState.gotItMsg?.remove();
@@ -1213,7 +1162,7 @@
         refineState.botPromptMsg?.remove();
         
         const type = answers['type'];
-        const langKey = ['eng', 'zh', 'zh-HK'].find(k => k === currentLang) || 'eng';
+        const langKey = ['en', 'zh', 'zh-HK'].find(k => k === currentLang.split('-')[0]) || 'en';
         const fields = templateSections[type]?.[langKey];
         if (!fields?.length) return;
 
@@ -1223,7 +1172,7 @@
         const bubble = wrap.querySelector('.bubble');
         bubble.innerHTML = '';
         bubble.style.background = 'none';
-        bubble.style.paddingLeft = '44px';
+        bubble.style.paddingLeft = '40px';
 
         const selected = new Set();
         fields.forEach(f => {
@@ -1248,26 +1197,23 @@
             const partList = [...selected];
             appendMessage(`${t('pleaseRefine')}\n- ${partList.join('\n- ')}`, 'user', null, true);
             
-            const loadingMsg = appendMessage('⏳ Regenerating…', 'bot');
-            const prompt = `
-                You are revising a teacher document.
-                ### Previous draft (markdown)\n\`\`\`\n${fullMarkdown}\n\`\`\`
-                ### Task\nRewrite ONLY the following section(s) with richer detail, leaving everything else unchanged:
-                ${partList.map(p => '- ' + p).join('\n')}
-                Return **only the rewritten sections** in markdown, starting with their original headings. **Do not include triple backticks (\`\`\`) in your response.**
-            `;
+            const loadingMsg = appendMessage('', 'bot');
+            const loadingBubble = loadingMsg.querySelector('.bubble');
+            loadingBubble.innerHTML = `<img src="https://cdn.prod.website-files.com/67af0a7f5730375704f96216/682588f940a6776a7f6c138a_boywalkingg.gif" style="height:120px;vertical-align:middle;" alt="loading"><span>${t('pleaseWait')}</span>`;
+
+            const prompt = `You are revising a teacher document.\n### Previous draft (markdown)\n\`\`\`\n${fullMarkdown}\n\`\`\`\n### Task\nRewrite ONLY the following section(s) with richer detail, leaving everything else unchanged:\n${partList.map(p => '- ' + p).join('\n')}\nReturn **only the rewritten sections** in markdown, starting with their original headings. **Do not include triple backticks (\`\`\`) in your response.**`;
 
             try {
                 let refinedContent = '';
                 await callDeepSeek(prompt, chunk => {
                     refinedContent += chunk;
-                    renderMarkdown(loadingMsg.querySelector('.bubble'), refinedContent);
+                    renderMarkdown(loadingBubble, refinedContent);
                 });
                 fullMarkdown = mergeSections(fullMarkdown, refinedContent);
                 appendExportButton(fullMarkdown);
                 askIfRefineNeeded();
             } catch (e) {
-                loadingMsg.querySelector('.bubble').textContent = t('generationFailed');
+                loadingBubble.textContent = t('generationFailed');
             }
         };
 
@@ -1276,7 +1222,7 @@
     }
 
     function mergeSections(oldDoc, patchDoc) {
-        const blocks = patchDoc.split(/^(#+)\s+/m).slice(1); // Split by markdown headings
+        const blocks = patchDoc.split(/^(#+)\s+/m).slice(1);
         for (let i = 0; i < blocks.length; i += 2) {
             const headingLevel = blocks[i];
             const headingAndBody = blocks[i + 1];
@@ -1297,7 +1243,6 @@
     }
 
     // --- Event Listeners ---
-
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -1305,49 +1250,31 @@
         }
     });
     
-    // Generic file upload handler for the main input area's button
     fileInput.addEventListener('change', () => {
-       if (currentStage === 2) {
+        if(currentStage === 2) {
             handleStage3FileUpload(fileInput.files);
-       } else {
-            // Handle general file drops if needed in other stages
-            console.log("Files attached outside of stage 3:", fileInput.files);
-       }
-       fileInput.value = ''; // Reset input
-    });
-    
-    // Drag and drop for the entire input area
-    inputArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        inputArea.style.backgroundColor = '#f3fffa';
-    });
-    inputArea.addEventListener('dragleave', () => {
-        inputArea.style.backgroundColor = '';
-    });
-    inputArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        inputArea.style.backgroundColor = '';
-        if (currentStage === 2) {
-            handleStage3FileUpload(e.dataTransfer.files);
         }
+        fileInput.value = '';
     });
 
     // --- Initialisation ---
     window.addEventListener('DOMContentLoaded', () => {
-        updateUIText();
-        showStage();
-        if (typeof books !== 'undefined') {
-            document.getElementById('filter-input').addEventListener('input', e => {
-                const kw = e.target.value.trim().toLowerCase();
-                const filtered = books.filter(b => b.title.toLowerCase().includes(kw) || b.path.toLowerCase().includes(kw));
-                renderGroupedList(filtered);
-            });
-        } else {
-             console.warn("books.js not loaded or 'books' array is not defined.");
-        }
+      currentLang = document.documentElement.lang || 'en';
+      updateUIText();
+      showStage();
+      
+      const filterInput = document.getElementById('filter-input');
+      filterInput.addEventListener('input', e => {
+          const kw = e.target.value.trim().toLowerCase();
+          const allBooks = Object.values(regions).flatMap(r => r.books);
+          if(!kw) {
+            renderGroupedList(allBooks);
+            return;
+          }
+          const filtered = allBooks.filter(b => b.title.toLowerCase().includes(kw) || (b.path && b.path.toLowerCase().includes(kw)));
+          renderGroupedList(filtered);
+      });
     });
-
   </script>
-  <!-- End of part 2-->
 </body>
 </html>

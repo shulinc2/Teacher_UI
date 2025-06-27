@@ -8,7 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     body {
-      max-width: 800px;
+      max-width: 1400px;
       margin: 20px auto;
       padding: 0 20px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -16,7 +16,6 @@
       color: #111827;
     }
     .control-group {
-        margin: 20px 0;
         display: flex;
         flex-direction: column;
         gap: 5px;
@@ -125,16 +124,50 @@
     .input-group {
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        margin-bottom: 20px;
+        gap: 15px; /* Increased gap for better spacing */
+    }
+    .input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
     }
     input[type="file"], input[type="url"] {
       width: 100%;
       padding: 10px;
-      margin: 5px 0;
+      /* margin: 5px 0; */
       border: 1px solid #d1d5db;
       border-radius: 8px;
       box-sizing: border-box; /* Important */
+      transition: background-color 0.2s;
+    }
+    input[type="file"]:disabled, input[type="url"]:disabled {
+        background-color: #f3f4f6;
+        cursor: not-allowed;
+        color: #9ca3af;
+    }
+    .clear-btn {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #9ca3af;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 22px;
+        height: 22px;
+        cursor: pointer;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        line-height: 22px;
+        padding: 0;
+        display: none; /* Hidden by default */
+    }
+    .clear-btn:hover {
+        background: #6b7280;
     }
     .markdown-content {
       background: #ffffff;
@@ -173,10 +206,33 @@
       width: 100%;
       gap: 10px;
     }
+    #error-message {
+        color: #ef4444;
+        background-color: #fee2e2;
+        border: 1px solid #fca5a5;
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        display: none; /* Hidden by default */
+        text-align: center;
+    }
   </style>
 </head>
 <body>
-  <div class="control-group">
+  <h2 id="title">🎙️ Upload Audio or 📺 Paste Video Link</h2>
+  
+  <div id="error-message"></div>
+
+  <div class="input-group">
+    <div class="input-wrapper">
+        <input type="file" id="media" accept="audio/*,video/*">
+        <button id="clearFileBtn" class="clear-btn" title="Clear file selection">×</button>
+    </div>
+    <div class="input-wrapper">
+        <input type="url" id="videoLink" placeholder="Paste YouTube video link">
+        <button id="clearUrlBtn" class="clear-btn" title="Clear URL">×</button>
+    </div>
+    <div class="control-group">
       <label id="videoLangLabel" for="videoLanguageSelect">Video Language</label>
       <div class="language-select">
           <select id="videoLanguageSelect">
@@ -187,20 +243,13 @@
           </select>
       </div>
   </div>
-
-
-  <h2 id="title">🎙️ Upload Audio or 📺 Paste Video Link</h2>
-
-  <div class="input-group">
-    <input type="file" id="media" accept="audio/*,video/*">
-    <input type="url" id="videoLink" placeholder="Paste YouTube video link">
   </div>
   
   <div class="button-container">
     <div class="mode-switch">
-      <button id="transcriptBtn" class="mode-button" onclick="switchMode('transcript')">📝 Show Full Text</button>
-      <button id="summaryBtn" class="mode-button" onclick="switchMode('summary')">🧑‍🏫 Generate Summary</button>
-      <button id="minutesBtn" class="mode-button" onclick="switchMode('minutes')">📝 Minutes</button>
+      <button id="transcriptBtn" type="button" class="mode-button" onclick="switchMode('transcript')">📝 Show Full Text</button>
+      <button id="summaryBtn" type="button" class="mode-button" onclick="switchMode('summary')">🧑‍🏫 Generate Summary</button>
+      <button id="minutesBtn" type="button" class="mode-button" onclick="switchMode('minutes')">📝 Minutes</button>
     </div>
     <button onclick="processMedia()" id="submitBtn">Submit</button>
   </div>
@@ -216,6 +265,7 @@
   </div>
 
   <script>
+    
     // --- 1. CONFIGURATION ---
     const translations = {
       'en': { 
@@ -231,7 +281,7 @@
         noLang: 'Please select a video language!',
         processingError: 'Request failed: ', 
         error: 'Error: ', 
-        videoLangLabel: 'Video Language',
+        videoLangLabel: 'Resource Language',
         resultTitle: 'Result',
         fullTextTitle: 'Full Text'
       },
@@ -248,7 +298,7 @@
         noLang: '请选择视频语言！',
         processingError: '请求失败：', 
         error: '错误：', 
-        videoLangLabel: '视频语言',
+        videoLangLabel: '资源语言',
         resultTitle: '结果',
         fullTextTitle: '全文'
       },
@@ -265,7 +315,7 @@
         noLang: '請選擇視訊語言！',
         processingError: '請求失敗：', 
         error: '錯誤：',
-        videoLangLabel: '視訊語言',
+        videoLangLabel: '資源語言',
         resultTitle: '結果',
         fullTextTitle: '全文'
       }
@@ -275,27 +325,41 @@
     let uiLang = 'en'; // Default UI language
     const cachedData = { transcript: null, summary: null, minutes: null, currentMode: 'transcript' };
 
-    // DOM Elements
-    const transcriptBtn = document.getElementById('transcriptBtn');
-    const summaryBtn = document.getElementById('summaryBtn');
-    const minutesBtn = document.getElementById('minutesBtn');
-    const modeButtons = [transcriptBtn, summaryBtn, minutesBtn];
-    const loadingEl = document.getElementById('loading');
-    const outDiv = document.getElementById('out');
+    // DOM Elements are initialized in DOMContentLoaded
+    let transcriptBtn, summaryBtn, minutesBtn, modeButtons, loadingEl, outDiv,
+        mediaInput, videoLinkInput, clearFileBtn, clearUrlBtn, errorMsgEl;
 
     // --- 2. CORE FUNCTIONS ---
+
+    /**
+     * Shows an error message in the UI.
+     * @param {string} message - The error message to display.
+     */
+    function showMessage(message, isError = true) {
+        errorMsgEl.textContent = message;
+        errorMsgEl.style.backgroundColor = isError ? '#fee2e2' : '#dcfce7';
+        errorMsgEl.style.color = isError ? '#ef4444' : '#166534';
+        errorMsgEl.style.borderColor = isError ? '#fca5a5' : '#86efac';
+        errorMsgEl.style.display = 'block';
+    }
+
+    /**
+     * Hides the error message box.
+     */
+    function hideMessage() {
+        errorMsgEl.style.display = 'none';
+    }
 
     /**
      * Sets the user interface language based on a language code.
      * @param {string} lang - The language code (e.g., 'en', 'zh').
      */
     function setUiLanguage(lang) {
-      // Fallback logic: if a specific regional lang (e.g., zh-CN) isn't found, try the base (zh).
       const t = translations[lang] || translations[lang.split('-')[0]] || translations['en'];
-      uiLang = lang; // Store the current UI language
+      uiLang = lang; 
 
       document.getElementById('title').textContent = t.title;
-      document.getElementById('videoLink').placeholder = t.videoLinkPlaceholder;
+      videoLinkInput.placeholder = t.videoLinkPlaceholder;
       document.getElementById('videoLangLabel').textContent = t.videoLangLabel;
       transcriptBtn.textContent = t.transcriptBtn;
       summaryBtn.textContent = t.summaryBtn;
@@ -333,15 +397,13 @@
       if (cachedData[mode]) {
         return displayResult(mode, cachedData[mode]);
       }
-      // If we want a summary/minutes and already have a transcript, we can request it.
       if ((mode === 'summary' || mode === 'minutes') && cachedData.transcript) {
-        return processMedia(); // Re-use processMedia logic which handles this case
+        return processMedia(); 
       }
     }
 
     /**
-     * [FIXED] Renders the result in the output container.
-     * Correctly handles different data structures for transcript, summary, and minutes.
+     * Renders the result in the output container.
      * @param {string} mode - The mode of the content being displayed ('transcript', 'summary', 'minutes').
      * @param {object} data - The data object containing the result text.
      */
@@ -352,36 +414,30 @@
         if (!data) {
             textToRender = 'No content available.';
         } else if (mode === 'transcript') {
-            // For transcript, the data object has a 'transcript' property which is a string.
             textToRender = data.transcript || 'No transcript available.';
         } else if (mode === 'summary' || mode === 'minutes') {
-            // For summary/minutes, data can be the full response { summary: { en: '...' } }
-            // or the cached data { en: '...' }.
             const contentObject = data[mode] || data; 
             if (typeof contentObject === 'object' && contentObject !== null) {
-                // Select the text for the current UI language, with fallbacks.
                 textToRender = contentObject[uiLang] || contentObject[uiLang.split('-')[0]] || contentObject['en'] || 'Content not available for the selected language.';
             } else if (typeof contentObject === 'string') {
-                textToRender = contentObject; // Fallback if it's just a string for some reason
+                textToRender = contentObject;
             } else {
                 textToRender = 'No content available for this mode.';
             }
         }
 
-        let title;
-        let emoji;
+        let title, emoji;
         if (mode === 'transcript') {
             title = t.fullTextTitle;
             emoji = '📝';
         } else if (mode === 'summary') {
             title = t.summaryBtn.replace(/🧑‍🏫/g, '').trim();
-            emoji = '🧑‍�';
+            emoji = '🧑‍🏫';
         } else if (mode === 'minutes') {
             title = t.minutesBtn.replace(/📝/g, '').trim();
             emoji = '📝';
         }
 
-        // Ensure textToRender is a string before parsing to prevent errors.
         if (typeof textToRender !== 'string') {
             console.error("Invalid data passed to displayResult. Expected string, got:", textToRender);
             textToRender = "Error: Invalid content format.";
@@ -393,7 +449,7 @@
     }
 
     /**
-     * Makes a non-streaming request to the backend (e.g., for summary, minutes).
+     * Makes a non-streaming request to the backend.
      * @param {object} params - Parameters for the request, e.g., { reuseId: '...' }.
      */
     async function requestFullBody(params) {
@@ -407,8 +463,8 @@
         if (params.reuseId) {
             form.append('reuseId', params.reuseId);
         } else {
-             const mediaFile = document.getElementById('media').files[0];
-             const videoLink = document.getElementById('videoLink').value;
+             const mediaFile = mediaInput.files[0];
+             const videoLink = videoLinkInput.value;
              mediaFile ? form.append('media', mediaFile) : form.append('videoUrl', videoLink);
         }
         
@@ -420,18 +476,12 @@
 
             if (res.error) throw new Error(res.error);
             
-            // [FIXED] Update cache granularly
             if (res.transcript && !cachedData.transcript) {
                 cachedData.transcript = { id: res.id, transcript: res.transcript, engine: res.engine };
             }
-            if (res.summary) {
-                cachedData.summary = res.summary;
-            }
-            if (res.minutes) {
-                cachedData.minutes = res.minutes;
-            }
+            if (res.summary) cachedData.summary = res.summary;
+            if (res.minutes) cachedData.minutes = res.minutes;
             
-            // Pass the full response object to displayResult
             displayResult(cachedData.currentMode, res);
         } catch (e) {
             outDiv.innerHTML = `<div class="result-content">${marked.parse(`❌ ${t.error}${e.message}`)}</div>`;
@@ -444,33 +494,32 @@
      * Main function to process media, handling streaming for transcripts.
      */
     async function processMedia() {
+        hideMessage();
         const videoLang = document.getElementById('videoLanguageSelect').value;
-        const mediaFile = document.getElementById('media').files[0];
-        const videoLink = document.getElementById('videoLink').value;
+        const mediaFile = mediaInput.files[0];
+        const videoLink = videoLinkInput.value;
         const t = translations[uiLang] || translations['en'];
 
         if (!videoLang) {
-            alert(t.noLang);
+            showMessage(t.noLang);
             return;
         }
         if (!mediaFile && !videoLink) {
-            alert(t.noInput);
+            showMessage(t.noInput);
             return;
         }
 
-        // If we want a summary/minutes, use the non-streaming request.
-        // It will either use a cached transcript ID or upload the file again.
+        // This is the non-streaming path for summary/minutes, which now works
+        // because the backend will respond with full JSON for these modes.
         if (cachedData.currentMode !== 'transcript') {
             return requestFullBody({ reuseId: cachedData.transcript?.id });
         }
         
-        // If transcript is already cached, just display it.
         if(cachedData.transcript){
             return displayResult('transcript', cachedData.transcript);
         }
 
-
-        // --- Streaming Logic for new transcriptions ---
+        // --- Streaming Logic (for 'transcript' mode) ---
         loadingEl.style.display = 'block';
         const streamingTitle = t.fullTextTitle + " (Streaming)";
         outDiv.innerHTML = `<div class="result-header"><span class="emoji">📝</span><span class="title">${streamingTitle}</span></div>
@@ -479,11 +528,10 @@
         const transcriptContentEl = document.getElementById('transcript-content');
         const recognizingContentEl = document.getElementById('recognizing-content');
         
-        // Reset cache for a new run
+        // Clear all cached data for a new transcription job
         Object.keys(cachedData).forEach(key => {
             if(key !== 'currentMode') cachedData[key] = null;
         });
-        let streamedTranscriptForDisplay = ""; 
 
         const form = new FormData();
         form.append('mode', 'transcript');
@@ -501,6 +549,9 @@
             const decoder = new TextDecoder();
             let buffer = '';
             let streamEnded = false;
+            
+            // Clear the content area before streaming starts
+            transcriptContentEl.textContent = '';
 
             while (!streamEnded) {
                 const { done, value } = await reader.read();
@@ -517,19 +568,15 @@
                         try {
                             const data = JSON.parse(jsonString);
                             if (data.type === 'chunk') {
-                                const p = document.createElement('p');
-                                p.textContent = data.content;
-                                transcriptContentEl.appendChild(p);
-                                streamedTranscriptForDisplay += data.content + '\n\n';
+                                // FIXED: Append content for a smooth streaming display
+                                transcriptContentEl.textContent += data.content;
                                 recognizingContentEl.innerText = '';
                             } else if (data.type === 'recognizing') {
                                 recognizingContentEl.innerText = data.content;
                             } else if (data.type === 'end') {
-                                cachedData.transcript = { 
-                                    id: data.id, 
-                                    transcript: streamedTranscriptForDisplay.trim(),
-                                    engine: data.engine 
-                                };
+                                // FIXED: Use the final, clean transcript from the server payload
+                                cachedData.transcript = { id: data.id, transcript: data.transcript, engine: data.engine };
+                                // Re-render with the final data to apply markdown correctly
                                 displayResult('transcript', cachedData.transcript);
                                 streamEnded = true;
                                 break;
@@ -543,9 +590,23 @@
                 }
             }
             
-            if (!streamEnded) {
-                throw new Error("Stream closed unexpectedly without a final 'end' event from the server.");
+            if (!streamEnded && buffer) { // Handle any final data that didn't end with \n\n
+                 if (buffer.startsWith('data: ')) {
+                     const jsonString = buffer.substring(6);
+                     if(jsonString) {
+                        try {
+                           const data = JSON.parse(jsonString);
+                           if (data.type === 'end') {
+                                cachedData.transcript = { id: data.id, transcript: data.transcript, engine: data.engine };
+                                displayResult('transcript', cachedData.transcript);
+                           }
+                        }  catch(e) {
+                             console.error("Failed to parse final SSE message chunk:", jsonString, e);
+                        }
+                     }
+                 }
             }
+
 
         } catch (e) {
             outDiv.innerHTML += `<div class="result-content">${marked.parse(`❌ ${t.error}${e.message}`)}</div>`;
@@ -557,13 +618,65 @@
 
     // --- 3. INITIALIZATION ---
     document.addEventListener('DOMContentLoaded', () => {
-        // Determine UI language from the <html> tag's lang attribute
+        // --- Get DOM Elements ---
+        transcriptBtn = document.getElementById('transcriptBtn');
+        summaryBtn = document.getElementById('summaryBtn');
+        minutesBtn = document.getElementById('minutesBtn');
+        modeButtons = [transcriptBtn, summaryBtn, minutesBtn];
+        loadingEl = document.getElementById('loading');
+        outDiv = document.getElementById('out');
+        mediaInput = document.getElementById('media');
+        videoLinkInput = document.getElementById('videoLink');
+        clearFileBtn = document.getElementById('clearFileBtn');
+        clearUrlBtn = document.getElementById('clearUrlBtn');
+        errorMsgEl = document.getElementById('error-message');
+
+        // --- Set Initial State ---
         const initialLang = document.documentElement.lang || 'en';
         setUiLanguage(initialLang);
-
-        // Set default values
         document.getElementById('videoLanguageSelect').value = 'en-US';
         setMode('transcript');
+
+        // --- Add Event Listeners for new features ---
+
+        // Listener for the URL input
+        videoLinkInput.addEventListener('input', () => {
+            hideMessage();
+            if (videoLinkInput.value.trim() !== '') {
+                mediaInput.disabled = true;
+                clearUrlBtn.style.display = 'flex';
+            } else {
+                mediaInput.disabled = false;
+                clearUrlBtn.style.display = 'none';
+            }
+        });
+
+        // Listener for the file input
+        mediaInput.addEventListener('change', () => {
+            hideMessage();
+            if (mediaInput.files.length > 0) {
+                videoLinkInput.disabled = true;
+                clearFileBtn.style.display = 'flex';
+            } else {
+                videoLinkInput.disabled = false;
+                clearFileBtn.style.display = 'none';
+            }
+        });
+
+        // Listener for the clear URL button
+        clearUrlBtn.addEventListener('click', () => {
+            videoLinkInput.value = '';
+            mediaInput.disabled = false;
+            clearUrlBtn.style.display = 'none';
+            videoLinkInput.focus();
+        });
+
+        // Listener for the clear file button
+        clearFileBtn.addEventListener('click', () => {
+            mediaInput.value = ''; // This clears the file selection
+            videoLinkInput.disabled = false;
+            clearFileBtn.style.display = 'none';
+        });
     });
   </script>
 </body>

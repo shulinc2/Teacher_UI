@@ -199,6 +199,13 @@
       color: #374151;
       word-wrap: break-word;
     }
+    .recognizing-text {
+        color: #6b7280;
+        font-style: italic;
+        margin-top: 10px;
+        padding: 5px;
+        min-height: 24px;
+    }
     .button-container {
       display: flex;
       flex-direction: column;
@@ -283,7 +290,9 @@
         error: 'Error: ', 
         videoLangLabel: 'Resource Language',
         resultTitle: 'Result',
-        fullTextTitle: 'Full Text'
+        fullTextTitle: 'Full Text',
+        invalidIdError: 'Cannot generate content because the history ID is missing or invalid. Please re-process the original media.',
+        historySaveError: "Processing complete, but could not save to history. Summary/Minutes are disabled."
       },
       'zh': { 
         title: '🎙️ 上传音频 或 📺 粘贴视频链接', 
@@ -300,7 +309,9 @@
         error: '错误：', 
         videoLangLabel: '资源语言',
         resultTitle: '结果',
-        fullTextTitle: '全文'
+        fullTextTitle: '全文',
+        invalidIdError: '无法生成内容，因为历史记录ID丢失或无效。请重新处理原始媒体。',
+        historySaveError: "处理完成，但无法保存到历史记录。摘要/会议纪要功能已禁用。"
       },
       'zh-Hant': { 
         title: '🎙️ 上傳音頻 或 📺 貼上視頻連結', 
@@ -317,7 +328,9 @@
         error: '錯誤：',
         videoLangLabel: '資源語言',
         resultTitle: '結果',
-        fullTextTitle: '全文'
+        fullTextTitle: '全文',
+        invalidIdError: '無法生成內容，因為歷史記錄ID丟失或無效。請重新處理原始媒體。',
+        historySaveError: "處理完成，但無法保存到歷史記錄。摘要/會議紀要功能已禁用。"
       }
     };
     
@@ -332,8 +345,16 @@
     // --- 2. CORE FUNCTIONS ---
 
     /**
-     * Shows an error message in the UI.
-     * @param {string} message - The error message to display.
+     * **NEW**: Checks if a string is a valid MongoDB ObjectId.
+     * @param {string} id The ID to validate.
+     * @returns {boolean}
+     */
+    const isValidObjectId = (id) => typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id);
+
+    /**
+     * Shows a message in the UI.
+     * @param {string} message - The message to display.
+     * @param {boolean} isError - Whether the message is an error.
      */
     function showMessage(message, isError = true) {
         errorMsgEl.textContent = message;
@@ -344,7 +365,7 @@
     }
 
     /**
-     * Hides the error message box.
+     * Hides the message box.
      */
     function hideMessage() {
         errorMsgEl.style.display = 'none';
@@ -404,7 +425,7 @@
 
     /**
      * Renders the result in the output container.
-     * @param {string} mode - The mode of the content being displayed ('transcript', 'summary', 'minutes').
+     * @param {string} mode - The mode of the content being displayed.
      * @param {object} data - The data object containing the result text.
      */
     function displayResult(mode, data) {
@@ -449,38 +470,37 @@
     }
 
     /**
-     * Makes a non-streaming request to the backend.
+     * Makes a non-streaming request to the backend for summaries and minutes.
      * @param {object} params - Parameters for the request, e.g., { reuseId: '...' }.
      */
     async function requestFullBody(params) {
         const t = translations[uiLang] || translations['en'];
         loadingEl.style.display = 'block';
         outDiv.innerHTML = `<div class="result-content">${marked.parse(`⏳ ${t.loading}`)}</div>`;
+        
+        const userId = window.currentTeacher.tid; // Replace with dynamic user ID
 
-        const form = new FormData();
-        form.append('mode', cachedData.currentMode);
-        form.append('language', document.getElementById('videoLanguageSelect').value);
-        if (params.reuseId) {
-            form.append('reuseId', params.reuseId);
-        } else {
-             const mediaFile = mediaInput.files[0];
-             const videoLink = videoLinkInput.value;
-             mediaFile ? form.append('media', mediaFile) : form.append('videoUrl', videoLink);
-        }
+        // Use JSON for this request as we are not uploading a file
+        const payload = {
+            mode: cachedData.currentMode,
+            locale: document.getElementById('videoLanguageSelect').value,
+            userId: userId,
+            reuseId: params.reuseId,
+        };
         
         try {
             const res = await fetch('https://backend.canpaniongroup.com/aigc/process-media', {
                 method: 'POST',
-                body: form
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
             }).then(r => r.json());
 
             if (res.error) throw new Error(res.error);
             
-            if (res.transcript && !cachedData.transcript) {
-                cachedData.transcript = { id: res.id, transcript: res.transcript, engine: res.engine };
-            }
-            if (res.summary) cachedData.summary = res.summary;
-            if (res.minutes) cachedData.minutes = res.minutes;
+            if (res.summary) cachedData.summary = { id: res.id, ...res.summary };
+            if (res.minutes) cachedData.minutes = { id: res.id, ...res.minutes };
             
             displayResult(cachedData.currentMode, res);
         } catch (e) {
@@ -491,7 +511,7 @@
     }
 
     /**
-     * Main function to process media, handling streaming for transcripts.
+     * Main function to process media.
      */
     async function processMedia() {
         hideMessage();
@@ -504,22 +524,31 @@
             showMessage(t.noLang);
             return;
         }
-        if (!mediaFile && !videoLink) {
+        if (!mediaFile && !videoLink && !cachedData.transcript?.id) {
             showMessage(t.noInput);
             return;
         }
 
-        // This is the non-streaming path for summary/minutes, which now works
-        // because the backend will respond with full JSON for these modes.
+        // **EDIT**: Use the non-streaming path for summary/minutes, but first validate the ID.
         if (cachedData.currentMode !== 'transcript') {
-            return requestFullBody({ reuseId: cachedData.transcript?.id });
-        }
-        
-        if(cachedData.transcript){
-            return displayResult('transcript', cachedData.transcript);
+            if (!isValidObjectId(cachedData.transcript?.id)) {
+                showMessage(t.invalidIdError, true);
+                return;
+            }
+            return requestFullBody({ reuseId: cachedData.transcript.id });
         }
 
-        // --- Streaming Logic (for 'transcript' mode) ---
+        // If transcript is already cached, just display it.
+        if(cachedData.transcript) {
+            return displayResult('transcript', cachedData.transcript);
+        }
+        
+        // --- This point onwards is for a NEW, STREAMING transcript job. ---
+        
+        Object.keys(cachedData).forEach(key => {
+            if(key !== 'currentMode') cachedData[key] = null;
+        });
+        
         loadingEl.style.display = 'block';
         const streamingTitle = t.fullTextTitle + " (Streaming)";
         outDiv.innerHTML = `<div class="result-header"><span class="emoji">📝</span><span class="title">${streamingTitle}</span></div>
@@ -528,14 +557,11 @@
         const transcriptContentEl = document.getElementById('transcript-content');
         const recognizingContentEl = document.getElementById('recognizing-content');
         
-        // Clear all cached data for a new transcription job
-        Object.keys(cachedData).forEach(key => {
-            if(key !== 'currentMode') cachedData[key] = null;
-        });
-
         const form = new FormData();
         form.append('mode', 'transcript');
-        form.append('language', videoLang);
+        form.append('locale', videoLang);
+        const userId = window.currentTeacher.tid; // Replace with dynamic user ID
+        form.append('userId', userId);
         mediaFile ? form.append('media', mediaFile) : form.append('videoUrl', videoLink);
 
         try {
@@ -548,12 +574,10 @@
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let buffer = '';
-            let streamEnded = false;
             
-            // Clear the content area before streaming starts
             transcriptContentEl.textContent = '';
 
-            while (!streamEnded) {
+            while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
 
@@ -568,18 +592,31 @@
                         try {
                             const data = JSON.parse(jsonString);
                             if (data.type === 'chunk') {
-                                // FIXED: Append content for a smooth streaming display
                                 transcriptContentEl.textContent += data.content;
                                 recognizingContentEl.innerText = '';
                             } else if (data.type === 'recognizing') {
                                 recognizingContentEl.innerText = data.content;
                             } else if (data.type === 'end') {
-                                // FIXED: Use the final, clean transcript from the server payload
-                                cachedData.transcript = { id: data.id, transcript: data.transcript, engine: data.engine };
-                                // Re-render with the final data to apply markdown correctly
+                                // **EDIT**: Validate the ID received from the server.
+                                if (data.id && isValidObjectId(data.id)) {
+                                    cachedData.transcript = { 
+                                        id: data.id, 
+                                        transcript: data.transcript, 
+                                        engine: data.engine 
+                                    };
+                                } else {
+                                    // Server returned a bad ID. Cache transcript but not the ID.
+                                    console.error("Server returned an invalid history ID. Subsequent operations might fail.", data.id);
+                                    cachedData.transcript = { 
+                                        id: null, 
+                                        transcript: data.transcript, 
+                                        engine: data.engine 
+                                    };
+                                    showMessage(t.historySaveError, false);
+                                }
+                                // Re-render with the final data.
                                 displayResult('transcript', cachedData.transcript);
-                                streamEnded = true;
-                                break;
+                                return; // Exit the loop
                             } else if (data.type === 'error') {
                                 throw new Error(`Transcription service error: ${data.message}`);
                             }
@@ -589,25 +626,6 @@
                     }
                 }
             }
-            
-            if (!streamEnded && buffer) { // Handle any final data that didn't end with \n\n
-                 if (buffer.startsWith('data: ')) {
-                     const jsonString = buffer.substring(6);
-                     if(jsonString) {
-                        try {
-                           const data = JSON.parse(jsonString);
-                           if (data.type === 'end') {
-                                cachedData.transcript = { id: data.id, transcript: data.transcript, engine: data.engine };
-                                displayResult('transcript', cachedData.transcript);
-                           }
-                        }  catch(e) {
-                             console.error("Failed to parse final SSE message chunk:", jsonString, e);
-                        }
-                     }
-                 }
-            }
-
-
         } catch (e) {
             outDiv.innerHTML += `<div class="result-content">${marked.parse(`❌ ${t.error}${e.message}`)}</div>`;
         } finally {
@@ -618,6 +636,7 @@
 
     // --- 3. INITIALIZATION ---
     document.addEventListener('DOMContentLoaded', () => {
+        window.currentTeacher=JSON.parse(localStorage.getItem('userInfo'));
         // --- Get DOM Elements ---
         transcriptBtn = document.getElementById('transcriptBtn');
         summaryBtn = document.getElementById('summaryBtn');
@@ -637,9 +656,7 @@
         document.getElementById('videoLanguageSelect').value = 'en-US';
         setMode('transcript');
 
-        // --- Add Event Listeners for new features ---
-
-        // Listener for the URL input
+        // --- Add Event Listeners ---
         videoLinkInput.addEventListener('input', () => {
             hideMessage();
             if (videoLinkInput.value.trim() !== '') {
@@ -650,8 +667,6 @@
                 clearUrlBtn.style.display = 'none';
             }
         });
-
-        // Listener for the file input
         mediaInput.addEventListener('change', () => {
             hideMessage();
             if (mediaInput.files.length > 0) {
@@ -662,18 +677,14 @@
                 clearFileBtn.style.display = 'none';
             }
         });
-
-        // Listener for the clear URL button
         clearUrlBtn.addEventListener('click', () => {
             videoLinkInput.value = '';
             mediaInput.disabled = false;
             clearUrlBtn.style.display = 'none';
             videoLinkInput.focus();
         });
-
-        // Listener for the clear file button
         clearFileBtn.addEventListener('click', () => {
-            mediaInput.value = ''; // This clears the file selection
+            mediaInput.value = '';
             videoLinkInput.disabled = false;
             clearFileBtn.style.display = 'none';
         });

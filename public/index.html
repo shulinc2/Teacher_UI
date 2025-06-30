@@ -17,7 +17,8 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://unpkg.com/file-saver/dist/FileSaver.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
-  <script src="https://unpkg.com/html-docx-js-typescript/dist/html-docx.js"></script>
+  <!-- MODIFIED: Switched to a more browser-friendly library, html-docx-js. -->
+  <script src="https://unpkg.com/html-docx-js@0.3.1/dist/html-docx.js"></script>
   
   <style>
     /* --- Base Styles from Webflow Version --- */
@@ -269,7 +270,7 @@
   <div id="chat">
     <h2 class="centered-heading">👋 What do you wanna generate?</h2>
   </div>
-   <div id="input-area">
+    <div id="input-area">
     <div class="input-wrapper">
       <textarea id="user-input" rows="2"></textarea>
       <div class="tooltip-wrapper">
@@ -366,7 +367,9 @@
             ph_input: "Type something...", details: "Details", label_comment: "Comment", label_grade: "Grade", label_students: "Number of Students",
             label_duration: "Duration", label_length: "Length", na: "N/A",
             browseFiles: "📁 Browse files from database:", uploadFiles: "Upload Files", browseDatabase: "Browse Database",
-            confirmSelection: "Confirm Selection", exportDocx: "Export to .docx"
+            confirmSelection: "Confirm Selection", exportDocx: "Export to .docx",
+            exportError: "Failed to generate .docx file. Please try again.",
+            exportLibraryMissing: "Export library not found. Please refresh the page."
         },
         zh: {}, "zh-HK": {}
     };
@@ -388,7 +391,9 @@
         ph_input: "请输入内容…", details: "详情", label_comment: "注释", label_grade: "年级", label_students: "学生人数",
         label_duration: "时长", label_length: "长度", na: "未填写",
         browseFiles: "📁 从数据库中选择文件：", uploadFiles: "上传文件", browseDatabase: "浏览数据库",
-        confirmSelection: "确认选择", exportDocx: "导出到 .docx"
+        confirmSelection: "确认选择", exportDocx: "导出到 .docx",
+        exportError: "生成 .docx 文件失败，请重试。",
+        exportLibraryMissing: "找不到导出库。请刷新页面。"
     };
     translations["zh-HK"] = { ...translations.en,
         title: "👋 你想要生成什麼？", next: "下一步", upload: "上傳檔案", yes: "是", no: "否", saveBtn: "儲存",
@@ -408,7 +413,9 @@
         ph_input: "請輸入內容…", details: "詳情", label_comment: "註解", label_grade: "年級", label_students: "學生人數",
         label_duration: "時長", label_length: "長度", na: "未填寫",
         browseFiles: "📁 從數據庫中瀏覽檔案：", uploadFiles: "上傳檔案", browseDatabase: "瀏覽數據庫",
-        confirmSelection: "確認選取", exportDocx: "導出至 .docx"
+        confirmSelection: "確認選取", exportDocx: "導出至 .docx",
+        exportError: "生成 .docx 檔案失敗，請再試一次。",
+        exportLibraryMissing: "找不到導出庫。請刷新頁面。"
     };
 
     const templateSections = {
@@ -1098,18 +1105,27 @@
     }
     
     let exportCount = 0;
+    // MODIFIED: This function now uses the html-docx-js library and its correct syntax.
     function appendExportButton(markdownContent) {
         const exportMsg = appendMessage('', 'bot');
         const exportId = `exportbtn-${exportCount++}`;
         exportMsg.querySelector('.bubble').innerHTML = `<a id="${exportId}" href="#" style="text-decoration: none; color: #10a37f; font-weight: bold;">${t('exportDocx')}</a>`;
+
         document.getElementById(exportId).onclick = (e) => {
             e.preventDefault();
-            const htmlContent = marked.parse(markdownContent);
-            if (htmlContent && typeof htmlDocx !== 'undefined') {
+
+            if (typeof htmlDocx === 'undefined') {
+                alert(t('exportLibraryMissing'));
+                return;
+            }
+            
+            try {
+                const htmlContent = '<html><head><meta charset="utf-8"></head><body>' + marked.parse(markdownContent) + '</body></html>';
                 const docxBlob = htmlDocx.asBlob(htmlContent);
                 saveAs(docxBlob, 'generated-plan.docx');
-            } else {
-                alert('No content to export or export library not found.');
+            } catch (error) {
+                console.error('Error generating DOCX:', error);
+                alert(t('exportError'));
             }
         };
     }

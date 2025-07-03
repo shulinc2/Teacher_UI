@@ -1,0 +1,22 @@
+services:
+  fastapi:
+    container_name: pdf-fastapi
+    build:
+      context: ./docker/fastapi
+      dockerfile: Dockerfile
+    ports:
+      - "7860:7860"
+    environment:
+      DEEPSEEK_API_KEY: "sk-816d9a802e5f4c8ab73459a40791d7db"  # ← 你的真密钥
+    restart: unless-stopped
+
+  node:
+    container_name: pdf-node
+    build:
+      context: ./docker/node      # ← CHANGE: build from docker/node
+      dockerfile: Dockerfile      # ← and use its Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - fastapi
+    restart: unless-stopped

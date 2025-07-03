@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>PDF 全文与目录提取（升级版）</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;padding:24px;max-width:940px;margin:auto;}
+    h2{margin:0 0 12px;} #log{color:#888;margin:6px 0;}
+    textarea{width:100%;height:420px;margin-top:18px;font-family:monospace;white-space:pre-wrap;}
+    button{margin-right:8px;padding:8px 12px;background:#007cba;color:white;border:none;border-radius:4px;cursor:pointer;}
+    button:hover{background:#005a87;} button:disabled{background:#ccc;cursor:not-allowed;}
+    ul{padding-left:0;margin:14px 0;list-style:none;}
+    li{margin:4px 0;padding:6px 8px;background:#f5f5f5;border-radius:4px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
+    li:hover{background:#e0e0e0;}
+    .toc-page{color:#007cba;font-weight:bold;}
+    .toc-title{color:#333;font-weight:500;}
+    #tocBox{border:1px solid #ddd;border-radius:6px;padding:16px;margin:16px 0;background:#fafafa;}
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.4/dist/tesseract.min.js"></script>
+</head>
+<body>
+  <h2>📄 PDF 全文与目录提取助手（升级版）</h2>
+  <p style="color:#666;">新增智能阈值 OCR 和云端 MonkeyOCR 回退</p>
+
+  <input type="file" id="pdfFile" accept="application/pdf"><br><br>
+  <button id="extractTxtBtn">📖 提取全文</button>
+  <button id="downloadBtn" disabled>💾 下载 TXT</button><br><br>
+
+  <button id="extractTocBtn">📑 提取目录（多页）</button>
+  <label>目录起始页:</label><input type="number" id="tocStartInput" placeholder="如 5" min="1" style="width:60px;padding:6px;">
+  <label style="margin-left:10px;">目录结束页:</label><input type="number" id="tocEndInput" placeholder="如 6" min="1" style="width:60px;padding:6px;"><br><br>
+
+  <label>页码偏移:</label><input type="number" id="pageOffsetInput" placeholder="如 5" style="width:60px;padding:6px;">
+  <label style="margin-left:10px;">额外页数:</label><input type="number" id="extraPagesInput" placeholder="如 5" style="width:60px;padding:6px;"><br><br>
+
+  <div id="tocBox" style="display:none;"></div>
+  <span id="log"></span>
+  <textarea id="output" placeholder="输出结果将显示在此…"></textarea>
+
+  <script>
+    const $ = s => document.querySelector(s);
+    const log = t => $('#log').textContent = t;
+
+    // 1) 初始化 Tesseract Worker
+    async function initWorker() {
+      const w = await Tesseract.createWorker();
+      await w.load(); 
+      await w.loadLanguage('chi_sim'); 
+      await w.initialize('chi_sim');
+      return w;
+    }
+
+    // 2) 调用后端 MonkeyOCR+BLIP 服务
+    async function proxyOcr(page) {
+      const vp = page.getViewport({ scale: 3 });
+      const canvas = document.createElement('canvas');
+      canvas.width = vp.width; 
+      canvas.height = vp.height;
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+      const dataUrl = canvas.toDataURL('image/png');
+
+      const res = await fetch('http://localhost:7860/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ img_b64: dataUrl })
+      });
+
+      if (!res.ok) throw new Error(`OCR 服务出错：${res.status}`);
+      const { text } = await res.json();
+      return text;
+    }
+
+    // 3) Tesseract 回退 + 最终 BLIP
+    async function ocrFallback(page, worker) {
+      const vp = page.getViewport({ scale: 3 });
+      const canvas = document.createElement('canvas');
+      canvas.width = vp.width; 
+      canvas.height = vp.height;
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+      const { data: { text: ocrText } } = await worker.recognize(canvas);
+      if (ocrText.trim().length >= 20) {
+        return ocrText;
+      }
+      return await proxyOcr(page);
+    }
+
+    // 4) 根据文字块数量及内容判断，纯图页直接走 proxyOcr，其它页走文本合并 + 回退
+    async function pageToText(page, worker) {
+      const txtContent = await page.getTextContent({ normalizeWhitespace: true });
+      // 纯图页（文字块太少）
+      if (txtContent.items.length < 10) {
+        return await proxyOcr(page);
+      }
+      // 文本合并
+      const buckets = {};
+      txtContent.items.forEach(item => {
+        const y = Math.round(item.transform[5]);
+        (buckets[y] || (buckets[y] = [])).push(item);
+      });
+      const lines = Object.keys(buckets)
+        .sort((a,b)=>b-a)
+        .map(y => buckets[y]
+          .sort((i,j)=>i.transform[4]-j.transform[4])
+          .map(i=>i.str).join('').trim()
+        );
+      const text = lines.join('\n').trim();
+
+      // 文本太少或中文少时，Tesseract 回退
+      const chineseCount = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
+      if (chineseCount < 10 || text.length < 50) {
+        const tesseractText = await ocrFallback(page, worker);
+        return tesseractText;
+      }
+
+      return text;
+    }
+
+    // 提取指定页范围
+    async function extractRange(start, end) {
+      if (!window._lastPdf) return alert('请先加载 PDF 并提取目录');
+      log(`⏳ 提取第 ${start} 到 ${end} 页…`);
+      $('#output').value = '';
+      const pdf = window._lastPdf;
+      const worker = await initWorker();
+      let result = '';
+      for (let p = start; p <= end && p <= pdf.numPages; p++) {
+        const pg = await pdf.getPage(p);
+        const txt = await pageToText(pg, worker);
+        result += `---- Page ${p} ----\n${txt.trim()}\n\n`;
+      }
+      await worker.terminate();
+      $('#output').value = result.trim();
+      log(`✅ 完成：第 ${start}-${end} 页`);
+    }
+
+    // 全文提取
+    $('#extractTxtBtn').onclick = async () => {
+      const file = $('#pdfFile').files[0];
+      if (!file) return alert('请选择 PDF 文件');
+      log('⏳ 提取全文…');
+      $('#output').value = '';
+      $('#downloadBtn').disabled = true;
+
+      const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+      window._lastPdf = pdf;
+      window._lastPdfPages = pdf.numPages;
+      const worker = await initWorker();
+      let full = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        log(`📖 第 ${i}/${pdf.numPages} 页…`);
+        const pg = await pdf.getPage(i);
+        const txt = await pageToText(pg, worker);
+        full += `---- Page ${i} ----\n${txt.trim()}\n\n`;
+      }
+      await worker.terminate();
+
+      $('#output').value = full.trim();
+      $('#downloadBtn').disabled = false;
+      $('#downloadBtn').onclick = () => {
+        const blob = new Blob([full], { type:'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = file.name.replace(/\.pdf$/i, '') + '.txt';
+        a.click();
+      };
+      log(`✅ 全文提取完毕，共 ${pdf.numPages} 页`);
+    };
+
+    // 目录提取
+    $('#extractTocBtn').onclick = async () => {
+      const file = $('#pdfFile').files[0];
+      if (!file) return alert('请选择 PDF 文件');
+      const start = +$('#tocStartInput').value || 1;
+      const end   = +$('#tocEndInput').value || start;
+      log(`⏳ 提取目录：第 ${start} 到 ${end} 页…`);
+      const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+      window._lastPdf = pdf;
+      window._lastPdfPages = pdf.numPages;
+      if (start < 1 || start > pdf.numPages || end < start) {
+        return alert('目录页范围错误');
+      }
+      const worker = await initWorker();
+      let combined = '';
+      for (let p = start; p <= end; p++) {
+        const pg = await pdf.getPage(p);
+        combined += await pageToText(pg, worker) + '\n';
+      }
+      await worker.terminate();
+      const tocList = extractToc(combined);
+      renderToc(tocList);
+    };
+
+    // 解析目录文本为条目
+    function extractToc(text) {
+      const lines = text.split('\n').map(l=>l.trim())
+        .filter(l=> l && !/^----/.test(l) && l!=='目录' && !/^[一二三四五六七八九十]+$/.test(l));
+      const toc = [], used = new Set();
+      for (let i = 0; i < lines.length; i++) {
+        if (used.has(i)) continue;
+        const line = lines[i], next = lines[i+1] || '';
+        let m = line.match(/^(.+?)\s+(\d{1,3})$/);
+        if (m) {
+          toc.push({ title: m[1], page: +m[2] });
+          used.add(i);
+          continue;
+        }
+        if (/^\d+$/.test(line) && next && !/^\d+$/.test(next)) {
+          toc.push({ title: next, page: +line });
+          used.add(i); used.add(i+1); i++;
+          continue;
+        }
+        if (!/^\d+$/.test(line) && /^\d+$/.test(next)) {
+          toc.push({ title: line, page: +next });
+          used.add(i); used.add(i+1); i++;
+          continue;
+        }
+      }
+      return toc.sort((a,b)=>a.page - b.page);
+    }
+
+    // 渲染目录列表
+    function renderToc(list) {
+      window._tocList = list;
+      const box = $('#tocBox');
+      box.style.display = 'block';
+      box.innerHTML = '';
+      if (!list.length) {
+        box.innerHTML = '<div style="color:#e74c3c;text-align:center;">❌ 未检测到目录</div>';
+        return;
+      }
+      const ul = document.createElement('ul');
+      list.forEach(({ title, page }, idx) => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="toc-title">${title}</span><span class="toc-page">${page}</span>`;
+        li.onclick = () => handleRangeClick(idx);
+        ul.appendChild(li);
+      });
+      box.appendChild(ul);
+      log(`✅ 提取到 ${list.length} 条目录`);
+    }
+
+    // 点击目录条目提取对应区间
+    async function handleRangeClick(idx) {
+      const toc = window._tocList || [];
+      if (!toc.length) return;
+      const offset = +$('#pageOffsetInput').value || 0;
+      const extra  = +$('#extraPagesInput').value || 0;
+      const start  = toc[idx].page + offset;
+      const next   = toc[idx+1];
+      const end    = (next ? next.page - 1 : window._lastPdfPages) + offset + extra;
+      await extractRange(start, end);
+    }
+  </script>
+</body>
+</html>

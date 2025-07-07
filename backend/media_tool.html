@@ -9,6 +9,7 @@
   <!-- ADDED: html-to-docx library --> 
   <script src="https://unpkg.com/html-to-docx@1.8.0/dist/html-to-docx.js"></script> 
   <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 <script src="https://unpkg.com/react@16.4.1/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@16.4.1/umd/react-dom.production.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -16,254 +17,375 @@
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="https://unpkg.com/html-docx-js/dist/html-docx.js"></script>
 <script src="https://canpanion-dev-reactcomponent.s3.ap-southeast-2.amazonaws.com/AIGC_Media/bundle.js"></script>
-<style> 
- 	 .container { 
- 		 width: 100%; 
- 		 max-width: 700px; 
- 		 background: white; 
- 		 padding: 25px 30px; 
- 		 border-radius: 12px; 
- 		 box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
- 	 } 
- 	 .control-group { 
- 		 display: flex; 
- 		 flex-direction: column; 
- 		 gap: 5px; 
- 	 } 
- 	 label { 
- 		 font-weight: 500; 
- 		 color: #374151; 
- 		 font-size: 14px; 
- 	 } 
- 	 .language-select { 
- 	 	 position: relative; 
- 	 	 width: 250px; 
- 	 } 
- 	 .language-select select { 
- 	 	 width: 100%; 
- 	 	 padding: 10px 16px; 
- 	 	 border: 1px solid #d1d5db; 
- 	 	 border-radius: 8px; 
- 	 	 cursor: pointer; 
- 	 	 background: white; 
- 	 	 color: #333; 
- 	 	 font-size: 14px; 
- 	 	 appearance: none; 
- 	 	 -webkit-appearance: none; 
- 	 	 -moz-appearance: none; 
- 	 	 transition: border-color 0.2s, box-shadow 0.2s; 
- 	 } 
- 	 .language-select::after { 
- 	 	 content: "▼"; 
- 	 	 font-size: 12px; 
- 	 	 color: #6b7280; 
- 	 	 position: absolute; 
- 	 	 right: 15px; 
- 	 	 top: 50%; 
- 	 	 transform: translateY(-50%); 
- 	 	 pointer-events: none; 
- 	 } 
- 	 .language-select select:hover { 
- 	 	 border-color: #9ca3af; 
- 	 } 
- 	 .language-select select:focus { 
- 	 	 outline: none; 
- 	 	 border-color: #3b82f6; 
- 	 	 box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); 
- 	 } 
- 	 h2 { 
- 		 color: #1f2937; 
- 		 text-align: center; 
-     font-size: 24px !important;
-     margin-bottom: 16px !important;
- 	 } 
- 	 .mode-switch { 
- 	 	 margin: 20px 0; 
- 	 	 display: flex; 
- 	 	 gap: 10px; 
- 	 	 justify-content: space-between; 
- 	 	 flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */ 
- 	 } 
- 	 .mode-button { 
- 	 	 padding: 12px 24px; 
- 	 	 border: 1px solid #d1d5db; 
- 	 	 border-radius: 8px; 
- 	 	 cursor: pointer; 
- 	 	 background: white; 
- 	 	 color: #374151; 
- 	 	 transition: all 0.2s ease-in-out; 
- 	 	 font-size: 15px; 
- 	 	 font-weight: 500; 
- 	 	 box-shadow: 0 1px 2px rgba(0,0,0,0.05); 
- 	 	 flex-grow: 1; 
- 	 	 text-align: center; 
- 	 } 
- 	 .mode-button:hover { 
- 	 	 background: #f3f4f6; 
- 	 	 transform: translateY(-1px); 
- 	 	 box-shadow: 0 3px 6px rgba(0,0,0,0.08); 
- 	 } 
- 	 .mode-button.selected { 
- 	 	 background: #3b82f6; 
- 	 	 color: white; 
- 	 	 border-color: #3b82f6; 
- 	 	 box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2); 
- 	 } 
- 	 #submitBtn, #exportBtn { /* UPDATED */ 
- 	 	 display: block; 
- 	 	 width: 100%; 
- 	 	 padding: 12px 24px; 
- 	 	 border: none; 
- 	 	 border-radius: 8px; 
- 	 	 cursor: pointer; 
- 	 	 font-size: 16px; 
- 	 	 font-weight: 600; 
- 	 	 transition: all 0.2s ease-in-out; 
- 	 	 box-shadow: 0 1px 2px rgba(0,0,0,0.05); 
- 	 } 
- 	 #submitBtn { 
- 	 	 background: #22c55e; 
- 	 	 color: white; 
- 	 } 
- 	 #submitBtn:hover { 
- 	 	 background: #16a34a; 
- 	 	 transform: translateY(-1px); 
- 	 	 box-shadow: 0 3px 6px rgba(0,0,0,0.1); 
- 	 } 
- 	 /* ADDED: Export button styles */ 
- 	 #exportBtn { 
- 	 	 background: #0ea5e9; /* Light blue */ 
- 	 	 color: white; 
- 	 } 
- 	 #exportBtn:hover { 
- 	 	 background: #0284c7; /* Darker blue */ 
- 	 	 transform: translateY(-1px); 
- 	 	 box-shadow: 0 3px 6px rgba(0,0,0,0.1); 
- 	 } 
- 	 #exportBtn:disabled { 
- 	 	 background: #e5e7eb; 
- 	 	 color: #9ca3af; 
- 	 	 cursor: not-allowed; 
- 	 	 transform: none; 
- 	 	 box-shadow: none; 
- 	 } 
- 	 #loading { 
- 	 	 display: none; 
- 	 	 color: #4b5563; 
- 	 	 margin: 15px 0; 
- 	 	 text-align: center; 
- 	 } 
- 	 .input-group { 
- 		 display: flex; 
- 		 flex-direction: column; 
- 		 gap: 15px; /* Increased gap for better spacing */ 
- 	 } 
- 	 .input-wrapper { 
- 		 position: relative; 
- 		 display: flex; 
- 		 align-items: center; 
- 	 } 
- 	 input[type="file"], input[type="url"] { 
- 	 	 width: 100%; 
- 	 	 padding: 10px; 
- 	 	 border: 1px solid #d1d5db; 
- 	 	 border-radius: 8px; 
- 	 	 box-sizing: border-box; /* Important */ 
- 	 	 transition: background-color 0.2s; 
- 	 } 
- 	 input[type="file"]:disabled, input[type="url"]:disabled { 
- 		 background-color: #f3f4f6; 
- 		 cursor: not-allowed; 
- 		 color: #9ca3af; 
- 	 } 
- 	 .clear-btn { 
- 		 position: absolute; 
- 		 right: 10px; 
- 		 top: 50%; 
- 		 transform: translateY(-50%); 
- 		 background: #9ca3af; 
- 		 color: white; 
- 		 border: none; 
- 		 border-radius: 50%; 
- 		 width: 22px; 
- 		 height: 22px; 
- 		 cursor: pointer; 
- 		 font-weight: bold; 
- 		 display: flex; 
- 		 align-items: center; 
- 		 justify-content: center; 
- 		 font-size: 12px; 
- 		 line-height: 22px; 
- 		 padding: 0; 
- 		 display: none; /* Hidden by default */ 
- 	 } 
- 	 .clear-btn:hover { 
- 		 background: #6b7280; 
- 	 } 
- 	 .markdown-content { 
- 	 	 background: #ffffff; 
- 	 	 padding: 25px; 
- 	 	 border-radius: 10px; 
- 	 	 margin-top: 20px; 
- 	 	 box-shadow: 0 2px 8px rgba(0,0,0,0.07); 
- 	 	 line-height: 1.7; 
- 	 	 font-size: 16px; 
-        min-height: 150px;
- 	 } 
- 	 .result-header { 
- 	 	 display: flex; 
- 	 	 align-items: center; 
- 	 	 margin-bottom: 15px; 
- 	 	 padding-bottom: 10px; 
- 	 	 border-bottom: 1px solid #e5e7eb; 
- 	 } 
- 	 .result-header .emoji { 
- 	 	 font-size: 24px; 
- 	 	 margin-right: 12px; 
- 	 } 
- 	 .result-header .title { 
- 	 	 font-size: 18px; 
- 	 	 font-weight: 600; 
- 	 	 color: #111827; 
- 	 } 
- 	 .result-content { 
- 	 	 color: #374151; 
- 	 	 word-wrap: break-word; 
- 	 } 
-    .result-content p {
-        margin-bottom: 1em; /* Spacing between paragraphs */
-    }
- 	 .recognizing-text { 
- 		 color: #6b7280; 
- 		 font-style: italic; 
- 		 margin-top: 10px; 
- 		 padding: 5px; 
- 		 min-height: 24px; 
- 	 } 
- 	 .button-container { 
- 	 	 display: flex; 
- 	 	 flex-direction: column; 
- 	 	 align-items: center; 
- 	 	 width: 100%; 
- 	 	 gap: 10px; 
- 	 } 
- 	 /* ADDED: Container for action buttons */ 
- 	 .action-buttons { 
- 		 display: flex; 
- 		 gap: 10px; 
- 		 width: 100%; 
- 	 } 
- 	 #error-message { 
- 		 color: #ef4444; 
- 		 background-color: #fee2e2; 
- 		 border: 1px solid #fca5a5; 
- 		 padding: 10px; 
- 		 border-radius: 8px; 
- 		 margin-bottom: 15px; 
- 		 display: none; /* Hidden by default */ 
- 		 text-align: center; 
- 	 } 
-  </style> 
+<style>
+        
+        .container {
+            width: 100%;
+            max-width: 700px;
+            background: white;
+            padding: 25px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        label {
+            font-weight: 500;
+            color: #374151;
+            font-size: 14px;
+        }
+        .language-select {
+            position: relative;
+            width: 250px;
+        }
+        .language-select select {
+            width: 100%;
+            padding: 10px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            cursor: pointer;
+            background: white;
+            color: #333;
+            font-size: 14px;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .language-select::after {
+            content: "▼";
+            font-size: 12px;
+            color: #6b7280;
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+        .language-select select:hover {
+            border-color: #9ca3af;
+        }
+        .language-select select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        h2 {
+            color: #1f2937;
+            text-align: center;
+            font-size: 24px !important;
+            margin-bottom: 16px !important;
+        }
+        .mode-switch {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .mode-button {
+            padding: 12px 24px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            cursor: pointer;
+            background: white;
+            color: #374151;
+            transition: all 0.2s ease-in-out;
+            font-size: 15px;
+            font-weight: 500;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            flex-grow: 1;
+            text-align: center;
+        }
+        .mode-button:hover {
+            background: #f3f4f6;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+        }
+        .mode-button.selected {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+        }
+        #submitBtn, #exportBtn {
+            display: block;
+            width: 100%;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        #submitBtn {
+            background: #22c55e;
+            color: white;
+        }
+        #submitBtn:hover {
+            background: #16a34a;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+        #exportBtn {
+            background: #0ea5e9;
+            color: white;
+        }
+        #exportBtn:hover {
+            background: #0284c7;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+        #exportBtn:disabled {
+            background: #e5e7eb;
+            color: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        #loading {
+            display: none;
+            color: #4b5563;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        input[type="file"], input[type="url"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            box-sizing: border-box;
+            transition: background-color 0.2s;
+        }
+        input[type="file"]:disabled, input[type="url"]:disabled {
+            background-color: #f3f4f6;
+            cursor: not-allowed;
+            color: #9ca3af;
+        }
+        .clear-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #9ca3af;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            line-height: 22px;
+            padding: 0;
+            display: none;
+        }
+        .clear-btn:hover {
+            background: #6b7280;
+        }
+        .markdown-content {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            line-height: 1.7;
+            font-size: 16px;
+            min-height: 150px;
+        }
+        .result-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .result-header .emoji {
+            font-size: 24px;
+            margin-right: 12px;
+        }
+        .result-header .title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+        }
+        .result-content {
+            color: #374151;
+            word-wrap: break-word;
+        }
+        .result-content p {
+            margin-bottom: 1em;
+        }
+        .recognizing-text {
+            color: #6b7280;
+            font-style: italic;
+            margin-top: 10px;
+            padding: 5px;
+            min-height: 24px;
+        }
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            gap: 10px;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+        #error-message {
+            color: #ef4444;
+            background-color: #fee2e2;
+            border: 1px solid #fca5a5;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+            text-align: center;
+        }
+
+        /* --- NEW: Chat Styles --- */
+        #chat-container {
+            margin-top: 24px;
+            padding: 16px;
+            border-top: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+            border-radius: 8px;
+        }
+        .iep-dialog-planreply-container {
+            height: 300px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background-color: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px;
+            margin-bottom: 12px;
+        }
+        .iep-dialog-planreply-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+        }
+        .iep-dialog-planreply-row.user {
+            justify-content: flex-end;
+        }
+        .iep-dialog-planreply-row.bot {
+            justify-content: flex-start;
+        }
+        .iep-dialog-planreply-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+            background-color: #e5e7eb; /* Placeholder background */
+        }
+        .iep-dialog-planreply-msg-container.card {
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .iep-dialog-planreply-msg-container.card.user {
+            background-color: #3b82f6;
+            color: white;
+            border-top-right-radius: 4px;
+        }
+        .iep-dialog-planreply-msg-container.card.bot {
+            background-color: #e9ecef;
+            color: #333;
+            border-top-left-radius: 4px;
+        }
+        .iep-dialog-planreply-msg {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+        .iep-dialog-planreply-msg p:last-child {
+            margin-bottom: 0;
+        }
+        .iep-chat-input-plan-reply {
+            display:flex;
+            align-items: center;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding-left: 12px;
+            background-color: white;
+        }
+        .iep-chat-input-plan-reply input {
+            flex-grow: 1;
+            border: none;
+            outline: none;
+            padding: 10px 0;
+            background: transparent;
+        }
+        .iep-send-btn {
+            background: none;
+            border: none;
+            color: #3b82f6;
+            padding: 0 12px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .iep-send-btn:disabled {
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+        .iep-spinner {
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(0,0,0,0.1);
+            border-left-color: #333;
+            border-radius: 50%;
+            animation: iep-spin 1s linear infinite;
+        }
+        @keyframes iep-spin { to { transform: rotate(360deg); } }
+        .suggested-questions-container button {
+            padding: 6px 12px;
+            background-color: #e5e7eb;
+            color: #374151;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 500;
+            border-radius: 9999px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .suggested-questions-container button:hover {
+            background-color: #d1d5db;
+        }
+         .suggested-questions-container button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style> 
  </head> 
  <body> 
  <div class="container"> 
@@ -317,156 +439,203 @@
     </div> 
     <div class="result-content">Waiting for input...</div> 
   </div> 
+  <!-- NEW: Chat Interface Container -->
+    <div id="chat-container" style="display: none;">
+        <!-- Chat UI will be injected here by JavaScript -->
+    </div>
  </div> 
 
-  <script> 
- 	 window.currentTeacher=JSON.parse(localStorage.getItem('userInfo')); 
- 	 // --- 1. CONFIGURATION --- 
- 	 const translations = { 
- 		 'en': {  
- 			 title: '🎙️ Upload Audio or 📺 Paste Video Link',  
- 			 videoLinkPlaceholder: 'or paste YouTube video link',  
- 			 transcriptBtn: '🗒️ Full Text',  
- 			 summaryBtn: '🧑‍🏫 Brief Summary',  
- 			 minutesBtn: '📝 Minutes',  
- 			 submitBtn: 'Submit',  
- 			 loading: 'Processing...',  
- 			 waiting: 'Waiting for input...',  
- 			 noInput: 'Please upload an audio file or paste a video link!', 
- 			 noLang: 'Please select a video language!', 
- 			 processingError: 'Request failed: ',  
- 			 error: 'Error: ',  
- 			 videoLangLabel: 'Resource Language', 
- 			 resultTitle: 'Result', 
- 			 fullTextTitle: 'Full Text', 
- 			 invalidIdError: 'Cannot generate content because the history ID is missing or invalid. Please re-process the original media.', 
- 			 historySaveError: "Processing complete, but could not save to history. Summary/Minutes are disabled.", 
- 			 exportButton: 'Export to DOCX',
- 			 exporting: 'Exporting...',
- 			 noContentToExport: 'There is no content to export yet.',
-              generatePlaceholder: 'Click "Submit" to generate content for this mode.',
- 		 }, 
- 		 'zh': {  
- 			 title: '🎙️ 上传音频 或 📺 粘贴视频链接',  
- 			 videoLinkPlaceholder: '或粘贴 YouTube 视频链接',  
- 			 transcriptBtn: '📝 全文',  
- 			 summaryBtn: '🧑‍🏫 摘要',  
- 			 minutesBtn: '📝 会议纪要',  
- 			 submitBtn: '提交处理',  
- 			 loading: '处理中，请稍候...',  
- 			 waiting: '等待输入...',  
- 			 noInput: '请上传一个音频文件或粘贴视频链接！', 
- 			 noLang: '请选择视频语言！', 
- 			 processingError: '请求失败：',  
- 			 error: '错误：',  
- 			 videoLangLabel: '资源语言', 
- 			 resultTitle: '结果', 
- 			 fullTextTitle: '全文', 
- 			 invalidIdError: '无法生成内容，因为历史记录ID丢失或无效。请重新处理原始媒体。', 
- 			 historySaveError: "处理完成，但无法保存到历史记录。摘要/会议纪要功能已禁用。", 
- 			 exportButton: '汇出为 DOCX',
- 			 exporting: '汇出中...',
- 			 noContentToExport: '尚无内容可汇出。',
-              generatePlaceholder: '请点击“提交”以生成此模式的内容。',
- 		 }, 
- 		 'zh-Hant': {  
- 			 title: '🎙️ 上傳音頻 或 📺 貼上視頻連結',  
- 			 videoLinkPlaceholder: '或貼上 YouTube 視頻連結',  
- 			 transcriptBtn: '🗒️ 全文',  
- 			 summaryBtn: '🧑‍🏫 摘要',  
- 			 minutesBtn: '📝 會議紀要',  
- 			 submitBtn: '提交處理',  
- 			 loading: '處理中，請稍候...',  
- 			 waiting: '等待輸入...',  
- 			 noInput: '請上傳一個音頻文件或貼上視頻連結！', 
- 			 noLang: '請選擇視訊語言！', 
- 			 processingError: '請求失敗：',  
- 			 error: '錯誤：', 
- 			 videoLangLabel: '資源語言', 
- 			 resultTitle: '結果', 
- 			 fullTextTitle: '全文', 
- 			 invalidIdError: '無法生成內容，因為歷史記錄ID丟失或無效。請重新處理原始媒體。', 
- 			 historySaveError: "處理完成，但無法保存到歷史記錄。摘要/會議紀要功能已禁用。", 
- 			 exportButton: '匯出為 DOCX',
- 			 exporting: '匯出中...',
- 			 noContentToExport: '尚無內容可匯出。',
-              generatePlaceholder: '請點擊「提交」以生成此模式的內容。',
- 		 } 
- 	 }; 
- 	  
- 	 // --- Global State ---
- 	 let uiLang = 'en'; 
- 	 const cachedData = { transcript: null, summary: null, minutes: null, currentMode: 'transcript' }; 
-      // NEW: State for managing in-progress streaming
-     let isStreamingTranscript = false;
-     let streamedTranscriptParagraphs = [];
-     let recognizingText = '';
+  <script>
+    window.currentTeacher = JSON.parse(localStorage.getItem('userInfo'));
+    // --- 1. CONFIGURATION ---
+    const translations = {
+        'en': {
+            title: '🎙️ Upload Audio or 📺 Paste Video Link',
+            videoLinkPlaceholder: 'or paste YouTube video link',
+            transcriptBtn: '🗒️ Full Text',
+            summaryBtn: '🧑‍🏫 Brief Summary',
+            minutesBtn: '📝 Minutes',
+            submitBtn: 'Submit',
+            loading: 'Processing...',
+            waiting: 'Waiting for input...',
+            noInput: 'Please upload an audio file or paste a video link!',
+            noLang: 'Please select a video language!',
+            processingError: 'Request failed: ',
+            error: 'Error: ',
+            videoLangLabel: 'Resource Language',
+            resultTitle: 'Result',
+            fullTextTitle: 'Full Text',
+            invalidIdError: 'Cannot generate content because the history ID is missing or invalid. Please re-process the original media.',
+            historySaveError: "Processing complete, but could not save to history. Summary/Minutes are disabled.",
+            exportButton: 'Export to DOCX',
+            exporting: 'Exporting...',
+            noContentToExport: 'There is no content to export yet.',
+            generatePlaceholder: 'Click "Submit" to generate content for this mode.',
+            // --- NEW Chat Translations ---
+            askAboutThisContent: "Ask about this content",
+            type_message_media: 'Type your question about the content...',
+            bot_typing: 'Bot is typing...',
+            failed_response: 'Failed to get a response. Please try again.',
+            suggested_questions_title: 'Suggested Questions',
+            suggested_questions_media: [
+                "Summarize the key points.",
+                "What is the main topic?",
+                "Identify any action items mentioned.",
+                "What is the overall tone of the conversation?",
+            ],
+        },
+        'zh': {
+            title: '🎙️ 上传音频 或 📺 粘贴视频链接',
+            videoLinkPlaceholder: '或粘贴 YouTube 视频链接',
+            transcriptBtn: '📝 全文',
+            summaryBtn: '🧑‍🏫 摘要',
+            minutesBtn: '📝 会议纪要',
+            submitBtn: '提交处理',
+            loading: '处理中，请稍候...',
+            waiting: '等待输入...',
+            noInput: '请上传一个音频文件或粘贴视频链接！',
+            noLang: '请选择视频语言！',
+            processingError: '请求失败：',
+            error: '错误：',
+            videoLangLabel: '资源语言',
+            resultTitle: '结果',
+            fullTextTitle: '全文',
+            invalidIdError: '无法生成内容，因为历史记录ID丢失或无效。请重新处理原始媒体。',
+            historySaveError: "处理完成，但无法保存到历史记录。摘要/会议纪要功能已禁用。",
+            exportButton: '汇出为 DOCX',
+            exporting: '汇出中...',
+            noContentToExport: '尚无内容可汇出。',
+            generatePlaceholder: '请点击“提交”以生成此模式的内容。',
+            // --- NEW Chat Translations ---
+            askAboutThisContent: "询问此内容",
+            type_message_media: '输入您关于此内容的问题...',
+            bot_typing: '机器人正在输入...',
+            failed_response: '获取回复失败，请重试。',
+            suggested_questions_title: '建议问题',
+            suggested_questions_media: [
+                "总结要点。",
+                "主要议题是什么？",
+                "确定提到的任何行动项目。",
+                "对话的整体基调是什么？",
+            ],
+        },
+        'zh-Hant': {
+            title: '🎙️ 上傳音頻 或 📺 貼上視頻連結',
+            videoLinkPlaceholder: '或貼上 YouTube 視頻連結',
+            transcriptBtn: '🗒️ 全文',
+            summaryBtn: '🧑‍🏫 摘要',
+            minutesBtn: '📝 會議紀要',
+            submitBtn: '提交處理',
+            loading: '處理中，請稍候...',
+            waiting: '等待輸入...',
+            noInput: '請上傳一個音頻文件或貼上視頻連結！',
+            noLang: '請選擇視訊語言！',
+            processingError: '請求失敗：',
+            error: '錯誤：',
+            videoLangLabel: '資源語言',
+            resultTitle: '結果',
+            fullTextTitle: '全文',
+            invalidIdError: '無法生成內容，因為歷史記錄ID丟失或無效。請重新處理原始媒體。',
+            historySaveError: "處理完成，但無法保存到歷史記錄。摘要/會議紀要功能已禁用。",
+            exportButton: '匯出為 DOCX',
+            exporting: '匯出中...',
+            noContentToExport: '尚無內容可匯出。',
+            generatePlaceholder: '請點擊「提交」以生成此模式的內容。',
+            // --- NEW Chat Translations ---
+            askAboutThisContent: "询问此内容",
+            type_message_media: '输入您关于此内容的问题...',
+            bot_typing: '机器人正在输入...',
+            failed_response: '获取回复失败，请重试。',
+            suggested_questions_title: '建议问题',
+            suggested_questions_media: [
+                "总结要点。",
+                "主要议题是什么？",
+                "确定提到的任何行动项目。",
+                "对话的整体基调是什么？",
+            ],
+        }
+    };
+    
+    // --- Global State ---
+    let uiLang = 'en';
+    const cachedData = { transcript: null, summary: null, minutes: null, currentMode: 'transcript' };
+    let isStreamingTranscript = false;
+    let streamedTranscriptParagraphs = [];
+    let recognizingText = '';
+    // --- NEW Chat State ---
+    let chatMessages = [];
+    let isChatLoading = false;
 
- 	 // DOM Elements (initialized in DOMContentLoaded)
- 	 let transcriptBtn, summaryBtn, minutesBtn, modeButtons, loadingEl, outDiv, 
- 		 mediaInput, videoLinkInput, clearFileBtn, clearUrlBtn, errorMsgEl, exportBtn; 
+    // DOM Elements
+    let transcriptBtn, summaryBtn, minutesBtn, modeButtons, loadingEl, outDiv,
+        mediaInput, videoLinkInput, clearFileBtn, clearUrlBtn, errorMsgEl, exportBtn, chatContainer;
 
- 	 // --- 2. CORE & HELPER FUNCTIONS --- 
+    // --- 2. CORE & HELPER FUNCTIONS ---
 
- 	 const isValidObjectId = (id) => typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id); 
+    const isValidObjectId = (id) => typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id);
 
- 	 function showMessage(message, isError = true) { 
- 		 errorMsgEl.textContent = message; 
- 		 errorMsgEl.style.backgroundColor = isError ? '#fee2e2' : '#dcfce7'; 
- 		 errorMsgEl.style.color = isError ? '#ef4444' : '#166534'; 
- 		 errorMsgEl.style.borderColor = isError ? '#fca5a5' : '#86efac'; 
- 		 errorMsgEl.style.display = 'block'; 
- 	 } 
+    function showMessage(message, isError = true) {
+        errorMsgEl.textContent = message;
+        errorMsgEl.style.backgroundColor = isError ? '#fee2e2' : '#dcfce7';
+        errorMsgEl.style.color = isError ? '#ef4444' : '#166534';
+        errorMsgEl.style.borderColor = isError ? '#fca5a5' : '#86efac';
+        errorMsgEl.style.display = 'block';
+    }
 
- 	 function hideMessage() { 
- 		 errorMsgEl.style.display = 'none'; 
- 	 } 
+    function hideMessage() {
+        errorMsgEl.style.display = 'none';
+    }
 
- 	 function setUiLanguage(lang) { 
- 		 const t = translations[lang] || translations[lang.split('-')[0]] || translations['en']; 
- 		 uiLang = lang;  
+    function setUiLanguage(lang) {
+        const t = translations[lang] || translations[lang.split('-')[0]] || translations['en'];
+        uiLang = lang;
 
- 		 document.getElementById('title').textContent = t.title; 
- 		 videoLinkInput.placeholder = t.videoLinkPlaceholder; 
- 		 document.getElementById('videoLangLabel').textContent = t.videoLangLabel; 
- 		 transcriptBtn.textContent = t.transcriptBtn; 
- 		 summaryBtn.textContent = t.summaryBtn; 
- 		 minutesBtn.textContent = t.minutesBtn; 
- 		 document.getElementById('submitBtn').textContent = t.submitBtn; 
- 		 exportBtn.textContent = t.exportButton; 
- 		 loadingEl.textContent = t.loading; 
- 		  
- 		 const resultTitleEl = outDiv.querySelector('.title'); 
- 		 if (resultTitleEl && resultTitleEl.textContent === (translations[uiLang]?.resultTitle || 'Result')) { 
- 			  resultTitleEl.textContent = t.resultTitle; 
- 		 } 
- 		  
- 		 const resultContentEl = outDiv.querySelector('.result-content'); 
- 		 if(resultContentEl && resultContentEl.textContent === (translations[uiLang]?.waiting || 'Waiting for input...')){ 
- 			  resultContentEl.textContent = t.waiting; 
- 		 } 
- 	 } 
+        document.getElementById('title').textContent = t.title;
+        videoLinkInput.placeholder = t.videoLinkPlaceholder;
+        document.getElementById('videoLangLabel').textContent = t.videoLangLabel;
+        transcriptBtn.textContent = t.transcriptBtn;
+        summaryBtn.textContent = t.summaryBtn;
+        minutesBtn.textContent = t.minutesBtn;
+        document.getElementById('submitBtn').textContent = t.submitBtn;
+        exportBtn.textContent = t.exportButton;
+        loadingEl.textContent = t.loading;
+        
+        const resultTitleEl = outDiv.querySelector('.title');
+        if (resultTitleEl && resultTitleEl.textContent === (translations[uiLang]?.resultTitle || 'Result')) {
+            resultTitleEl.textContent = t.resultTitle;
+        }
+        
+        const resultContentEl = outDiv.querySelector('.result-content');
+        if(resultContentEl && resultContentEl.textContent === (translations[uiLang]?.waiting || 'Waiting for input...')){
+            resultContentEl.textContent = t.waiting;
+        }
+        // Re-initialize chat if language changes to update text
+        if (chatContainer.style.display !== 'none') {
+            initializeChat();
+        }
+    }
 
- 	 function setMode(mode) { 
- 		 cachedData.currentMode = mode; 
- 		 modeButtons.forEach(b => b.classList.remove('selected')); 
- 		 document.getElementById(`${mode}Btn`).classList.add('selected'); 
- 	 } 
+    function setMode(mode) {
+        cachedData.currentMode = mode;
+        modeButtons.forEach(b => b.classList.remove('selected'));
+        document.getElementById(`${mode}Btn`).classList.add('selected');
+    }
 
-    /**
-     * NEW: Resets all data and UI to the initial state.
-     */
     function resetState() {
         hideMessage();
-        // Clear all cached results and streaming state
         Object.keys(cachedData).forEach(key => {
             if (key !== 'currentMode') cachedData[key] = null;
         });
         isStreamingTranscript = false;
         streamedTranscriptParagraphs = [];
         recognizingText = '';
+        
+        // NEW: Reset chat state
+        chatMessages = [];
+        isChatLoading = false;
+        chatContainer.style.display = 'none';
+        chatContainer.innerHTML = '';
 
-        // Reset UI to initial state
         const t = translations[uiLang] || translations['en'];
         outDiv.innerHTML = `
             <div class="result-header">
@@ -476,79 +645,71 @@
             <div class="result-content">${t.waiting}</div>
         `;
         exportBtn.disabled = true;
-        // We don't switch mode here, let the user decide.
     }
 
- 	 /** * REWRITTEN: Handles switching modes with better state management.
- 	  */ 
- 	 function switchMode(mode) { 
- 		 setMode(mode); 
- 		 const modeState = cachedData[mode]; 
+    function switchMode(mode) {
+        setMode(mode);
+        const modeState = cachedData[mode];
 
-         // If user clicks on transcript tab while it's actively streaming,
-         // re-render the streaming view from the current state.
-         if (mode === 'transcript' && isStreamingTranscript) {
-             displayStreamingTranscriptState();
-             return;
-         }
+        if (mode === 'transcript' && isStreamingTranscript) {
+            displayStreamingTranscriptState();
+            return;
+        }
 
- 		 if (modeState === 'loading') { 
- 			 displayLoadingState(mode); 
- 		 } else if (modeState) { 
- 			 displayResult(mode, modeState); 
- 		 } else {
-            // If no data and not loading, show an empty state for the selected mode.
+        if (modeState === 'loading') {
+            displayLoadingState(mode);
+        } else if (modeState) {
+            displayResult(mode, modeState);
+        } else {
             displayEmptyState(mode);
-         }
- 	 } 
+        }
+    }
 
- 	 /** * Renders the final result in the output container. 
- 	  */ 
- 	 function displayResult(mode, data) { 
- 		 const t = translations[uiLang] || translations['en']; 
- 		 let textToRender = ''; 
+    function displayResult(mode, data) {
+        const t = translations[uiLang] || translations['en'];
+        let textToRender = '';
 
- 		 if (!data) { 
- 			 textToRender = 'No content available.'; 
- 		 } else if (mode === 'transcript') { 
- 			 textToRender = data.transcript || 'No transcript available.'; 
- 		 } else if (mode === 'summary' || mode === 'minutes') { 
- 			 const contentObject = data[mode] || data;  
- 			 if (typeof contentObject === 'object' && contentObject !== null) { 
- 				  textToRender = contentObject[uiLang] || contentObject[uiLang.split('-')[0]] || contentObject['en'] || 'Content not available for the selected language.'; 
- 			 } else if (typeof contentObject === 'string') { 
- 				  textToRender = contentObject; 
- 			 } else { 
- 				  textToRender = 'No content available for this mode.'; 
- 			 } 
- 		 } 
+        if (!data) {
+            textToRender = 'No content available.';
+        } else if (mode === 'transcript') {
+            textToRender = data.transcript || 'No transcript available.';
+        } else if (mode === 'summary' || mode === 'minutes') {
+            const contentObject = data[mode] || data;
+            if (typeof contentObject === 'object' && contentObject !== null) {
+                textToRender = contentObject[uiLang] || contentObject[uiLang.split('-')[0]] || contentObject['en'] || 'Content not available for the selected language.';
+            } else if (typeof contentObject === 'string') {
+                textToRender = contentObject;
+            } else {
+                textToRender = 'No content available for this mode.';
+            }
+        }
 
- 		 let title, emoji; 
- 		 if (mode === 'transcript') { 
- 			 title = t.fullTextTitle; 
- 			 emoji = '🗒️'; 
- 		 } else if (mode === 'summary') { 
- 			 title = t.summaryBtn.replace(/🧑‍🏫/g, '').trim(); 
- 			 emoji = '‍🧑‍🏫'; 
- 		 } else if (mode === 'minutes') { 
- 			 title = t.minutesBtn.replace(/📝/g, '').trim(); 
- 			 emoji = '📝'; 
- 		 } 
+        let title, emoji;
+        if (mode === 'transcript') {
+            title = t.fullTextTitle;
+            emoji = '🗒️';
+        } else if (mode === 'summary') {
+            title = t.summaryBtn.replace(/🧑‍🏫/g, '').trim();
+            emoji = '🧑‍🏫';
+        } else if (mode === 'minutes') {
+            title = t.minutesBtn.replace(/📝/g, '').trim();
+            emoji = '📝';
+        }
 
- 		 if (typeof textToRender !== 'string') { 
- 			 console.error("Invalid data passed to displayResult. Expected string, got:", textToRender); 
- 			 textToRender = "Error: Invalid content format."; 
- 		 } 
- 		  
- 		 const content = `<div class="result-header"><span class="emoji">${emoji}</span><span class="title">${title}</span></div> 
- 						   <div class="result-content">${marked.parse(textToRender)}</div>`; 
- 		 outDiv.innerHTML = content; 
- 		 exportBtn.disabled = false; 
- 	 } 
-
-    /**
-     * NEW: Renders the view for a mode that has no data yet.
-     */
+        if (typeof textToRender !== 'string') {
+            console.error("Invalid data passed to displayResult. Expected string, got:", textToRender);
+            textToRender = "Error: Invalid content format.";
+        }
+        
+        const content = `<div class="result-header"><span class="emoji">${emoji}</span><span class="title">${title}</span></div>
+                         <div class="result-content">${marked.parse(textToRender)}</div>`;
+        outDiv.innerHTML = content;
+        exportBtn.disabled = false;
+        
+        // NEW: Show and initialize chat after displaying result
+        initializeChat();
+    }
+    
     function displayEmptyState(mode) {
         const t = translations[uiLang] || translations['en'];
         let title, emoji;
@@ -559,53 +720,48 @@
         } else if (mode === 'minutes') {
             title = t.minutesBtn.replace(/📝/g, '').trim();
             emoji = '📝';
-        } else { // Includes 'transcript' when there's no data
+        } else {
             title = t.fullTextTitle;
             emoji = '🗒️';
         }
 
         const emptyMessage = cachedData.transcript?.id ? t.generatePlaceholder : t.waiting;
-
         const content = `
             <div class="result-header"><span class="emoji">${emoji}</span><span class="title">${title}</span></div>
             <div class="result-content">${emptyMessage}</div>
         `;
         outDiv.innerHTML = content;
         exportBtn.disabled = !cachedData.transcript;
+        
+        // NEW: Hide chat if there's no content
+        chatContainer.style.display = 'none';
     }
 
- 	 /** * Renders a loading state in the output container.
- 	  */ 
- 	 function displayLoadingState(mode) { 
- 		 const t = translations[uiLang] || translations['en']; 
- 		 let title, emoji; 
+    function displayLoadingState(mode) {
+        const t = translations[uiLang] || translations['en'];
+        let title, emoji;
 
- 		 if (mode === 'summary') { 
- 			 title = t.summaryBtn.replace(/🧑‍🏫/g, '').trim(); 
- 			 emoji = '🧑‍🏫'; 
- 		 } else if (mode === 'minutes') { 
- 			 title = t.minutesBtn.replace(/📝/g, '').trim(); 
- 			 emoji = '📝'; 
- 		 } else { 
- 			 title = t.fullTextTitle; 
- 			 emoji = '🗒️'; 
- 		 } 
+        if (mode === 'summary') {
+            title = t.summaryBtn.replace(/🧑‍🏫/g, '').trim();
+            emoji = '🧑‍🏫';
+        } else if (mode === 'minutes') {
+            title = t.minutesBtn.replace(/📝/g, '').trim();
+            emoji = '📝';
+        } else {
+            title = t.fullTextTitle;
+            emoji = '🗒️';
+        }
 
- 		 const loadingMessage = `⏳ ${t.loading}`; 
- 		 const content = `<div class="result-header"><span class="emoji">${emoji}</span><span class="title">${title}</span></div> 
- 						   <div class="result-content">${marked.parse(loadingMessage)}</div>`; 
- 		 outDiv.innerHTML = content; 
- 		 exportBtn.disabled = true; 
- 	 } 
+        const loadingMessage = `⏳ ${t.loading}`;
+        const content = `<div class="result-header"><span class="emoji">${emoji}</span><span class="title">${title}</span></div>
+                         <div class="result-content">${marked.parse(loadingMessage)}</div>`;
+        outDiv.innerHTML = content;
+        exportBtn.disabled = true;
+    }
 
-    /**
-     * NEW: Renders the real-time streaming transcript view from state.
-     */
     function displayStreamingTranscriptState() {
         const t = translations[uiLang] || translations['en'];
         const streamingTitle = t.fullTextTitle + " (Streaming)";
-
-        // Set the container structure
         outDiv.innerHTML = `
             <div class="result-header">
                 <span class="emoji">📝</span><span class="title">${streamingTitle}</span>
@@ -614,138 +770,128 @@
             <div class="recognizing-text" id="recognizing-content"></div>
         `;
 
-        // Get the new elements
         const transcriptContentEl = document.getElementById('transcript-content');
         const recognizingContentEl = document.getElementById('recognizing-content');
 
-        // Populate with current state
         streamedTranscriptParagraphs.forEach(pText => {
             const p = document.createElement('p');
             p.textContent = pText;
             transcriptContentEl.appendChild(p);
         });
         recognizingContentEl.textContent = recognizingText;
-
         exportBtn.disabled = true;
     }
 
- 	 /** * Makes a non-streaming request for summaries and minutes. 
- 	  */ 
- 	 async function requestFullBody(params) { 
- 		 const t = translations[uiLang] || translations['en']; 
- 		 const modeToGenerate = cachedData.currentMode; 
+    async function requestFullBody(params) {
+        const t = translations[uiLang] || translations['en'];
+        const modeToGenerate = cachedData.currentMode;
 
- 		 cachedData[modeToGenerate] = 'loading'; 
- 		 displayLoadingState(modeToGenerate); 
- 		 loadingEl.style.display = 'none'; 
+        cachedData[modeToGenerate] = 'loading';
+        displayLoadingState(modeToGenerate);
+        loadingEl.style.display = 'none';
 
- 		 const userId = window.currentTeacher?.tid || 'test-user-id'; 
- 		 const payload = { 
- 			 mode: modeToGenerate, 
- 			 locale: document.getElementById('videoLanguageSelect').value, 
- 			 userId: userId, 
- 			 reuseId: params.reuseId, 
- 		 }; 
- 		  
- 		 try { 
- 			 const res = await fetch('https://backend.canpaniongroup.com/aigc/process-media', { 
- 				 method: 'POST', 
- 				 headers: { 'Content-Type': 'application/json' }, 
- 				 body: JSON.stringify(payload) 
- 			 }).then(r => r.json()); 
+        const userId = window.currentTeacher?.tid || 'test-user-id';
+        const payload = {
+            mode: modeToGenerate,
+            locale: document.getElementById('videoLanguageSelect').value,
+            userId: userId,
+            reuseId: params.reuseId,
+        };
+        
+        try {
+            const res = await fetch('https://backend.canpaniongroup.com/aigc/process-media', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(r => r.json());
 
- 			 if (res.error) throw new Error(res.error); 
- 			  
- 			 if (res.summary) cachedData.summary = { id: res.id, ...res.summary }; 
- 			 if (res.minutes) cachedData.minutes = { id: res.id, ...res.minutes }; 
- 			  
- 			 if (cachedData.currentMode === modeToGenerate) { 
- 				 displayResult(modeToGenerate, res); 
- 			 } 
- 		 } catch (e) { 
- 			 cachedData[modeToGenerate] = null; 
- 			 if (cachedData.currentMode === modeToGenerate) { 
- 				 outDiv.innerHTML = `<div class="result-content">${marked.parse(`❌ ${t.error}${e.message}`)}</div>`; 
- 			 } 
- 		 } 
- 	 } 
+            if (res.error) throw new Error(res.error);
+            
+            if (res.summary) cachedData.summary = { id: res.id, ...res.summary };
+            if (res.minutes) cachedData.minutes = { id: res.id, ...res.minutes };
+            
+            if (cachedData.currentMode === modeToGenerate) {
+                displayResult(modeToGenerate, res);
+            }
+        } catch (e) {
+            cachedData[modeToGenerate] = null;
+            if (cachedData.currentMode === modeToGenerate) {
+                outDiv.innerHTML = `<div class="result-content">${marked.parse(`❌ ${t.error}${e.message}`)}</div>`;
+            }
+        }
+    }
 
- 	 /** * Main function to process media. 
- 	  */ 
- 	 async function processMedia() { 
- 		 hideMessage(); 
- 		 const videoLang = document.getElementById('videoLanguageSelect').value; 
- 		 const mediaFile = mediaInput.files[0]; 
- 		 const videoLink = videoLinkInput.value; 
- 		 const t = translations[uiLang] || translations['en']; 
+    async function processMedia() {
+        hideMessage();
+        const videoLang = document.getElementById('videoLanguageSelect').value;
+        const mediaFile = mediaInput.files[0];
+        const videoLink = videoLinkInput.value;
+        const t = translations[uiLang] || translations['en'];
 
- 		 if (!videoLang) { 
- 			 showMessage(t.noLang); 
- 			 return; 
- 		 } 
- 		 if (!mediaFile && !videoLink && !cachedData.transcript?.id) { 
- 			 showMessage(t.noInput); 
- 			 return; 
- 		 } 
+        if (!videoLang) {
+            showMessage(t.noLang);
+            return;
+        }
+        if (!mediaFile && !videoLink && !cachedData.transcript?.id) {
+            showMessage(t.noInput);
+            return;
+        }
 
- 		 if (cachedData.currentMode !== 'transcript') { 
- 			 if (!isValidObjectId(cachedData.transcript?.id)) { 
- 				 showMessage(t.invalidIdError, true); 
- 				 return; 
- 			 } 
- 			 return requestFullBody({ reuseId: cachedData.transcript.id }); 
- 		 } 
+        if (cachedData.currentMode !== 'transcript') {
+            if (!isValidObjectId(cachedData.transcript?.id)) {
+                showMessage(t.invalidIdError, true);
+                return;
+            }
+            return requestFullBody({ reuseId: cachedData.transcript.id });
+        }
 
- 		 if(cachedData.transcript) { 
- 			 return displayResult('transcript', cachedData.transcript); 
- 		 } 
- 		  
- 		 // Reset state for new transcript generation
+        if(cachedData.transcript) {
+            return displayResult('transcript', cachedData.transcript);
+        }
+        
         isStreamingTranscript = true;
         streamedTranscriptParagraphs = [];
         recognizingText = '';
- 		 exportBtn.disabled = true; 
- 		  
- 		 loadingEl.style.display = 'block'; 
-         displayStreamingTranscriptState();
- 		  
- 		 const form = new FormData(); 
- 		 form.append('mode', 'transcript'); 
- 		 form.append('locale', videoLang); 
- 		 const userId = window.currentTeacher?.tid || 'test-user-id'; 
- 		 form.append('userId', userId); 
- 		 mediaFile ? form.append('media', mediaFile) : form.append('videoUrl', videoLink); 
+        exportBtn.disabled = true;
+        
+        loadingEl.style.display = 'block';
+        displayStreamingTranscriptState();
+        
+        const form = new FormData();
+        form.append('mode', 'transcript');
+        form.append('locale', videoLang);
+        const userId = window.currentTeacher?.tid || 'test-user-id';
+        form.append('userId', userId);
+        mediaFile ? form.append('media', mediaFile) : form.append('videoUrl', videoLink);
 
- 		 try { 
- 			 const response = await fetch('https://backend.canpaniongroup.com/aigc/process-media', { method: 'POST', body: form }); 
- 			 if (!response.ok) { 
- 				 const errText = await response.text(); 
- 				 throw new Error(`Server error: ${response.status} ${errText}`); 
- 			 } 
+        try {
+            const response = await fetch('https://backend.canpaniongroup.com/aigc/process-media', { method: 'POST', body: form });
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`Server error: ${response.status} ${errText}`);
+            }
 
- 			 const reader = response.body.getReader(); 
- 			 const decoder = new TextDecoder(); 
- 			 let buffer = ''; 
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
 
- 			 while (true) { 
- 				 const { done, value } = await reader.read(); 
- 				 if (done) break; 
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
 
- 				 buffer += decoder.decode(value, { stream: true }); 
- 				 const sseMessages = buffer.split('\n\n'); 
- 				 buffer = sseMessages.pop(); 
+                buffer += decoder.decode(value, { stream: true });
+                const sseMessages = buffer.split('\n\n');
+                buffer = sseMessages.pop();
 
- 				 for (const msg of sseMessages) { 
- 					 if (msg.startsWith('data: ')) { 
- 						 const jsonString = msg.substring(6); 
- 						 if (!jsonString) continue; 
- 						 try { 
- 							 const data = JSON.parse(jsonString); 
- 							 if (data.type === 'chunk') {
-                                // 1. Update state
+                for (const msg of sseMessages) {
+                    if (msg.startsWith('data: ')) {
+                        const jsonString = msg.substring(6);
+                        if (!jsonString) continue;
+                        try {
+                            const data = JSON.parse(jsonString);
+                            if (data.type === 'chunk') {
                                 streamedTranscriptParagraphs.push(data.content);
                                 recognizingText = '';
-                                // 2. Update DOM if visible
                                 const transcriptContentEl = document.getElementById('transcript-content');
                                 if (transcriptContentEl) {
                                     const p = document.createElement('p');
@@ -753,181 +899,319 @@
                                     transcriptContentEl.appendChild(p);
                                     document.getElementById('recognizing-content').innerText = '';
                                 }
- 							 } else if (data.type === 'recognizing') { 
-                                // 1. Update state
+                            } else if (data.type === 'recognizing') {
                                 recognizingText = data.content;
-                                // 2. Update DOM if visible
                                 const recognizingContentEl = document.getElementById('recognizing-content');
                                 if (recognizingContentEl) {
                                     recognizingContentEl.innerText = data.content;
                                 }
- 							 } else if (data.type === 'end') { 
-                                 // Construct the final transcript from the streamed paragraphs to preserve formatting.
-                                 const finalTranscriptText = streamedTranscriptParagraphs.join('\n\n');
+                            } else if (data.type === 'end') {
+                                const finalTranscriptText = streamedTranscriptParagraphs.join('\n\n');
+                                if (data.id && isValidObjectId(data.id)) {
+                                    cachedData.transcript = { 
+                                        id: data.id, 
+                                        transcript: finalTranscriptText,
+                                        engine: data.engine 
+                                    };
+                                } else {
+                                    console.error("Server returned an invalid history ID.", data.id);
+                                    cachedData.transcript = { id: null, transcript: finalTranscriptText, engine: data.engine };
+                                    showMessage(t.historySaveError, false);
+                                }
+                                if (cachedData.currentMode === 'transcript') {
+                                    displayResult('transcript', cachedData.transcript);
+                                }
+                                return;
+                            } else if (data.type === 'error') {
+                                throw new Error(`Transcription service error: ${data.message}`);
+                            }
+                        } catch(e) {
+                            console.error("Failed to parse SSE message chunk:", jsonString, e);
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            outDiv.innerHTML += `<div class="result-content">${marked.parse(`❌ ${t.error}${e.message}`)}</div>`;
+        } finally {
+            isStreamingTranscript = false;
+            loadingEl.style.display = 'none';
+            const recognizingEl = document.getElementById('recognizing-content');
+            if (recognizingEl) recognizingEl.innerText = '';
+        }
+    }
 
- 								 if (data.id && isValidObjectId(data.id)) { 
- 									 cachedData.transcript = {  
- 										 id: data.id,  
- 										 transcript: finalTranscriptText,  // Use the paragraph-formatted text
- 										 engine: data.engine  
- 									 }; 
- 								 } else { 
- 									 console.error("Server returned an invalid history ID.", data.id); 
- 									 cachedData.transcript = { 
-                                         id: null, 
-                                         transcript: finalTranscriptText, // Use the paragraph-formatted text
-                                         engine: data.engine 
-                                     }; 
- 									 showMessage(t.historySaveError, false); 
- 								 } 
-                                 // Only display the final result if the user is still on the transcript tab
-                                 if (cachedData.currentMode === 'transcript') {
- 								    displayResult('transcript', cachedData.transcript); 
-                                 }
- 								 return; // End of stream processing
- 							 } else if (data.type === 'error') { 
- 								 throw new Error(`Transcription service error: ${data.message}`); 
- 							 } 
- 						 } catch(e) { 
- 							 console.error("Failed to parse SSE message chunk:", jsonString, e); 
- 						 } 
- 					 } 
- 				 } 
- 			 } 
- 		 } catch (e) { 
- 			 outDiv.innerHTML += `<div class="result-content">${marked.parse(`❌ ${t.error}${e.message}`)}</div>`; 
- 		 } finally { 
-             isStreamingTranscript = false;
- 			 loadingEl.style.display = 'none'; 
-             // Clear any lingering "recognizing" text from the final view
-             const recognizingEl = document.getElementById('recognizing-content');
- 			 if (recognizingEl) recognizingEl.innerText = ''; 
- 		 } 
- 	 } 
+    // --- NEW: CHAT FUNCTIONS ---
 
- 	 // --- EXPORT FUNCTION --- 
- 	 async function handleExport() { 
- 		 const t = translations[uiLang] || translations.en; 
- 		 hideMessage(); 
+    function initializeChat() {
+        const hasContent = cachedData.transcript || cachedData.summary || cachedData.minutes;
+        if (!hasContent) {
+            chatContainer.style.display = 'none';
+            return;
+        }
 
- 		 if (!cachedData.transcript && !cachedData.summary && !cachedData.minutes) { 
- 			 showMessage(t.noContentToExport, true); 
- 			 return; 
- 		 } 
+        const t = translations[uiLang] || translations['en'];
+        chatContainer.innerHTML = `
+            <h3 class="text-md font-semibold text-gray-700 mb-2">${t.askAboutThisContent}</h3>
+            <div class="iep-dialog-planreply-container" id="chat-messages">
+                <!-- Messages will be rendered here -->
+            </div>
+            <div class="mb-3">
+                <p class="text-xs font-semibold text-gray-600 mb-2">${t.suggested_questions_title}</p>
+                <div class="flex flex-wrap gap-2 suggested-questions-container">
+                    ${t.suggested_questions_media.map(q => `<button class="suggested-question-btn">${q}</button>`).join('')}
+                </div>
+            </div>
+            <div class="iep-chat-input-plan-reply">
+                <input type="text" id="chat-input" placeholder="${t.type_message_media}" />
+                <button class="iep-send-btn" id="chat-send-btn">
+                    <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                </button>
+            </div>
+        `;
+        chatContainer.style.display = 'block';
+        updateChatUI(); // Render any existing messages
 
- 		 if (typeof window.htmlDocx === 'undefined') { 
- 			 showMessage('Exporter library is not ready. Please try again in a moment.', true); 
- 			 return; 
- 		 } 
+        // Add event listeners
+        document.getElementById('chat-send-btn').addEventListener('click', () => {
+            const input = document.getElementById('chat-input');
+            handleSendMessage(input.value);
+            input.value = '';
+        });
+        document.getElementById('chat-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSendMessage(e.target.value);
+                e.target.value = '';
+            }
+        });
+        document.querySelectorAll('.suggested-question-btn').forEach(btn => {
+            btn.addEventListener('click', () => handleSendMessage(btn.textContent));
+        });
+    }
 
- 		 exportBtn.disabled = true; 
- 		 exportBtn.textContent = t.exporting; 
+    async function handleSendMessage(question) {
+        const questionText = question.trim();
+        if (!questionText || isChatLoading) return;
 
- 		 try { 
- 			 const sourceName = mediaInput.files[0]?.name || videoLinkInput.value || 'MediaExport'; 
- 			  
- 			 const transcriptHtml = cachedData.transcript ? `<h2>${t.fullTextTitle}</h2>${marked.parse(cachedData.transcript.transcript || '')}` : ''; 
- 			  
- 			 const summaryHtml = cachedData.summary ? `<h2>${t.summaryBtn.replace(/🧑‍🏫/g, '').trim()}</h2>` + Object.entries(cachedData.summary).filter(([key]) => key !== 'id').map(([lang, text]) => `<h3>(${lang})</h3>${marked.parse(text || '')}`).join('<hr/>') : ''; 
- 			  
- 			 const minutesHtml = cachedData.minutes ? `<h2>${t.minutesBtn.replace(/📝/g, '').trim()}</h2>` + Object.entries(cachedData.minutes).filter(([key]) => key !== 'id').map(([lang, text]) => `<h3>(${lang})</h3>${marked.parse(text || '')}`).join('<hr/>') : ''; 
+        chatMessages.push({ sender: 'user', content: questionText });
+        isChatLoading = true;
+        updateChatUI();
 
- 			 const fullHtmlContent = ` 
- 				 <!DOCTYPE html> 
- 				 <html> 
- 				 <head><meta charset="UTF-8"><title>${sourceName}</title></head> 
- 				 <body> 
- 					 <h1>${sourceName}</h1> 
- 					 <hr/> 
- 					 ${transcriptHtml} 
- 					 <hr/> 
- 					 ${summaryHtml} 
- 					 <hr/> 
- 					 ${minutesHtml} 
- 				 </body> 
- 				 </html> 
- 			 `; 
+        const t = translations[uiLang] || translations['en'];
+        try {
+            const summaryLang = cachedData.summary ? Object.keys(cachedData.summary).find(k => k !== 'id') : null;
+            const summaryText = summaryLang ? cachedData.summary[summaryLang] : '';
+            const minutesLang = cachedData.minutes ? Object.keys(cachedData.minutes).find(k => k !== 'id') : null;
+            const minutesText = minutesLang ? cachedData.minutes[minutesLang] : '';
+            
+            const contentParts = [];
+            if (cachedData.transcript?.transcript) {
+                contentParts.push(`${t.transcript}:\n${cachedData.transcript.transcript}`);
+            }
+            if (summaryText) {
+                contentParts.push(`\n\n${t.summary}:\n${summaryText}`);
+            }
+            if (minutesText) {
+                contentParts.push(`\n\n${t.minutes}:\n${minutesText}`);
+            }
+            const fullContent = contentParts.join('');
 
- 			 const fileBlob = await window.htmlDocx.asBlob(fullHtmlContent); 
+            if (!fullContent) throw new Error("No content available to ask about.");
 
- 			 const link = document.createElement("a"); 
- 			 link.href = URL.createObjectURL(fileBlob); 
- 			 link.download = `${sourceName.replace(/[^a-zA-Z0-9]/g, '_')}.docx`; 
- 			 document.body.appendChild(link); 
- 			 link.click(); 
- 			 document.body.removeChild(link); 
- 			 URL.revokeObjectURL(link.href); 
+            const payload = {
+                document: fullContent,
+                question: questionText,
+                locale: uiLang,
+                context: 'media'
+            };
 
- 		 } catch (err) { 
- 			 console.error('Error exporting file:', err); 
- 			 showMessage(`${t.error}${err.message}`, true); 
- 		 } finally { 
- 			 exportBtn.disabled = false; 
- 			 exportBtn.textContent = t.exportButton; 
- 		 } 
- 	 } 
+            const response = await fetch('https://backend.canpaniongroup.com/aigc/ask-question', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) throw new Error('Network response was not ok');
+
+            const result = await response.json();
+            chatMessages.push({ sender: 'bot', content: marked.parse(result.response || '') });
+
+        } catch (error) {
+            console.error('Error asking question:', error);
+            chatMessages.push({ sender: 'bot', content: t.failed_response });
+        } finally {
+            isChatLoading = false;
+            updateChatUI();
+        }
+    }
+
+    function updateChatUI() {
+        const messagesContainer = document.getElementById('chat-messages');
+        if (!messagesContainer) return;
+        
+        const t = translations[uiLang] || translations['en'];
+        messagesContainer.innerHTML = ''; // Clear existing messages
+
+        chatMessages.forEach(msg => {
+            const row = document.createElement('div');
+            row.className = `iep-dialog-planreply-row ${msg.sender}`;
+            const iconUrl = msg.sender === 'bot' 
+                ? 'https://cdn.prod.website-files.com/67af0a7f5730375704f96216/67f4fcf77c27d8278a59696a_AI.png'
+                : 'https://cdn.prod.website-files.com/67af0a7f5730375704f96216/6819d8caabf4d84e18b57524_avatar-icon-human-a-person-s-badge-social-media-profile-symbol-the-symbol-of-a-person-vector.jpg';
+            
+            const msgHtml = `
+                ${msg.sender === 'bot' ? `<img src="${iconUrl}" class="iep-dialog-planreply-icon" alt="Bot Icon" />` : ''}
+                <div class="iep-dialog-planreply-msg-container card ${msg.sender}">
+                    <div class="iep-dialog-planreply-msg">${msg.content}</div>
+                </div>
+                ${msg.sender === 'user' ? `<img src="${iconUrl}" class="iep-dialog-planreply-icon" alt="User Icon" />` : ''}
+            `;
+            row.innerHTML = msgHtml;
+            messagesContainer.appendChild(row);
+        });
+
+        if (isChatLoading) {
+            const loadingRow = document.createElement('div');
+            loadingRow.className = 'iep-dialog-planreply-row bot';
+            loadingRow.innerHTML = `
+                <img src="https://cdn.prod.website-files.com/67af0a7f5730375704f96216/67f4fcf77c27d8278a59696a_AI.png" class="iep-dialog-planreply-icon" alt="Bot Icon" />
+                <div class="iep-dialog-planreply-msg-container card bot">
+                    <div class="iep-dialog-planreply-msg">
+                        <div class="iep-spinner"></div><span>${t.bot_typing}</span>
+                    </div>
+                </div>
+            `;
+            messagesContainer.appendChild(loadingRow);
+        }
+
+        // Disable inputs while loading
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('chat-send-btn');
+        const suggestedBtns = document.querySelectorAll('.suggested-question-btn');
+        if (chatInput) chatInput.disabled = isChatLoading;
+        if (sendBtn) sendBtn.disabled = isChatLoading;
+        if (suggestedBtns) suggestedBtns.forEach(btn => btn.disabled = isChatLoading);
+
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
 
 
- 	 // --- 3. INITIALIZATION --- 
- 	 document.addEventListener('DOMContentLoaded', () => { 
- 		  
- 		 // --- Get DOM Elements --- 
- 		 transcriptBtn = document.getElementById('transcriptBtn'); 
- 		 summaryBtn = document.getElementById('summaryBtn'); 
- 		 minutesBtn = document.getElementById('minutesBtn'); 
- 		 modeButtons = [transcriptBtn, summaryBtn, minutesBtn]; 
- 		 loadingEl = document.getElementById('loading'); 
- 		 outDiv = document.getElementById('out'); 
- 		 mediaInput = document.getElementById('media'); 
- 		 videoLinkInput = document.getElementById('videoLink'); 
- 		 clearFileBtn = document.getElementById('clearFileBtn'); 
- 		 clearUrlBtn = document.getElementById('clearUrlBtn'); 
- 		 errorMsgEl = document.getElementById('error-message'); 
- 		 exportBtn = document.getElementById('exportBtn'); 
+    // --- EXPORT FUNCTION ---
+    async function handleExport() {
+        const t = translations[uiLang] || translations.en;
+        hideMessage();
 
- 		 // --- Set Initial State --- 
- 		 const initialLang = document.documentElement.lang || 'en'; 
- 		 setUiLanguage(initialLang); 
- 		 document.getElementById('videoLanguageSelect').value = 'en-US'; 
- 		 setMode('transcript'); 
- 		 exportBtn.disabled = true; 
+        if (!cachedData.transcript && !cachedData.summary && !cachedData.minutes) {
+            showMessage(t.noContentToExport, true);
+            return;
+        }
+        if (typeof window.htmlDocx === 'undefined') {
+            showMessage('Exporter library is not ready. Please try again in a moment.', true);
+            return;
+        }
 
- 		 // --- Add Event Listeners --- 
- 		 exportBtn.addEventListener('click', handleExport); 
- 		 videoLinkInput.addEventListener('input', () => { 
- 			 if (videoLinkInput.value.trim() !== '') { 
-                resetState(); // Clear old results
- 				 mediaInput.disabled = true; 
- 				 clearUrlBtn.style.display = 'flex'; 
- 			 } else { 
- 				 mediaInput.disabled = false; 
- 				 clearUrlBtn.style.display = 'none'; 
- 			 } 
- 		 }); 
- 		 mediaInput.addEventListener('change', () => { 
- 			 if (mediaInput.files.length > 0) { 
-                resetState(); // Clear old results
- 				 videoLinkInput.disabled = true; 
- 				 clearFileBtn.style.display = 'flex'; 
- 			 } else { 
- 				 videoLinkInput.disabled = false; 
- 				 clearFileBtn.style.display = 'none'; 
- 			 } 
- 		 }); 
- 		 clearUrlBtn.addEventListener('click', () => { 
- 			 videoLinkInput.value = ''; 
- 			 mediaInput.disabled = false; 
- 			 clearUrlBtn.style.display = 'none'; 
- 			 videoLinkInput.focus(); 
-             resetState(); // Clear old results
- 		 }); 
- 		 clearFileBtn.addEventListener('click', () => { 
- 			 mediaInput.value = ''; 
- 			 videoLinkInput.disabled = false; 
- 			 clearFileBtn.style.display = 'none'; 
-             resetState(); // Clear old results
- 		 }); 
- 	 }); 
-  </script> 
+        exportBtn.disabled = true;
+        exportBtn.textContent = t.exporting;
+
+        try {
+            const sourceName = mediaInput.files[0]?.name || videoLinkInput.value || 'MediaExport';
+            const transcriptHtml = cachedData.transcript ? `<h2>${t.fullTextTitle}</h2>${marked.parse(cachedData.transcript.transcript || '')}` : '';
+            const summaryHtml = cachedData.summary ? `<h2>${t.summaryBtn.replace(/🧑‍🏫/g, '').trim()}</h2>` + Object.entries(cachedData.summary).filter(([key]) => key !== 'id').map(([lang, text]) => `<h3>(${lang})</h3>${marked.parse(text || '')}`).join('<hr/>') : '';
+            const minutesHtml = cachedData.minutes ? `<h2>${t.minutesBtn.replace(/📝/g, '').trim()}</h2>` + Object.entries(cachedData.minutes).filter(([key]) => key !== 'id').map(([lang, text]) => `<h3>(${lang})</h3>${marked.parse(text || '')}`).join('<hr/>') : '';
+
+            const fullHtmlContent = `
+                <!DOCTYPE html>
+                <html>
+                <head><meta charset="UTF-8"><title>${sourceName}</title></head>
+                <body>
+                    <h1>${sourceName}</h1><hr/>
+                    ${transcriptHtml}<hr/>
+                    ${summaryHtml}<hr/>
+                    ${minutesHtml}
+                </body>
+                </html>
+            `;
+
+            const fileBlob = await window.htmlDocx.asBlob(fullHtmlContent);
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(fileBlob);
+            link.download = `${sourceName.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+
+        } catch (err) {
+            console.error('Error exporting file:', err);
+            showMessage(`${t.error}${err.message}`, true);
+        } finally {
+            exportBtn.disabled = false;
+            exportBtn.textContent = t.exportButton;
+        }
+    }
+
+
+    // --- 3. INITIALIZATION ---
+    document.addEventListener('DOMContentLoaded', () => {
+        
+        // --- Get DOM Elements ---
+        transcriptBtn = document.getElementById('transcriptBtn');
+        summaryBtn = document.getElementById('summaryBtn');
+        minutesBtn = document.getElementById('minutesBtn');
+        modeButtons = [transcriptBtn, summaryBtn, minutesBtn];
+        loadingEl = document.getElementById('loading');
+        outDiv = document.getElementById('out');
+        mediaInput = document.getElementById('media');
+        videoLinkInput = document.getElementById('videoLink');
+        clearFileBtn = document.getElementById('clearFileBtn');
+        clearUrlBtn = document.getElementById('clearUrlBtn');
+        errorMsgEl = document.getElementById('error-message');
+        exportBtn = document.getElementById('exportBtn');
+        chatContainer = document.getElementById('chat-container'); // NEW
+
+        // --- Set Initial State ---
+        const initialLang = document.documentElement.lang || 'en';
+        setUiLanguage(initialLang);
+        document.getElementById('videoLanguageSelect').value = 'en-US';
+        setMode('transcript');
+        exportBtn.disabled = true;
+
+        // --- Add Event Listeners ---
+        exportBtn.addEventListener('click', handleExport);
+        videoLinkInput.addEventListener('input', () => {
+            if (videoLinkInput.value.trim() !== '') {
+                resetState();
+                mediaInput.disabled = true;
+                clearUrlBtn.style.display = 'flex';
+            } else {
+                mediaInput.disabled = false;
+                clearUrlBtn.style.display = 'none';
+            }
+        });
+        mediaInput.addEventListener('change', () => {
+            if (mediaInput.files.length > 0) {
+                resetState();
+                videoLinkInput.disabled = true;
+                clearFileBtn.style.display = 'flex';
+            } else {
+                videoLinkInput.disabled = false;
+                clearFileBtn.style.display = 'none';
+            }
+        });
+        clearUrlBtn.addEventListener('click', () => {
+            videoLinkInput.value = '';
+            mediaInput.disabled = false;
+            clearUrlBtn.style.display = 'none';
+            videoLinkInput.focus();
+            resetState();
+        });
+        clearFileBtn.addEventListener('click', () => {
+            mediaInput.value = '';
+            videoLinkInput.disabled = false;
+            clearFileBtn.style.display = 'none';
+            resetState();
+        });
+    });
+</script>
  </body> 
  </html>

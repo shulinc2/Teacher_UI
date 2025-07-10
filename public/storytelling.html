@@ -4,6 +4,13 @@
   <meta charset="UTF-8" />
   <title>Storytelling Generator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Updated React and ReactDOM to version 18 for compatibility with createRoot -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/progressbar.js/1.1.0/progressbar.min.js"></script>
+  <script src="https://unpkg.com/html-docx-js/dist/html-docx.js"></script>
+  <!-- This bundle should contain the updated React component code -->
+  <script src="https://canpanion-dev-reactcomponent.s3.ap-southeast-2.amazonaws.com/AIGC_Story/bundle.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <!-- Link to Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -11,7 +18,6 @@
   <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
   <style>
     /* Use a minimal style block for dynamically generated content from Marked.js */
-    /* This avoids conflicts and is easier to manage than adding classes via JS */
     body {
         font-family: 'Inter', sans-serif;
     }
@@ -32,6 +38,26 @@
       padding-left: 1.2em;
       list-style-type: disc;
     }
+
+    /* --- Global Chat Widget Styling --- */
+    /* Moved from React component to make it globally available for both history and live chat */
+    .story-chat-widget-container { background-color: #f8f9fa; }
+    .story-dialog-reply-container { height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 1rem; }
+    .story-dialog-reply-row { display: flex; align-items: flex-end; gap: 8px; max-width: 100%; }
+    .story-dialog-reply-row.user { justify-content: flex-end; }
+    .story-dialog-reply-row.bot { justify-content: flex-start; }
+    .story-dialog-reply-icon { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+    .story-dialog-reply-msg-container.card { max-width: 80%; padding: 10px 14px; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .story-dialog-reply-msg-container.card.user { background-color: #007bff; color: white; border-top-right-radius: 4px; }
+    .story-dialog-reply-msg-container.card.bot { background-color: #e9ecef; color: #333; border-top-left-radius: 4px; }
+    .story-dialog-reply-msg { font-size: 0.9rem; line-height: 1.5; word-wrap: break-word; }
+    .story-dialog-reply-msg p:last-child { margin-bottom: 0; }
+    .story-chat-input-reply { display:flex; align-items: center; border: 1px solid #dee2e6; border-radius: 999px; background-color: #fff; padding: 0 4px 0 12px; }
+    .story-send-btn { background: #007bff; border: none; color: white; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background-color 0.2s; }
+    .story-send-btn:hover { background: #0056b3; }
+    .story-send-btn:disabled { background-color: #aaa; cursor: not-allowed; }
+    .story-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(0,0,0,0.1); border-left-color: #333; border-radius: 50%; animation: story-spin 1s linear infinite; margin-right: 8px; }
+    @keyframes story-spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body class="bg-gray-100">
@@ -84,12 +110,20 @@
       </button>
     </div>
 
+    <!-- Story Output -->
     <div id="output" class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 w-full max-w-2xl mt-8 min-h-[150px] max-h-[500px] overflow-y-auto leading-relaxed">
       📝 The story will appear here.
     </div>
+    
+    <!-- NEW: Container for the live chat React component -->
+    <div id="live-chat-container" class="w-full max-w-2xl"></div>
+
   </div>
 
   <script>
+    if (localStorage.getItem('userInfo')) {
+      window.currentTeacher=JSON.parse(localStorage.getItem('userInfo'));
+    }
     /* ===== I18n Dictionary ===== */
     const i18n = {
       en:{purpose:'Purpose',topic:'Topic',grade:'Grade',duration:'Duration (minutes)',language:'Story language',details:'Prompt details',
@@ -100,7 +134,7 @@
           generate:'生成',placeholderTopic:'例如：成语故事：狐假虎威',placeholderDetails:'请说明：难度、题目数量、教学目标…',
           storyHere:'📝 生成的故事将显示在此', academicLabel: '学术', leisureLabel : '休闲',
           generating: '⏳ 正在生成故事…', requiredError: '主题、年级和时长为必填项。'},
-      'zh-Hant':{purpose:'目的',topic:'主題',grade:'年級',duration:'時長（分鐘）',language:'生成語言',details:'提示細節',
+      'zh-HK':{purpose:'目的',topic:'主題',grade:'年級',duration:'時長（分鐘）',language:'生成語言',details:'提示細節',
           generate:'生成',placeholderTopic: '例如：成語故事：狐假虎威',placeholderDetails:'請說明：難度、題目數量、教學目標…',
           storyHere:'📝 生成的故事將顯示在此', academicLabel: '學術',leisureLabel : '休閒',
           generating: '⏳ 正在生成故事…', requiredError: '主題、年級和時長為必填項。'}
@@ -108,18 +142,9 @@
 
     /**
      * Gets the appropriate UI language key from the document's lang attribute.
-     * Maps specific codes like 'zh-HK' to 'zh-Hant' and defaults to 'en'.
-     * @returns {string} The language key ('en', 'zh', 'zh-Hant').
      */
     function getUILanguage() {
-      let lang = (document.documentElement.lang || 'en').toLowerCase();
-      if (lang === 'zh-hk') {
-        return 'zh-Hant';
-      }
-      if (lang.startsWith('zh')) {
-        return 'zh';
-      }
-      // Return 'en' or the detected language if it exists in our dictionary, otherwise default to 'en'
+      let lang = document.documentElement.lang;
       return i18n[lang] ? lang : 'en';
     }
 
@@ -144,9 +169,6 @@
 
     /**
      * Calls the backend streaming endpoint and updates the UI in real-time.
-     * @param {object} payload - The complete payload to send to the backend.
-     * @param {HTMLElement} outputElement - The element to render the story into.
-     * @param {HTMLElement} buttonElement - The button that triggered the generation.
      */
     async function callStreamingAPI(payload, outputElement, buttonElement) {
       buttonElement.disabled = true;
@@ -191,6 +213,15 @@
             }
           }
         }
+        
+        // NEW: When streaming is done, render the chat component
+        if (typeof window.renderLiveChat === 'function') {
+            const uiLang = getUILanguage();
+            window.renderLiveChat('live-chat-container', accumulatedContent, document.documentElement.lang);
+        } else {
+            console.error('renderLiveChat function not found. Was the React bundle loaded correctly?');
+        }
+
       } catch (err) {
         outputElement.textContent = `An error occurred: ${err.message}`;
         console.error(err);
@@ -219,29 +250,33 @@
       };
 
       if (!inputs.topic || !inputs.grade || !inputs.duration) {
-        // Replace alert with a more modern notification if possible, but alert is fine for now.
-        alert(t.requiredError);
+        alert(t.requiredError); // Using alert as in original code
         return;
       }
       
       const payload = {
-          tid,
+          userId: tid,
+          userType: 'teacher',
           uiLang,
           inputs
       };
 
       const outputDiv = document.getElementById('output');
       const generateButton = document.getElementById('generateBtn');
-      outputDiv.textContent = t.generating;
+      
+      // NEW: Clear the previous chat component before generating a new story
+      const chatContainer = document.getElementById('live-chat-container');
+      if (chatContainer) {
+          chatContainer.innerHTML = '';
+      }
+
+      outputDiv.innerHTML = `<div class="flex items-center justify-center p-4">${t.generating}</div>`;
 
       await callStreamingAPI(payload, outputDiv, generateButton);
     });
 
     /* ===== Initialize ===== */
     document.addEventListener('DOMContentLoaded', () => {
-      if (localStorage.getItem('userInfo')) {
-        window.currentTeacher=JSON.parse(localStorage.getItem('userInfo'));
-      }
       const lang = getUILanguage();
       applyUI(lang); // Initial render based on document language
     });

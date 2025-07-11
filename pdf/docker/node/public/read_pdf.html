@@ -34,6 +34,8 @@
   <label>页码偏移:</label><input type="number" id="pageOffsetInput" placeholder="如 5" style="width:60px;padding:6px;">
   <label style="margin-left:10px;">额外页数:</label><input type="number" id="extraPagesInput" placeholder="如 5" style="width:60px;padding:6px;"><br><br>
 
+  <button id="parseStructuredBtn">🧩 结构化解析</button>
+
   <div id="tocBox" style="display:none;"></div>
   <span id="log"></span>
   <textarea id="output" placeholder="输出结果将显示在此…"></textarea>
@@ -189,6 +191,22 @@
       await worker.terminate();
       const tocList = extractToc(combined);
       renderToc(tocList);
+    };
+
+    // 新增结构化解析按钮逻辑
+    document.getElementById('parseStructuredBtn').onclick = async () => {
+      const file = $('#pdfFile').files[0];
+      if (!file) return alert('请选择 PDF 文件');
+      const formData = new FormData();
+      formData.append('file', file);
+      log('⏳ 结构化解析中…');
+      const res = await fetch('http://localhost:7860/parse_structured', {
+        method: 'POST',
+        body: formData
+      });
+      const { markdown } = await res.json();
+      $('#output').value = markdown;
+      log('✅ 结构化解析完成');
     };
 
     // 解析目录文本为条目

@@ -85,7 +85,7 @@ export async function summariseText(fullText) {
   const systemPrompt = 'You are an educational assistant. Write a concise (~200 words) summary of the transcript for busy teachers.';
   const messages = [
     { role: 'system', content: systemPrompt },
-    { role: 'user',   content: fullText.slice(0, 12000) } // stay under token limit
+    { role: 'user',   content: (fullText || '').slice(0, 12000) } // stay under token limit
   ];
 
   if (process.env.DEEPSEEK_API_KEY) {

@@ -240,13 +240,26 @@
           console.warn("Warning: Teacher ID (tid) is not set. The story will not be saved to history.");
       }
 
+      // 适配三种语言的完整故事规则
+      let extraRule = '';
+      if (uiLang === 'zh') {
+        extraRule = '请生成一个完整的故事，不要出现反问句或省略号。';
+      } else if (uiLang === 'zh-HK') {
+        extraRule = '請生成一個完整的故事，不要出現反問句或省略號。';
+      } else {
+        extraRule = 'Please generate a complete story. Do not include rhetorical questions or ellipses (…).';
+      }
+
+      const detailsInput = document.getElementById('details').value.trim();
+      const details = detailsInput ? detailsInput + ' ' + extraRule : extraRule;
+
       const inputs = {
           purpose: document.getElementById('purpose').value,
           topic: document.getElementById('topic').value.trim(),
           grade: document.getElementById('grade').value.trim(),
           duration: document.getElementById('duration').value.trim(),
           storyLanguage: document.getElementById('language').value,
-          details: document.getElementById('details').value.trim()
+          details: details
       };
 
       if (!inputs.topic || !inputs.grade || !inputs.duration) {

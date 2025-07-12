@@ -1,19 +1,23 @@
-// service.js
-const express  = require('express');
-const fs       = require('fs');
-const path     = require('path');
-const { google } = require('googleapis');
-const pdfParse = require('pdf-parse');
+import express from 'express';
+import fs from 'fs';
+import path from 'path';
+import { google } from 'googleapis';
+import pdfParse from 'pdf-parse';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-const app  = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const app = express();
 const port = 3000;
 
 // 读 client_secrets + token
 const CREDENTIALS_PATH = path.join(__dirname, 'client_secrets.json');
-const TOKEN_PATH       = path.join(__dirname, 'token.json');
+const TOKEN_PATH = path.join(__dirname, 'token.json');
 
-const { installed } = JSON.parse(fs.readFileSync(CREDENTIALS_PATH));
-const token         = JSON.parse(fs.readFileSync(TOKEN_PATH));
+const { installed } = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf-8'));
+const token = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf-8'));
 
 const oAuth2Client = new google.auth.OAuth2(
   installed.client_id,
@@ -32,7 +36,7 @@ app.get('/api/fetch-drive-pdf', async (req, res) => {
   if (!fileId) return res.status(400).send('Missing fileId');
 
   try {
-    // 1) 下载 PDF 到临时目录
+    // 下载 PDF 到临时目录
     const destPath = path.join(TMP_DIR, `${fileId}.pdf`);
     await new Promise((resolve, reject) => {
       const dest = fs.createWriteStream(destPath);
@@ -49,14 +53,16 @@ app.get('/api/fetch-drive-pdf', async (req, res) => {
       );
     });
 
-    // 2) 解析文本
+    // 解析
     const data = await pdfParse(destPath);
-    fs.unlink(destPath, () => {});          
-    res.json({ text: data.text });           
+    fs.unlink(destPath, () => {});
+    res.json({ text: data.text });
   } catch (err) {
-    console.error('Error fetching PDF:', err);
+    console.error('❌ Error fetching PDF:', err);
     res.status(500).send('Failed to fetch or parse PDF');
   }
 });
 
-app.listen(port, () => console.log(`✅  API ready  →  http://localhost:${port}`));
+app.listen(port, () => {
+  console.log(`✅  API ready → http://localhost:${port}`);
+});

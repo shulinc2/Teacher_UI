@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Flash Card Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pptxgen@3.12.0/dist/pptxgen.min.js"></script>
+  <script>
+    // Fallback if the first CDN fails
+    if (typeof PptxGenJS === 'undefined') {
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/pptxgen@3.12.0/dist/pptxgen.min.js';
+      document.head.appendChild(script);
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.11.0/dist/pptxgen.bundle.js"></script>
+  <script src="books.js"></script>
+  <link rel="stylesheet" href="flashcards.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="language-selector-header">
+        <label for="pageLanguage">🌍 页面语言 / Page Language:</label>
+        <select id="pageLanguage" onchange="changePageLanguage()">
+          <option value="zh-CN">简体中文</option>
+          <option value="zh-TW">繁體中文</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+      <h1 id="pageTitle">Flash Card Generator</h1>
+      <p id="pageSubtitle">Create interactive flashcards with multiple learning modes</p>
+    </div>
+
+    <div class="content">
+      <!-- Mode Selection -->
+      <div class="section">
+        <h3>🎮 Select Flashcard Mode</h3>
+        <div class="mode-selector">
+          <div class="mode-card" data-mode="definition">
+            <div class="mode-icon">📚</div>
+            <h4>Definition Mode</h4>
+            <p>Term on front, definition on back. Perfect for vocabulary and concepts.</p>
+          </div>
+          <div class="mode-card" data-mode="translation">
+            <div class="mode-icon">🌍</div>
+            <h4>Translation Mode</h4>
+            <p>Word in one language on front, translation on back.</p>
+          </div>
+          <div class="mode-card" data-mode="multiple-choice">
+            <div class="mode-icon">❓</div>
+            <h4>Multiple Choice</h4>
+            <p>Question on front, multiple choice options with correct answer on back.</p>
+          </div>
+          <div class="mode-card" data-mode="fill-blank">
+            <div class="mode-icon">✏️</div>
+            <h4>Fill in the Blank</h4>
+            <p>Incomplete sentence on front, missing word on back.</p>
+          </div>
+          <div class="mode-card" data-mode="image-based">
+            <div class="mode-icon">🖼️</div>
+            <h4>Image-Based</h4>
+            <p>Image on front, description or name on back.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Source -->
+      <div class="section">
+        <h3>📄 Content Source</h3>
+        <div class="form-group">
+          <label>
+            <input type="radio" name="contentSource" value="upload" checked /> 
+            Upload Materials (PDF/DOC/TXT)
+          </label>
+          <div id="uploadSection">
+            <div class="file-upload-area" id="fileUploadArea">
+              <p>📁 Drag and drop files here or click to browse</p>
+              <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.txt" style="display: none;" />
+            </div>
+            <div id="fileList" class="file-list"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>
+            <input type="radio" name="contentSource" value="database" /> 
+            Use Pre-loaded Database (HK/CN)
+          </label>
+          <div id="databaseSection" style="display: none;">
+            <div class="book-list" id="bookList"></div>
+            <div class="selected-books" id="selectedBooks">
+              <h4>Selected Books:</h4>
+              <div id="selectedBooksList"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>
+            <input type="radio" name="contentSource" value="manual" /> 
+            Type Content Manually
+          </label>
+          <div id="manualSection" style="display: none;">
+            <textarea id="manualContent" placeholder="Enter your content here..."></textarea>
+          </div>
+        </div>
+
+        <!-- Image Upload for Image-Based Mode -->
+        <div class="form-group" id="imageUploadSection" style="display: none;">
+          <label>
+            <input type="radio" name="contentSource" value="images" /> 
+            Upload Images for Image-Based Mode
+          </label>
+          <div id="imageUploadArea" style="display: none;">
+            <div class="file-upload-area">
+              <p>🖼️ Drag and drop image files here or click to browse</p>
+              <input type="file" id="imageInput" multiple accept="image/*" style="display: none;" />
+            </div>
+            <div id="imageList" class="file-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Parameters -->
+      <div class="section">
+        <h3>⚙️ Parameters</h3>
+        <div class="form-group">
+          <label>Duration:</label>
+          <input type="text" id="duration" placeholder="e.g. 45 mins" />
+        </div>
+
+        <div class="form-group">
+          <label>Grade:</label>
+          <input type="text" id="grade" placeholder="e.g. Grade 3" />
+        </div>
+
+        <div class="form-group">
+          <label>Difficulty:</label>
+          <div class="radio-group">
+            <label><input type="radio" name="difficulty" value="High" /> High</label>
+            <label><input type="radio" name="difficulty" value="Mid" checked /> Mid</label>
+            <label><input type="radio" name="difficulty" value="Low" /> Low</label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Topic:</label>
+          <input type="text" id="topic" placeholder="Enter topic..." />
+        </div>
+
+        <!-- Translation Language Selection -->
+        <div class="form-group" id="translationOptions" style="display: none;">
+          <label>Translation Settings:</label>
+          <div class="translation-controls">
+            <div class="language-selector">
+              <label>From Language:</label>
+              <select id="fromLanguage">
+                <option value="English">English</option>
+                <option value="Simplified Chinese">Simplified Chinese (简体中文)</option>
+                <option value="Traditional Chinese">Traditional Chinese (繁體中文)</option>
+                <option value="Spanish">Spanish (Español)</option>
+                <option value="French">French (Français)</option>
+                <option value="German">German (Deutsch)</option>
+                <option value="Japanese">Japanese (日本語)</option>
+                <option value="Korean">Korean (한국어)</option>
+                <option value="Italian">Italian (Italiano)</option>
+                <option value="Portuguese">Portuguese (Português)</option>
+                <option value="Russian">Russian (Русский)</option>
+                <option value="Arabic">Arabic (العربية)</option>
+                <option value="Hindi">Hindi (हिन्दी)</option>
+              </select>
+            </div>
+            <div class="language-arrow">→</div>
+            <div class="language-selector">
+              <label>To Language:</label>
+              <select id="toLanguage">
+                <option value="Simplified Chinese" selected>Simplified Chinese (简体中文)</option>
+                <option value="Traditional Chinese">Traditional Chinese (繁體中文)</option>
+                <option value="English">English</option>
+                <option value="Spanish">Spanish (Español)</option>
+                <option value="French">French (Français)</option>
+                <option value="German">German (Deutsch)</option>
+                <option value="Japanese">Japanese (日本語)</option>
+                <option value="Korean">Korean (한국어)</option>
+                <option value="Italian">Italian (Italiano)</option>
+                <option value="Portuguese">Portuguese (Português)</option>
+                <option value="Russian">Russian (Русский)</option>
+                <option value="Arabic">Arabic (العربية)</option>
+                <option value="Hindi">Hindi (हिन्दी)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Number of Flashcards:</label>
+          <input type="number" id="cardCount" value="10" min="1" max="50" />
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="generateFlashCards()" id="generateButton">✨ Generate Flash Cards</button>
+
+      <!-- Flashcard Display -->
+      <div class="flashcard-container" id="flashcardContainer">
+        <div class="flashcard" id="flashcard" onclick="flipCard()">
+          <div class="flashcard-inner">
+            <div class="flashcard-front" id="cardFront">
+              Click to start
+            </div>
+            <div class="flashcard-back" id="cardBack">
+              Back content
+            </div>
+          </div>
+        </div>
+
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="flashcard-controls">
+          <div class="flashcard-nav">
+            <button class="btn btn-secondary" onclick="previousCard()" id="prevButton">← Previous</button>
+            <div class="flashcard-counter" id="cardCounter">1 / 10</div>
+            <button class="btn btn-secondary" onclick="nextCard()" id="nextButton">Next →</button>
+          </div>
+          <div class="button-row">
+            <button class="btn btn-success" onclick="markAsCorrect()" id="correctButton">✅ Correct</button>
+            <button class="btn btn-secondary" onclick="markAsIncorrect()" id="incorrectButton">❌ Incorrect</button>
+            <button class="btn btn-primary" onclick="shuffleCards()" id="shuffleButton">🔀 Shuffle</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Result Section -->
+      <div class="result-section" id="resultSection">
+        <h3 id="generatedContentTitle">📄 Generated Content</h3>
+        <div class="result-content" id="result"></div>
+        <div class="button-row">
+          <button class="btn btn-secondary" onclick="amendContent()" id="amendButton">📝 Amend</button>
+          <button class="btn btn-success" onclick="downloadFile('word')" id="exportWordButton">📄 Export to Word</button>
+          <button class="btn btn-success" onclick="downloadFile('ppt')" id="exportPPTButton">📊 Export to PPT</button>
+          <button class="btn btn-primary" onclick="startFlashcardMode()" id="startStudyButton">🎯 Start Flashcard Mode</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="flashcards.js"></script>
+</body>
+</html> 

@@ -4,243 +4,412 @@
   <meta charset="UTF-8">
   <title>Flash Card Generator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/pptxgen@3.12.0/dist/pptxgen.min.js"></script>
-<script>
-  // Fallback if the first CDN fails
-  if (typeof PptxGenJS === 'undefined') {
-    const script = document.createElement('script');
-    script.src = 'https://unpkg.com/pptxgen@3.12.0/dist/pptxgen.min.js';
-    document.head.appendChild(script);
-  }
-</script>
-<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.11.0/dist/pptxgen.bundle.js"></script>
-<script src="https://backend.canpaniongroup.com/public/flashcard/books.js"></script>
-<link rel="stylesheet" href="https://backend.canpaniongroup.com/public/flashcard/flashcards.css">
+  <!-- External Stylesheet for Flashcard Generator -->
+    <link rel="stylesheet" href="https://backend.canpaniongroup.com/public/flashcard/flashcards.css">
+    
+    <!-- Tailwind CSS for React Component Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
+    <!-- User's Head Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pptxgen@3.12.0/dist/pptxgen.min.js"></script>
+    <script>
+      // Fallback if the first CDN fails
+      if (typeof PptxGenJS === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/pptxgen@3.12.0/dist/pptxgen.min.js';
+        document.head.appendChild(script);
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.11.0/dist/pptxgen.bundle.js"></script>
+    
+    <!-- React Libraries -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        /* Basic styles for the tab system */
+        body {
+            font-family: 'Inter', sans-serif; /* A nice default font */
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e5e7eb; /* gray-200 */
+            margin-bottom: 1.5rem;
+        }
+        .tab-link {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #6b7280; /* gray-500 */
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease-in-out;
+        }
+        .tab-link:hover {
+            color: #111827; /* gray-900 */
+        }
+        .tab-link.active {
+            color: #3b82f6; /* blue-500 */
+            border-color: #3b82f6; /* blue-500 */
+        }
+        .tab-content {
+            display: none;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
+  <div class="container max-w-5xl">
     <div class="header">
       <h1 id="pageTitle">Flash Card Generator</h1>
       <p id="pageSubtitle">Create interactive flashcards with multiple learning modes</p>
     </div>
 
-    <div class="content">
-      <!-- Mode Selection -->
-      <div class="section">
-        <h3><span id="selectModeTitle">🎮 Select Flashcard Mode</span></h3>
-        <div class="mode-selector">
-          <div class="mode-card" data-mode="definition">
-            <div class="mode-icon">📚</div>
-            <h4 id="definitionModeTitle">Definition Mode</h4>
-            <p id="definitionModeDesc">Term on front, definition on back. Perfect for vocabulary and concepts.</p>
-          </div>
-          <div class="mode-card" data-mode="translation">
-            <div class="mode-icon">🌍</div>
-            <h4 id="translationModeTitle">Translation Mode</h4>
-            <p id="translationModeDesc">Word in one language on front, translation on back.</p>
-          </div>
-          <div class="mode-card" data-mode="multiple-choice">
-            <div class="mode-icon">❓</div>
-            <h4 id="multipleChoiceModeTitle">Multiple Choice</h4>
-            <p id="multipleChoiceModeDesc">Question on front, multiple choice options with correct answer on back.</p>
-          </div>
-          <div class="mode-card" data-mode="fill-blank">
-            <div class="mode-icon">✏️</div>
-            <h4 id="fillBlankModeTitle">Fill in the Blank</h4>
-            <p id="fillBlankModeDesc">Incomplete sentence on front, missing word on back.</p>
-          </div>
-          <div class="mode-card" data-mode="image-based">
-            <div class="mode-icon">🖼️</div>
-            <h4 id="imageBasedModeTitle">Image-Based</h4>
-            <p id="imageBasedModeDesc">Image on front, description or name on back.</p>
-          </div>
-        </div>
-      </div>
+    <!-- Tab Navigation -->
+    <div class="tabs">
+      <button class="tab-link active" onclick="openTab(event, 'Generator')">⚡ Generator</button>
+      <button class="tab-link" onclick="openTab(event, 'History')">📜 History</button>
+    </div>
 
-      <!-- Content Source -->
-      <div class="section">
-        <h3><span id="contentSourceTitle">📄 Content Source</span></h3>
-        <div class="form-group">
-          <label>
-            <input type="radio" name="contentSource" value="upload" checked /> 
-            <span id="uploadMaterialsLabel">Upload Materials (PDF/DOC/TXT)</span>
-          </label>
-          <div id="uploadSection">
-            <div class="file-upload-area" id="fileUploadArea">
-              <p id="dragDropFilesText">📁 Drag and drop files here or click to browse</p>
-              <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.txt" style="display: none;" />
+    <!-- Generator Tab Content (User's Original HTML) -->
+    <div id="Generator" class="tab-content" style="display: block;">
+      <div class="content">
+        <!-- Mode Selection -->
+        <div class="section">
+          <h3><span id="selectModeTitle">🎮 Select Flashcard Mode</span></h3>
+          <div class="mode-selector">
+            <div class="mode-card" data-mode="definition">
+              <div class="mode-icon">📚</div>
+              <h4 id="definitionModeTitle">Definition Mode</h4>
+              <p id="definitionModeDesc">Term on front, definition on back. Perfect for vocabulary and concepts.</p>
             </div>
-            <div id="fileList" class="file-list"></div>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>
-            <input type="radio" name="contentSource" value="database" /> 
-            <span id="useDatabaseLabel">Use Pre-loaded Database (HK/CN)</span>
-          </label>
-          <div id="databaseSection" style="display: none;">
-            <div class="book-list" id="bookList"></div>
-            <div class="selected-books" id="selectedBooks">
-              <h4><span id="selectedBooksTitle">Selected Books:</span></h4>
-              <div id="selectedBooksList"></div>
+            <div class="mode-card" data-mode="translation">
+              <div class="mode-icon">🌍</div>
+              <h4 id="translationModeTitle">Translation Mode</h4>
+              <p id="translationModeDesc">Word in one language on front, translation on back.</p>
+            </div>
+            <div class="mode-card" data-mode="multiple-choice">
+              <div class="mode-icon">❓</div>
+              <h4 id="multipleChoiceModeTitle">Multiple Choice</h4>
+              <p id="multipleChoiceModeDesc">Question on front, multiple choice options with correct answer on back.</p>
+            </div>
+            <div class="mode-card" data-mode="fill-blank">
+              <div class="mode-icon">✏️</div>
+              <h4 id="fillBlankModeTitle">Fill in the Blank</h4>
+              <p id="fillBlankModeDesc">Incomplete sentence on front, missing word on back.</p>
+            </div>
+            <div class="mode-card" data-mode="image-based">
+              <div class="mode-icon">🖼️</div>
+              <h4 id="imageBasedModeTitle">Image-Based</h4>
+              <p id="imageBasedModeDesc">Image on front, description or name on back.</p>
             </div>
           </div>
         </div>
 
-        <div class="form-group">
-          <label>
-            <input type="radio" name="contentSource" value="manual" /> 
-            <span id="typeManuallyLabel">Type Content Manually</span>
-          </label>
-          <div id="manualSection" style="display: none;">
-            <textarea id="manualContent" placeholder="Enter your content here..."></textarea>
-          </div>
-        </div>
-
-        <!-- Image Upload for Image-Based Mode -->
-        <div class="form-group" id="imageUploadSection" style="display: none;">
-          <label>
-            <input type="radio" name="contentSource" value="images" /> 
-            <span id="uploadImagesLabel">Upload Images for Image-Based Mode</span>
-          </label>
-          <div id="imageUploadArea" style="display: none;">
-            <div class="file-upload-area">
-              <p id="dragDropImagesText">🖼️ Drag and drop image files here or click to browse</p>
-              <input type="file" id="imageInput" multiple accept="image/*" style="display: none;" />
+        <!-- Content Source -->
+        <div class="section">
+          <h3><span id="contentSourceTitle">📄 Content Source</span></h3>
+          <div class="form-group">
+            <label>
+              <input type="radio" name="contentSource" value="upload" checked />
+              <span id="uploadMaterialsLabel">Upload Materials (PDF/DOC/TXT)</span>
+            </label>
+            <div id="uploadSection">
+              <div class="file-upload-area" id="fileUploadArea">
+                <p id="dragDropFilesText">📁 Drag and drop files here or click to browse</p>
+                <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.txt" style="display: none;" />
+              </div>
+              <div id="fileList" class="file-list"></div>
             </div>
-            <div id="imageList" class="file-list"></div>
           </div>
-        </div>
-      </div>
 
-      <!-- Parameters -->
-      <div class="section">
-        <h3><span id="parametersTitle">⚙️ Parameters</span></h3>
-        <div class="form-group">
-          <label for="duration" id="durationLabel">Duration:</label>
-          <input type="text" id="duration" placeholder="e.g. 45 mins" />
-        </div>
-
-        <div class="form-group">
-          <label for="grade" id="gradeLabel">Grade:</label>
-          <input type="text" id="grade" placeholder="e.g. Grade 3" />
-        </div>
-
-        <div class="form-group">
-          <label id="difficultyLabel">Difficulty:</label>
-          <div class="radio-group">
-            <label><input type="radio" name="difficulty" value="High" /> <span id="difficultyHigh">High</span></label>
-            <label><input type="radio" name="difficulty" value="Mid" checked /> <span id="difficultyMid">Mid</span></label>
-            <label><input type="radio" name="difficulty" value="Low" /> <span id="difficultyLow">Low</span></label>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="topic" id="topicLabel">Topic:</label>
-          <input type="text" id="topic" placeholder="Enter topic..." />
-        </div>
-
-        <!-- Translation Language Selection -->
-        <div class="form-group" id="translationOptions" style="display: none;">
-          <label id="translationSettingsLabel">Translation Settings:</label>
-          <div class="translation-controls">
-            <div class="language-selector">
-              <label for="fromLanguage" id="fromLanguageLabel">From Language:</label>
-              <select id="fromLanguage">
-                <option value="English">English</option>
-                <option value="Simplified Chinese">Simplified Chinese (简体中文)</option>
-                <option value="Traditional Chinese">Traditional Chinese (繁體中文)</option>
-                <option value="Spanish">Spanish (Español)</option>
-                <option value="French">French (Français)</option>
-                <option value="German">German (Deutsch)</option>
-                <option value="Japanese">Japanese (日本語)</option>
-                <option value="Korean">Korean (한국어)</option>
-                <option value="Italian">Italian (Italiano)</option>
-                <option value="Portuguese">Portuguese (Português)</option>
-                <option value="Russian">Russian (Русский)</option>
-                <option value="Arabic">Arabic (العربية)</option>
-                <option value="Hindi">Hindi (हिन्दी)</option>
-              </select>
+          <div class="form-group">
+            <label>
+              <input type="radio" name="contentSource" value="database" />
+              <span id="useDatabaseLabel">Use Pre-loaded Database (HK/CN)</span>
+            </label>
+            <div id="databaseSection" style="display: none;">
+              <div class="book-list" id="bookList"></div>
+              <div class="selected-books" id="selectedBooks">
+                <h4><span id="selectedBooksTitle">Selected Books:</span></h4>
+                <div id="selectedBooksList"></div>
+              </div>
             </div>
-            <div class="language-arrow">→</div>
-            <div class="language-selector">
-              <label for="toLanguage" id="toLanguageLabel">To Language:</label>
-              <select id="toLanguage">
-                <option value="Simplified Chinese" selected>Simplified Chinese (简体中文)</option>
-                <option value="Traditional Chinese">Traditional Chinese (繁體中文)</option>
-                <option value="English">English</option>
-                <option value="Spanish">Spanish (Español)</option>
-                <option value="French">French (Français)</option>
-                <option value="German">German (Deutsch)</option>
-                <option value="Japanese">Japanese (日本語)</option>
-                <option value="Korean">Korean (한국어)</option>
-                <option value="Italian">Italian (Italiano)</option>
-                <option value="Portuguese">Portuguese (Português)</option>
-                <option value="Russian">Russian (Русский)</option>
-                <option value="Arabic">Arabic (العربية)</option>
-                <option value="Hindi">Hindi (हिन्दी)</option>
-              </select>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <input type="radio" name="contentSource" value="manual" />
+              <span id="typeManuallyLabel">Type Content Manually</span>
+            </label>
+            <div id="manualSection" style="display: none;">
+              <textarea id="manualContent" placeholder="Enter your content here..."></textarea>
+            </div>
+          </div>
+
+          <!-- Image Upload for Image-Based Mode -->
+          <div class="form-group" id="imageUploadSection" style="display: none;">
+            <label>
+              <input type="radio" name="contentSource" value="images" />
+              <span id="uploadImagesLabel">Upload Images for Image-Based Mode</span>
+            </label>
+            <div id="imageUploadArea" style="display: none;">
+              <div class="file-upload-area">
+                <p id="dragDropImagesText">🖼️ Drag and drop image files here or click to browse</p>
+                <input type="file" id="imageInput" multiple accept="image/*" style="display: none;" />
+              </div>
+              <div id="imageList" class="file-list"></div>
             </div>
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="cardCount" id="cardCountLabel">Number of Flashcards:</label>
-          <input type="number" id="cardCount" value="10" min="1" max="50" />
-        </div>
-      </div>
+        <!-- Parameters -->
+        <div class="section">
+          <h3><span id="parametersTitle">⚙️ Parameters</span></h3>
+          <div class="form-group">
+            <label for="duration" id="durationLabel">Duration:</label>
+            <input type="text" id="duration" placeholder="e.g. 45 mins" />
+          </div>
 
-      <button class="btn btn-primary" onclick="generateFlashCards()" id="generateButton">✨ Generate Flash Cards</button>
+          <div class="form-group">
+            <label for="grade" id="gradeLabel">Grade:</label>
+            <input type="text" id="grade" placeholder="e.g. Grade 3" />
+          </div>
 
-      <!-- Flashcard Display -->
-      <div class="flashcard-container" id="flashcardContainer">
-        <div class="flashcard" id="flashcard" onclick="flipCard()">
-          <div class="flashcard-inner">
-            <div class="flashcard-front" id="cardFront">
-              Click to start
+          <div class="form-group">
+            <label id="difficultyLabel">Difficulty:</label>
+            <div class="radio-group">
+              <label><input type="radio" name="difficulty" value="High" /> <span id="difficultyHigh">High</span></label>
+              <label><input type="radio" name="difficulty" value="Mid" checked /> <span id="difficultyMid">Mid</span></label>
+              <label><input type="radio" name="difficulty" value="Low" /> <span id="difficultyLow">Low</span></label>
             </div>
-            <div class="flashcard-back" id="cardBack">
-              Back content
+          </div>
+
+          <div class="form-group">
+            <label for="topic" id="topicLabel">Topic:</label>
+            <input type="text" id="topic" placeholder="Enter topic..." />
+          </div>
+
+          <!-- Translation Language Selection -->
+          <div class="form-group" id="translationOptions" style="display: none;">
+            <label id="translationSettingsLabel">Translation Settings:</label>
+            <div class="translation-controls">
+              <div class="language-selector">
+                <label for="fromLanguage" id="fromLanguageLabel">From Language:</label>
+                <select id="fromLanguage">
+                  <option value="English">English</option>
+                  <option value="Simplified Chinese">Simplified Chinese (简体中文)</option>
+                  <option value="Traditional Chinese">Traditional Chinese (繁體中文)</option>
+                  <option value="Spanish">Spanish (Español)</option>
+                  <option value="French">French (Français)</option>
+                  <option value="German">German (Deutsch)</option>
+                  <option value="Japanese">Japanese (日本語)</option>
+                  <option value="Korean">Korean (한국어)</option>
+                  <option value="Italian">Italian (Italiano)</option>
+                  <option value="Portuguese">Portuguese (Português)</option>
+                  <option value="Russian">Russian (Русский)</option>
+                  <option value="Arabic">Arabic (العربية)</option>
+                  <option value="Hindi">Hindi (हिन्दी)</option>
+                </select>
+              </div>
+              <div class="language-arrow">→</div>
+              <div class="language-selector">
+                <label for="toLanguage" id="toLanguageLabel">To Language:</label>
+                <select id="toLanguage">
+                  <option value="Simplified Chinese" selected>Simplified Chinese (简体中文)</option>
+                  <option value="Traditional Chinese">Traditional Chinese (繁體中文)</option>
+                  <option value="English">English</option>
+                  <option value="Spanish">Spanish (Español)</option>
+                  <option value="French">French (Français)</option>
+                  <option value="German">German (Deutsch)</option>
+                  <option value="Japanese">Japanese (日本語)</option>
+                  <option value="Korean">Korean (한국어)</option>
+                  <option value="Italian">Italian (Italiano)</option>
+                  <option value="Portuguese">Portuguese (Português)</option>
+                  <option value="Russian">Russian (Русский)</option>
+                  <option value="Arabic">Arabic (العربية)</option>
+                  <option value="Hindi">Hindi (हिन्दी)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="cardCount" id="cardCountLabel">Number of Flashcards:</label>
+            <input type="number" id="cardCount" value="10" min="1" max="50" />
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="generateFlashCards()" id="generateButton">✨ Generate Flash Cards</button>
+
+        <!-- Flashcard Display -->
+        <div class="flashcard-container" id="flashcardContainer">
+          <div class="flashcard" id="flashcard" onclick="flipCard()">
+            <div class="flashcard-inner">
+              <div class="flashcard-front" id="cardFront">
+                Click to start
+              </div>
+              <div class="flashcard-back" id="cardBack">
+                Back content
+              </div>
+            </div>
+          </div>
+
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+
+          <div class="flashcard-controls">
+            <div class="flashcard-nav">
+              <button class="btn btn-secondary" onclick="previousCard()" id="prevButton">← Previous</button>
+              <div class="flashcard-counter" id="cardCounter">1 / 10</div>
+              <button class="btn btn-secondary" onclick="nextCard()" id="nextButton">Next →</button>
+            </div>
+            <div class="button-row">
+              <button class="btn btn-success" onclick="markAsCorrect()" id="correctButton">✅ Correct</button>
+              <button class="btn btn-secondary" onclick="markAsIncorrect()" id="incorrectButton">❌ Incorrect</button>
+              <button class="btn btn-primary" onclick="shuffleCards()" id="shuffleButton">🔀 Shuffle</button>
             </div>
           </div>
         </div>
 
-        <div class="progress-bar">
-          <div class="progress-fill" id="progressFill"></div>
-        </div>
-
-        <div class="flashcard-controls">
-          <div class="flashcard-nav">
-            <button class="btn btn-secondary" onclick="previousCard()" id="prevButton">← Previous</button>
-            <div class="flashcard-counter" id="cardCounter">1 / 10</div>
-            <button class="btn btn-secondary" onclick="nextCard()" id="nextButton">Next →</button>
-          </div>
+        <!-- Result Section -->
+        <div class="result-section" id="resultSection">
+          <h3 id="generatedContentTitle">📄 Generated Content</h3>
+          <div class="result-content" id="result"></div>
           <div class="button-row">
-            <button class="btn btn-success" onclick="markAsCorrect()" id="correctButton">✅ Correct</button>
-            <button class="btn btn-secondary" onclick="markAsIncorrect()" id="incorrectButton">❌ Incorrect</button>
-            <button class="btn btn-primary" onclick="shuffleCards()" id="shuffleButton">🔀 Shuffle</button>
+            <button class="btn btn-secondary" onclick="amendContent()" id="amendButton">📝 Amend</button>
+            <button class="btn btn-success" onclick="exportToWord()" id="exportWordButton">📄 Export to Word</button>
+            <button class="btn btn-success" onclick="generatePPT()" id="exportPPTButton">📊 Export to PPT</button>
+            <button class="btn btn-primary" onclick="startFlashcardMode()" id="startStudyButton">🎯 Start Flashcard Mode</button>
           </div>
-        </div>
-      </div>
-
-      <!-- Result Section -->
-      <div class="result-section" id="resultSection">
-        <h3 id="generatedContentTitle">📄 Generated Content</h3>
-        <div class="result-content" id="result"></div>
-        <div class="button-row">
-          <button class="btn btn-secondary" onclick="amendContent()" id="amendButton">📝 Amend</button>
-          <button class="btn btn-success" onclick="downloadFile('word')" id="exportWordButton">📄 Export to Word</button>
-          <button class="btn btn-success" onclick="downloadFile('ppt')" id="exportPPTButton">📊 Export to PPT</button>
-          <button class="btn btn-primary" onclick="startFlashcardMode()" id="startStudyButton">🎯 Start Flashcard Mode</button>
         </div>
       </div>
     </div>
+
+    <!-- History Tab Content -->
+    <div id="History" class="tab-content">
+      <!-- React component will be mounted here -->
+      <div id="history-react-root"></div>
+    </div>
   </div>
 
-  <script src="./flashcards.js"></script>
+  <!-- Tab Switching Logic -->
+  <script>
+    function openTab(evt, tabName) {
+      // Get all elements with class="tab-content" and hide them
+      const tabcontent = document.getElementsByClassName("tab-content");
+      for (let i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+      }
+
+      // Get all elements with class="tab-link" and remove the class "active"
+      const tablinks = document.getElementsByClassName("tab-link");
+      for (let i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+      }
+
+      // Show the current tab, and add an "active" class to the button that opened the tab
+      document.getElementById(tabName).style.display = "block";
+      evt.currentTarget.className += " active";
+    }
+  </script>
+
+  <!-- User's Original Scripts -->
+  <script src="https://backend.canpaniongroup.com/public/flashcard/books.js"></script>
+  <script src="https://backend.canpaniongroup.com/public/flashcard/flashcards.js"></script>
+
+  <!-- React Component for History Tab (not completed, just a placeholder template) -->
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // A single history item component
+    const HistoryItem = ({ item, onDelete }) => (
+      <div className="bg-white p-5 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col justify-between">
+        <div>
+          <div className="flex justify-between items-start mb-3">
+            <h4 className="font-bold text-lg text-gray-800 break-all">{item.topic || 'Untitled Topic'}</h4>
+            <span className="text-xs text-gray-400 flex-shrink-0 ml-2">{item.date}</span>
+          </div>
+          <div className="space-y-2 text-sm text-gray-600">
+              <p><span className="font-medium">Mode:</span> {item.mode}</p>
+              <p><span className="font-medium">Cards:</span> {item.cardCount}</p>
+              <p><span className="font-medium">Source:</span> {item.source}</p>
+          </div>
+        </div>
+        <div className="mt-4 flex justify-end space-x-2">
+          <button className="px-4 py-2 bg-blue-500 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            View
+          </button>
+          <button 
+            onClick={() => onDelete(item.id)}
+            className="px-4 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg hover:bg-red-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+            Delete
+          </button>
+        </div>
+      </div>
+    );
+
+    // Main App component for the History Tab
+    const HistoryTab = () => {
+      // Mock data for demonstration. You would fetch this from your backend.
+      const mockData = [
+        { id: 1, topic: 'Photosynthesis & Cellular Respiration', mode: 'Definition', cardCount: 15, source: 'Uploaded PDF', date: '2024-07-10' },
+        { id: 2, topic: 'Spanish Vocabulary: Travel', mode: 'Translation', cardCount: 25, source: 'Manual Input', date: '2024-07-09' },
+        { id: 3, topic: 'World Capitals Quiz', mode: 'Multiple Choice', cardCount: 50, source: 'Pre-loaded Database', date: '2024-07-08' },
+        { id: 4, topic: 'Anatomy of a Eukaryotic Cell', mode: 'Image-Based', cardCount: 10, source: 'Uploaded Images', date: '2024-07-07' },
+        { id: 5, topic: 'French Verb Conjugation', mode: 'Fill in the Blank', cardCount: 30, source: 'Manual Input', date: '2024-07-06' },
+      ];
+
+      const [history, setHistory] = useState([]);
+      const [loading, setLoading] = useState(true);
+
+      // Simulate fetching data when the component mounts
+      useEffect(() => {
+        setTimeout(() => {
+          setHistory(mockData);
+          setLoading(false);
+        }, 1000); // Simulate network delay
+      }, []);
+      
+      const handleDelete = (id) => {
+        // In a real app, you'd also send a request to your server to delete the item
+        setHistory(history.filter(item => item.id !== id));
+      };
+
+      if (loading) {
+        return (
+            <div className="text-center py-12">
+                <p className="text-gray-500">Loading history...</p>
+            </div>
+        )
+      }
+
+      return (
+        <div className="p-1">
+          {history.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {history.map(item => <HistoryItem key={item.id} item={item} onDelete={handleDelete} />)}
+            </div>
+          ) : (
+            <div className="text-center py-16 bg-white rounded-lg shadow-sm">
+              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+              </svg>
+              <h3 className="mt-4 text-lg font-medium text-gray-900">No history yet</h3>
+              <p className="mt-1 text-sm text-gray-500">Generate some flashcards to see your history here.</p>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // Render the React component into the root div
+    const container = document.getElementById('history-react-root');
+    const root = ReactDOM.createRoot(container);
+    root.render(<HistoryTab />);
+  </script>
 </body>
 </html>

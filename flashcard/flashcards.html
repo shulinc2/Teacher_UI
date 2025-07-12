@@ -5,31 +5,24 @@
   <title>Flash Card Generator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/pptxgen@3.12.0/dist/pptxgen.min.js"></script>
-  <script>
-    // Fallback if the first CDN fails
-    if (typeof PptxGenJS === 'undefined') {
-      const script = document.createElement('script');
-      script.src = 'https://unpkg.com/pptxgen@3.12.0/dist/pptxgen.min.js';
-      document.head.appendChild(script);
-    }
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.11.0/dist/pptxgen.bundle.js"></script>
-  <script src="books.js"></script>
-  <link rel="stylesheet" href="flashcards.css">
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgen@3.12.0/dist/pptxgen.min.js"></script>
+<script>
+  // Fallback if the first CDN fails
+  if (typeof PptxGenJS === 'undefined') {
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/pptxgen@3.12.0/dist/pptxgen.min.js';
+    document.head.appendChild(script);
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.11.0/dist/pptxgen.bundle.js"></script>
+<script src="https://backend.canpaniongroup.com/public/flashcard/books.js"></script>
+<link rel="stylesheet" href="https://backend.canpaniongroup.com/public/flashcard/flashcards.css">
+
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <div class="language-selector-header">
-        <label for="pageLanguage">🌍 页面语言 / Page Language:</label>
-        <select id="pageLanguage" onchange="changePageLanguage()">
-          <option value="zh-CN">简体中文</option>
-          <option value="zh-TW">繁體中文</option>
-          <option value="en">English</option>
-        </select>
-      </div>
       <h1 id="pageTitle">Flash Card Generator</h1>
       <p id="pageSubtitle">Create interactive flashcards with multiple learning modes</p>
     </div>
@@ -37,47 +30,47 @@
     <div class="content">
       <!-- Mode Selection -->
       <div class="section">
-        <h3>🎮 Select Flashcard Mode</h3>
+        <h3><span id="selectModeTitle">🎮 Select Flashcard Mode</span></h3>
         <div class="mode-selector">
           <div class="mode-card" data-mode="definition">
             <div class="mode-icon">📚</div>
-            <h4>Definition Mode</h4>
-            <p>Term on front, definition on back. Perfect for vocabulary and concepts.</p>
+            <h4 id="definitionModeTitle">Definition Mode</h4>
+            <p id="definitionModeDesc">Term on front, definition on back. Perfect for vocabulary and concepts.</p>
           </div>
           <div class="mode-card" data-mode="translation">
             <div class="mode-icon">🌍</div>
-            <h4>Translation Mode</h4>
-            <p>Word in one language on front, translation on back.</p>
+            <h4 id="translationModeTitle">Translation Mode</h4>
+            <p id="translationModeDesc">Word in one language on front, translation on back.</p>
           </div>
           <div class="mode-card" data-mode="multiple-choice">
             <div class="mode-icon">❓</div>
-            <h4>Multiple Choice</h4>
-            <p>Question on front, multiple choice options with correct answer on back.</p>
+            <h4 id="multipleChoiceModeTitle">Multiple Choice</h4>
+            <p id="multipleChoiceModeDesc">Question on front, multiple choice options with correct answer on back.</p>
           </div>
           <div class="mode-card" data-mode="fill-blank">
             <div class="mode-icon">✏️</div>
-            <h4>Fill in the Blank</h4>
-            <p>Incomplete sentence on front, missing word on back.</p>
+            <h4 id="fillBlankModeTitle">Fill in the Blank</h4>
+            <p id="fillBlankModeDesc">Incomplete sentence on front, missing word on back.</p>
           </div>
           <div class="mode-card" data-mode="image-based">
             <div class="mode-icon">🖼️</div>
-            <h4>Image-Based</h4>
-            <p>Image on front, description or name on back.</p>
+            <h4 id="imageBasedModeTitle">Image-Based</h4>
+            <p id="imageBasedModeDesc">Image on front, description or name on back.</p>
           </div>
         </div>
       </div>
 
       <!-- Content Source -->
       <div class="section">
-        <h3>📄 Content Source</h3>
+        <h3><span id="contentSourceTitle">📄 Content Source</span></h3>
         <div class="form-group">
           <label>
             <input type="radio" name="contentSource" value="upload" checked /> 
-            Upload Materials (PDF/DOC/TXT)
+            <span id="uploadMaterialsLabel">Upload Materials (PDF/DOC/TXT)</span>
           </label>
           <div id="uploadSection">
             <div class="file-upload-area" id="fileUploadArea">
-              <p>📁 Drag and drop files here or click to browse</p>
+              <p id="dragDropFilesText">📁 Drag and drop files here or click to browse</p>
               <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.txt" style="display: none;" />
             </div>
             <div id="fileList" class="file-list"></div>
@@ -87,12 +80,12 @@
         <div class="form-group">
           <label>
             <input type="radio" name="contentSource" value="database" /> 
-            Use Pre-loaded Database (HK/CN)
+            <span id="useDatabaseLabel">Use Pre-loaded Database (HK/CN)</span>
           </label>
           <div id="databaseSection" style="display: none;">
             <div class="book-list" id="bookList"></div>
             <div class="selected-books" id="selectedBooks">
-              <h4>Selected Books:</h4>
+              <h4><span id="selectedBooksTitle">Selected Books:</span></h4>
               <div id="selectedBooksList"></div>
             </div>
           </div>
@@ -101,7 +94,7 @@
         <div class="form-group">
           <label>
             <input type="radio" name="contentSource" value="manual" /> 
-            Type Content Manually
+            <span id="typeManuallyLabel">Type Content Manually</span>
           </label>
           <div id="manualSection" style="display: none;">
             <textarea id="manualContent" placeholder="Enter your content here..."></textarea>
@@ -112,11 +105,11 @@
         <div class="form-group" id="imageUploadSection" style="display: none;">
           <label>
             <input type="radio" name="contentSource" value="images" /> 
-            Upload Images for Image-Based Mode
+            <span id="uploadImagesLabel">Upload Images for Image-Based Mode</span>
           </label>
           <div id="imageUploadArea" style="display: none;">
             <div class="file-upload-area">
-              <p>🖼️ Drag and drop image files here or click to browse</p>
+              <p id="dragDropImagesText">🖼️ Drag and drop image files here or click to browse</p>
               <input type="file" id="imageInput" multiple accept="image/*" style="display: none;" />
             </div>
             <div id="imageList" class="file-list"></div>
@@ -126,37 +119,37 @@
 
       <!-- Parameters -->
       <div class="section">
-        <h3>⚙️ Parameters</h3>
+        <h3><span id="parametersTitle">⚙️ Parameters</span></h3>
         <div class="form-group">
-          <label>Duration:</label>
+          <label for="duration" id="durationLabel">Duration:</label>
           <input type="text" id="duration" placeholder="e.g. 45 mins" />
         </div>
 
         <div class="form-group">
-          <label>Grade:</label>
+          <label for="grade" id="gradeLabel">Grade:</label>
           <input type="text" id="grade" placeholder="e.g. Grade 3" />
         </div>
 
         <div class="form-group">
-          <label>Difficulty:</label>
+          <label id="difficultyLabel">Difficulty:</label>
           <div class="radio-group">
-            <label><input type="radio" name="difficulty" value="High" /> High</label>
-            <label><input type="radio" name="difficulty" value="Mid" checked /> Mid</label>
-            <label><input type="radio" name="difficulty" value="Low" /> Low</label>
+            <label><input type="radio" name="difficulty" value="High" /> <span id="difficultyHigh">High</span></label>
+            <label><input type="radio" name="difficulty" value="Mid" checked /> <span id="difficultyMid">Mid</span></label>
+            <label><input type="radio" name="difficulty" value="Low" /> <span id="difficultyLow">Low</span></label>
           </div>
         </div>
 
         <div class="form-group">
-          <label>Topic:</label>
+          <label for="topic" id="topicLabel">Topic:</label>
           <input type="text" id="topic" placeholder="Enter topic..." />
         </div>
 
         <!-- Translation Language Selection -->
         <div class="form-group" id="translationOptions" style="display: none;">
-          <label>Translation Settings:</label>
+          <label id="translationSettingsLabel">Translation Settings:</label>
           <div class="translation-controls">
             <div class="language-selector">
-              <label>From Language:</label>
+              <label for="fromLanguage" id="fromLanguageLabel">From Language:</label>
               <select id="fromLanguage">
                 <option value="English">English</option>
                 <option value="Simplified Chinese">Simplified Chinese (简体中文)</option>
@@ -175,7 +168,7 @@
             </div>
             <div class="language-arrow">→</div>
             <div class="language-selector">
-              <label>To Language:</label>
+              <label for="toLanguage" id="toLanguageLabel">To Language:</label>
               <select id="toLanguage">
                 <option value="Simplified Chinese" selected>Simplified Chinese (简体中文)</option>
                 <option value="Traditional Chinese">Traditional Chinese (繁體中文)</option>
@@ -196,7 +189,7 @@
         </div>
 
         <div class="form-group">
-          <label>Number of Flashcards:</label>
+          <label for="cardCount" id="cardCountLabel">Number of Flashcards:</label>
           <input type="number" id="cardCount" value="10" min="1" max="50" />
         </div>
       </div>
@@ -248,6 +241,6 @@
     </div>
   </div>
 
-  <script src="flashcards.js"></script>
+  <script src="./flashcards.js"></script>
 </body>
-</html> 
+</html>

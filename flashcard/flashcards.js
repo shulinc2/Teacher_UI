@@ -1,14 +1,13 @@
 let selectedBooks = [];
 let currentMode = 'definition';
-let flashcards = [];
+let flashcards = []; // This will now store the structured JSON flashcards
 let currentCardIndex = 0;
 let correctAnswers = 0;
 let totalCards = 0;
-let currentPageLanguage = 'zh-CN'; // Default to Simplified Chinese
 
 // Multi-language text configuration
 const translations = {
-  'zh-CN': {
+  'zh': {
     pageTitle: '闪卡生成器',
     pageSubtitle: '创建具有多种学习模式的交互式闪卡',
     selectMode: '🎮 选择闪卡模式',
@@ -84,7 +83,7 @@ const translations = {
     generatedContent: '📄 生成的內容',
     changesSaved: '修改已保存'
   },
-  'zh-TW': {
+  'zh-HK': {
     pageTitle: '閃卡生成器',
     pageSubtitle: '創建具有多種學習模式的互動式閃卡',
     selectMode: '🎮 選擇閃卡模式',
@@ -154,7 +153,7 @@ const translations = {
     csvExported: 'CSV文件已導出',
     jsonExported: 'JSON文件已導出',
     amendContent: '📝 修改內容',
-    exportToWord: '📄 導出為Word',
+    exportToWord: '� 導出為Word',
     exportToPPT: '📊 導出為PPT',
     startStudyMode: '🧑‍🏫 開始敎學模式',
     generatedContent: '📄 生成的內容',
@@ -247,294 +246,114 @@ document.addEventListener('DOMContentLoaded', function() {
   // Set default mode
   document.querySelector('.mode-card[data-mode="definition"]').classList.add('selected');
   
-  // Initialize page language
+  // Initialize page language based on HTML lang attribute
   updatePageLanguage();
 });
 
-// Language switching function
-function changePageLanguage() {
-  currentPageLanguage = document.getElementById('pageLanguage').value;
-  updatePageLanguage();
+function getLanguage() {
+    const lang = (document.documentElement.lang || 'en').toLowerCase();
+    if (lang === 'zh-hk' || lang === 'zh-tw') {
+        return 'zh-HK';
+    }
+    if (lang.startsWith('zh')) { // Catches 'zh', 'zh-cn', etc.
+        return 'zh';
+    }
+    return 'en'; // Default to English
 }
 
-// Update all page text based on selected language
 function updatePageLanguage() {
-  const t = translations[currentPageLanguage];
+  const lang = getLanguage();
+  const t = translations[lang];
   
-  // Update page title and subtitle
   document.getElementById('pageTitle').textContent = t.pageTitle;
   document.getElementById('pageSubtitle').textContent = t.pageSubtitle;
-  
-  // Update section headers
-  document.querySelector('.section h3').textContent = t.selectMode;
-  
-  // Update mode cards
-  const modeCards = document.querySelectorAll('.mode-card');
-  modeCards[0].querySelector('h4').textContent = t.definitionMode;
-  modeCards[0].querySelector('p').textContent = t.definitionDesc;
-  modeCards[1].querySelector('h4').textContent = t.translationMode;
-  modeCards[1].querySelector('p').textContent = t.translationDesc;
-  modeCards[2].querySelector('h4').textContent = t.multipleChoiceMode;
-  modeCards[2].querySelector('p').textContent = t.multipleChoiceDesc;
-  modeCards[3].querySelector('h4').textContent = t.fillBlankMode;
-  modeCards[3].querySelector('p').textContent = t.fillBlankDesc;
-  modeCards[4].querySelector('h4').textContent = t.imageBasedMode;
-  modeCards[4].querySelector('p').textContent = t.imageBasedDesc;
-  
-  // Update content source section
-  document.querySelectorAll('.section')[1].querySelector('h3').textContent = t.contentSource;
-  
-  // Update form labels and placeholders - preserve child elements
-  // Find labels by their position in the form groups
-  const formGroups = document.querySelectorAll('.form-group');
-  
-  // Update upload materials label (first form group)
-  if (formGroups[0]) {
-    const uploadLabel = formGroups[0].querySelector('label');
-    if (uploadLabel) {
-      // Clear all text nodes and set new text
-      const textNodes = Array.from(uploadLabel.childNodes).filter(node => node.nodeType === Node.TEXT_NODE);
-      textNodes.forEach(node => node.remove());
-      uploadLabel.appendChild(document.createTextNode(t.uploadMaterials));
-    }
-  }
-  
-  // Update database label (second form group)
-  if (formGroups[1]) {
-    const databaseLabel = formGroups[1].querySelector('label');
-    if (databaseLabel) {
-      // Clear all text nodes and set new text
-      const textNodes = Array.from(databaseLabel.childNodes).filter(node => node.nodeType === Node.TEXT_NODE);
-      textNodes.forEach(node => node.remove());
-      databaseLabel.appendChild(document.createTextNode(t.useDatabase));
-    }
-  }
-  
-  // Update manual input label (third form group)
-  if (formGroups[2]) {
-    const manualLabel = formGroups[2].querySelector('label');
-    if (manualLabel) {
-      // Clear all text nodes and set new text
-      const textNodes = Array.from(manualLabel.childNodes).filter(node => node.nodeType === Node.TEXT_NODE);
-      textNodes.forEach(node => node.remove());
-      manualLabel.appendChild(document.createTextNode(t.typeManually));
-    }
-  }
-  
-  // Update images label (fourth form group)
-  if (formGroups[3]) {
-    const imagesLabel = formGroups[3].querySelector('label');
-    if (imagesLabel) {
-      // Clear all text nodes and set new text
-      const textNodes = Array.from(imagesLabel.childNodes).filter(node => node.nodeType === Node.TEXT_NODE);
-      textNodes.forEach(node => node.remove());
-      imagesLabel.appendChild(document.createTextNode(t.uploadImages));
-    }
-  }
-  
-  // Update placeholders
+  document.getElementById('selectModeTitle').textContent = t.selectMode;
+  document.getElementById('definitionModeTitle').textContent = t.definitionMode;
+  document.getElementById('definitionModeDesc').textContent = t.definitionDesc;
+  document.getElementById('translationModeTitle').textContent = t.translationMode;
+  document.getElementById('translationModeDesc').textContent = t.translationDesc;
+  document.getElementById('multipleChoiceModeTitle').textContent = t.multipleChoiceMode;
+  document.getElementById('multipleChoiceModeDesc').textContent = t.multipleChoiceDesc;
+  document.getElementById('fillBlankModeTitle').textContent = t.fillBlankMode;
+  document.getElementById('fillBlankModeDesc').textContent = t.fillBlankDesc;
+  document.getElementById('imageBasedModeTitle').textContent = t.imageBasedMode;
+  document.getElementById('imageBasedModeDesc').textContent = t.imageBasedDesc;
+  document.getElementById('contentSourceTitle').textContent = t.contentSource;
+  document.getElementById('uploadMaterialsLabel').textContent = t.uploadMaterials;
+  document.getElementById('useDatabaseLabel').textContent = t.useDatabase;
+  document.getElementById('typeManuallyLabel').textContent = t.typeManually;
+  document.getElementById('uploadImagesLabel').textContent = t.uploadImages;
+  document.getElementById('dragDropFilesText').textContent = t.dragDropFiles;
+  document.getElementById('dragDropImagesText').textContent = t.dragDropImages;
+  document.getElementById('selectedBooksTitle').textContent = t.selectedBooks;
   document.getElementById('manualContent').placeholder = t.enterContent;
   document.getElementById('duration').placeholder = t.durationPlaceholder;
   document.getElementById('grade').placeholder = t.gradePlaceholder;
   document.getElementById('topic').placeholder = t.topicPlaceholder;
-  
-  // Update parameters section
-  document.querySelectorAll('.section')[2].querySelector('h3').textContent = t.parameters;
-  
-  // Update labels - use more specific selectors to avoid conflicts
-  // Duration label
-  const durationInput = document.getElementById('duration');
-  if (durationInput) {
-    const durationLabel = durationInput.parentElement.querySelector('label');
-    if (durationLabel) durationLabel.textContent = t.duration;
-  }
-  
-  // Grade label
-  const gradeInput = document.getElementById('grade');
-  if (gradeInput) {
-    const gradeLabel = gradeInput.parentElement.querySelector('label');
-    if (gradeLabel) gradeLabel.textContent = t.grade;
-  }
-  
-  // Difficulty label
-  const difficultyGroup = document.querySelector('.form-group .radio-group');
-  if (difficultyGroup) {
-    const difficultyLabel = difficultyGroup.parentElement.querySelector('label');
-    if (difficultyLabel) difficultyLabel.textContent = t.difficulty;
-  }
-  
-  // Topic label
-  const topicInput = document.getElementById('topic');
-  if (topicInput) {
-    const topicLabel = topicInput.parentElement.querySelector('label');
-    if (topicLabel) topicLabel.textContent = t.topic;
-  }
-  
-  // Card count label
-  const cardCountInput = document.getElementById('cardCount');
-  if (cardCountInput) {
-    const cardCountLabel = cardCountInput.parentElement.querySelector('label');
-    if (cardCountLabel) cardCountLabel.textContent = t.cardCount;
-  }
-  
-  // Translation settings label
-  const translationOptions = document.getElementById('translationOptions');
-  if (translationOptions) {
-    const translationSettingsLabel = translationOptions.querySelector('label');
-    if (translationSettingsLabel) translationSettingsLabel.textContent = t.translationSettings;
-  }
-  
-  // From language label
-  const fromLanguageSelect = document.getElementById('fromLanguage');
-  if (fromLanguageSelect) {
-    const fromLanguageLabel = fromLanguageSelect.parentElement.querySelector('label');
-    if (fromLanguageLabel) fromLanguageLabel.textContent = t.fromLanguage;
-  }
-  
-  // To language label
-  const toLanguageSelect = document.getElementById('toLanguage');
-  if (toLanguageSelect) {
-    const toLanguageLabel = toLanguageSelect.parentElement.querySelector('label');
-    if (toLanguageLabel) toLanguageLabel.textContent = t.toLanguage;
-  }
-  
-  // Update difficulty options
-  const difficultyLabels = document.querySelectorAll('.radio-group label');
-  const difficultyInputs = document.querySelectorAll('input[name="difficulty"]');
-  
-  // Store current selection
-  let selectedDifficulty = '';
-  difficultyInputs.forEach(input => {
-    if (input.checked) {
-      selectedDifficulty = input.value;
-    }
-  });
-  
-  // Update labels - preserve radio buttons
-  difficultyLabels.forEach((label, index) => {
-    // Clear all text nodes and set new text
-    const textNodes = Array.from(label.childNodes).filter(node => node.nodeType === Node.TEXT_NODE);
-    textNodes.forEach(node => node.remove());
-    
-    // Add new text after the radio button
-    const radioButton = label.querySelector('input');
-    if (radioButton) {
-      radioButton.insertAdjacentText('afterend', index === 0 ? t.high : index === 1 ? t.mid : t.low);
-    }
-  });
-  
-  // Restore selection
-  difficultyInputs.forEach(input => {
-    if (input.value === selectedDifficulty) {
-      input.checked = true;
-      input.parentElement.classList.add('checked');
-    } else {
-      input.parentElement.classList.remove('checked');
-    }
-  });
-  
-  // Update button text
+  document.getElementById('parametersTitle').textContent = t.parameters;
+  document.getElementById('durationLabel').textContent = t.duration;
+  document.getElementById('gradeLabel').textContent = t.grade;
+  document.getElementById('difficultyLabel').textContent = t.difficulty;
+  document.getElementById('topicLabel').textContent = t.topic;
+  document.getElementById('cardCountLabel').textContent = t.cardCount;
+  document.getElementById('translationSettingsLabel').textContent = t.translationSettings;
+  document.getElementById('fromLanguageLabel').textContent = t.fromLanguage;
+  document.getElementById('toLanguageLabel').textContent = t.toLanguage;
+  document.getElementById('difficultyHigh').textContent = t.high;
+  document.getElementById('difficultyMid').textContent = t.mid;
+  document.getElementById('difficultyLow').textContent = t.low;
   document.getElementById('generateButton').textContent = t.generateCards;
-  
-  // Update flashcard content
   document.getElementById('cardFront').textContent = t.clickToStart;
   document.getElementById('cardBack').textContent = t.backContent;
-  
-  // Update navigation buttons
   document.getElementById('prevButton').textContent = t.previous;
   document.getElementById('nextButton').textContent = t.next;
-  
-  // Update action buttons
   document.getElementById('correctButton').textContent = t.correct;
   document.getElementById('incorrectButton').textContent = t.incorrect;
   document.getElementById('shuffleButton').textContent = t.shuffle;
-  
-  // Update file upload text
-  const fileUploadText = document.querySelector('#fileUploadArea p');
-  if (fileUploadText) fileUploadText.textContent = t.dragDropFiles;
-  
-  const imageUploadText = document.querySelector('#imageUploadArea p');
-  if (imageUploadText) imageUploadText.textContent = t.dragDropImages;
-  
-  // Update result section
   document.getElementById('generatedContentTitle').textContent = t.generatedContent;
   document.getElementById('amendButton').textContent = t.amendContent;
   document.getElementById('exportWordButton').textContent = t.exportToWord;
   document.getElementById('exportPPTButton').textContent = t.exportToPPT;
+  document.getElementById('exportCSVButton').textContent = t.exportCSV;
+  document.getElementById('exportJSONButton').textContent = t.exportJSON;
   document.getElementById('startStudyButton').textContent = t.startStudyMode;
 }
 
 function setupEventListeners() {
-  // Mode selection
   document.querySelectorAll('.mode-card').forEach(card => {
     card.addEventListener('click', function() {
       document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
       this.classList.add('selected');
       currentMode = this.dataset.mode;
       
-      // Show/hide translation options based on selected mode
       const translationOptions = document.getElementById('translationOptions');
-      if (currentMode === 'translation') {
-        translationOptions.style.display = 'block';
-      } else {
-        translationOptions.style.display = 'none';
-      }
+      translationOptions.style.display = (currentMode === 'translation') ? 'block' : 'none';
       
-      // Show/hide image upload section for image-based mode
       const imageUploadSection = document.getElementById('imageUploadSection');
-      if (currentMode === 'image-based') {
-        imageUploadSection.style.display = 'block';
-      } else {
-        imageUploadSection.style.display = 'none';
-      }
+      imageUploadSection.style.display = (currentMode === 'image-based') ? 'block' : 'none';
     });
   });
 
-  // Difficulty selection
   document.querySelectorAll('input[name="difficulty"]').forEach(radio => {
     radio.addEventListener('change', function() {
-      // Remove checked class from all difficulty labels
-      document.querySelectorAll('.radio-group label').forEach(label => {
-        label.classList.remove('checked');
-      });
-      
-      // Add checked class to the selected label
+      document.querySelectorAll('.radio-group label').forEach(label => label.classList.remove('checked'));
       this.parentElement.classList.add('checked');
     });
   });
   
-  // Initialize difficulty selection visual feedback
   const checkedDifficulty = document.querySelector('input[name="difficulty"]:checked');
   if (checkedDifficulty) {
     checkedDifficulty.parentElement.classList.add('checked');
   }
 
-  // Content source radio buttons
   document.querySelectorAll('input[name="contentSource"]').forEach(radio => {
     radio.addEventListener('change', function() {
-      const uploadSection = document.getElementById('uploadSection');
-      const databaseSection = document.getElementById('databaseSection');
-      const manualSection = document.getElementById('manualSection');
-      const imageUploadArea = document.getElementById('imageUploadArea');
-      
-      uploadSection.style.display = 'none';
-      databaseSection.style.display = 'none';
-      manualSection.style.display = 'none';
-      imageUploadArea.style.display = 'none';
-      
-      if (this.value === 'upload') {
-        uploadSection.style.display = 'block';
-      } else if (this.value === 'database') {
-        databaseSection.style.display = 'block';
-      } else if (this.value === 'manual') {
-        manualSection.style.display = 'block';
-      } else if (this.value === 'images') {
-        imageUploadArea.style.display = 'block';
-      }
+      document.getElementById('uploadSection').style.display = (this.value === 'upload') ? 'block' : 'none';
+      document.getElementById('databaseSection').style.display = (this.value === 'database') ? 'block' : 'none';
+      document.getElementById('manualSection').style.display = (this.value === 'manual') ? 'block' : 'none';
     });
   });
 
-  // Language selection validation
   document.getElementById('fromLanguage').addEventListener('change', validateLanguageSelection);
   document.getElementById('toLanguage').addEventListener('change', validateLanguageSelection);
 }
@@ -544,48 +363,29 @@ function setupFileUpload() {
   const fileInput = document.getElementById('fileInput');
 
   fileUploadArea.addEventListener('click', () => fileInput.click());
-  
-  fileUploadArea.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    fileUploadArea.classList.add('dragover');
-  });
-
-  fileUploadArea.addEventListener('dragleave', () => {
-    fileUploadArea.classList.remove('dragover');
-  });
-
+  fileUploadArea.addEventListener('dragover', (e) => { e.preventDefault(); fileUploadArea.classList.add('dragover'); });
+  fileUploadArea.addEventListener('dragleave', () => fileUploadArea.classList.remove('dragover'));
   fileUploadArea.addEventListener('drop', (e) => {
     e.preventDefault();
     fileUploadArea.classList.remove('dragover');
     fileInput.files = e.dataTransfer.files;
     updateFileList();
   });
-
   fileInput.addEventListener('change', updateFileList);
   
-  // Setup image upload
   const imageUploadArea = document.getElementById('imageUploadArea');
   const imageInput = document.getElementById('imageInput');
   
   if (imageUploadArea && imageInput) {
     imageUploadArea.addEventListener('click', () => imageInput.click());
-    
-    imageUploadArea.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      imageUploadArea.classList.add('dragover');
-    });
-
-    imageUploadArea.addEventListener('dragleave', () => {
-      imageUploadArea.classList.remove('dragover');
-    });
-
+    imageUploadArea.addEventListener('dragover', (e) => { e.preventDefault(); imageUploadArea.classList.add('dragover'); });
+    imageUploadArea.addEventListener('dragleave', () => imageUploadArea.classList.remove('dragover'));
     imageUploadArea.addEventListener('drop', (e) => {
       e.preventDefault();
       imageUploadArea.classList.remove('dragover');
       imageInput.files = e.dataTransfer.files;
       updateImageList();
     });
-
     imageInput.addEventListener('change', updateImageList);
   }
 }
@@ -594,39 +394,33 @@ function updateFileList() {
   const fileList = document.getElementById('fileList');
   const fileInput = document.getElementById('fileInput');
   fileList.innerHTML = '';
-  
   for (const file of fileInput.files) {
     const fileItem = document.createElement('div');
     fileItem.className = 'file-item';
-    fileItem.innerHTML = '<span>' + file.name + '</span>' + '<button onclick="removeFile(this)">Remove</button>';
+    fileItem.innerHTML = `<span>${file.name}</span><button onclick="removeFile(this)">Remove</button>`;
     fileList.appendChild(fileItem);
   }
 }
 
-function removeFile(button) {
-  button.parentElement.remove();
-}
+function removeFile(button) { button.parentElement.remove(); }
 
 function updateImageList() {
   const imageList = document.getElementById('imageList');
   const imageInput = document.getElementById('imageInput');
   imageList.innerHTML = '';
-  
   for (const file of imageInput.files) {
     const imageItem = document.createElement('div');
     imageItem.className = 'file-item';
-    imageItem.innerHTML = '<span>' + file.name + '</span>' + '<button onclick="removeImage(this)">Remove</button>';
+    imageItem.innerHTML = `<span>${file.name}</span><button onclick="removeImage(this)">Remove</button>`;
     imageList.appendChild(imageItem);
   }
 }
 
-function removeImage(button) {
-  button.parentElement.remove();
-}
+function removeImage(button) { button.parentElement.remove(); }
 
-// Books functionality
 function initializeBooksList() {
   const bookList = document.getElementById('bookList');
+  if (!bookList || typeof regions === 'undefined') return;
   bookList.innerHTML = '';
 
   Object.entries(regions).forEach(([regionKey, regionData]) => {
@@ -651,22 +445,18 @@ function initializeBooksList() {
       groupMap[group].push(book);
     });
 
-    const sortedGroupNames = Object.keys(groupMap).sort();
-    sortedGroupNames.forEach(group => {
+    Object.keys(groupMap).sort().forEach(group => {
       const title = document.createElement('div');
       title.className = 'group-title';
       title.textContent = '📂 ' + group;
       regionContent.appendChild(title);
 
-      const sortedBooks = groupMap[group].sort((a, b) => a.title.localeCompare(b.title));
-
-      sortedBooks.forEach(book => {
+      groupMap[group].sort((a, b) => a.title.localeCompare(b.title)).forEach(book => {
         const div = document.createElement('div');
         div.className = 'book-item';
         div.textContent = book.title;
         div.dataset.bookTitle = book.title;
         div.dataset.driveUrl = book.drive_url;
-
         div.addEventListener('click', () => toggleBookSelection(div, book));
         regionContent.appendChild(div);
       });
@@ -675,27 +465,22 @@ function initializeBooksList() {
 }
 
 function toggleBookSelection(element, book) {
-  const isSelected = element.classList.contains('selected');
-  
+  const isSelected = element.classList.toggle('selected');
   if (isSelected) {
-    element.classList.remove('selected');
-    selectedBooks = selectedBooks.filter(b => b.title !== book.title);
-  } else {
-    element.classList.add('selected');
     selectedBooks.push(book);
+  } else {
+    selectedBooks = selectedBooks.filter(b => b.title !== book.title);
   }
-  
   updateSelectedBooksList();
 }
 
 function updateSelectedBooksList() {
   const selectedBooksList = document.getElementById('selectedBooksList');
   selectedBooksList.innerHTML = '';
-  
   selectedBooks.forEach(book => {
     const div = document.createElement('div');
     div.className = 'selected-book';
-    div.innerHTML = '<span>' + book.title + '</span>' + '<button onclick="removeSelectedBook(\'' + book.title + '\')">×</button>';
+    div.innerHTML = `<span>${book.title}</span><button onclick="removeSelectedBook('${book.title}')">×</button>`;
     selectedBooksList.appendChild(div);
   });
 }
@@ -703,331 +488,177 @@ function updateSelectedBooksList() {
 function removeSelectedBook(bookTitle) {
   selectedBooks = selectedBooks.filter(b => b.title !== bookTitle);
   updateSelectedBooksList();
-  
-  document.querySelectorAll('.book-item').forEach(item => {
-    if (item.dataset.bookTitle === bookTitle) {
-      item.classList.remove('selected');
-    }
-  });
+  document.querySelector(`.book-item[data-book-title="${bookTitle}"]`)?.classList.remove('selected');
 }
 
 async function generateFlashCards() {
-  const contentSource = document.querySelector('input[name="contentSource"]:checked').value;
-  const duration = document.getElementById('duration').value.trim();
-  const grade = document.getElementById('grade').value.trim();
-  const topic = document.getElementById('topic').value.trim();
-  const difficulty = document.querySelector('input[name="difficulty"]:checked').value;
-  const cardCount = document.getElementById('cardCount').value;
+    const contentSource = document.querySelector('input[name="contentSource"]:checked').value;
+    const duration = document.getElementById('duration').value.trim();
+    const grade = document.getElementById('grade').value.trim();
+    const topic = document.getElementById('topic').value.trim();
+    const difficulty = document.querySelector('input[name="difficulty"]:checked').value;
+    const cardCount = document.getElementById('cardCount').value;
+    const fromLanguage = document.getElementById('fromLanguage').value;
+    const toLanguage = document.getElementById('toLanguage').value;
+    const lang = getLanguage();
+    const t = translations[lang];
 
-  const resultDiv = document.getElementById('result');
-  const t = translations[currentPageLanguage];
-  resultDiv.innerHTML = '<div class="loading">' + t.generatingCards + '</div>';
-  document.getElementById('resultSection').style.display = 'block';
+    const resultDiv = document.getElementById('result');
+    resultDiv.innerHTML = `<div class="loading">${t.generatingCards}</div>`;
+    document.getElementById('resultSection').style.display = 'block';
 
-  let textContent = '';
-  
-  if (contentSource === 'upload') {
-    const fileInput = document.getElementById('fileInput');
-    if (fileInput.files.length > 0) {
-      for (const file of fileInput.files) {
-        textContent += '\n[File: ' + file.name + ']\n';
-        textContent += await file.text();
-      }
+    let textContent = '';
+    if (contentSource === 'upload') {
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput.files.length > 0) {
+            for (const file of fileInput.files) {
+                textContent += `\n[File: ${file.name}]\n${await file.text()}`;
+            }
+        }
+    } else if (contentSource === 'database') {
+        if (selectedBooks.length > 0) {
+            textContent = '[Selected Books from Database]\n' + selectedBooks.map(b => `📖 ${b.title}\n🔗 ${b.drive_url}`).join('\n');
+        }
+    } else if (contentSource === 'manual') {
+        textContent = document.getElementById('manualContent').value.trim();
+    } else if (contentSource === 'images') {
+        const imageInput = document.getElementById('imageInput');
+        if (imageInput.files.length > 0) {
+            textContent = '[Uploaded Images]\n' + Array.from(imageInput.files).map(f => `📷 ${f.name}`).join('\n');
+        }
     }
-  } else if (contentSource === 'database') {
-    if (selectedBooks.length > 0) {
-      textContent = '[Selected Books from Database]\n';
-      selectedBooks.forEach(book => {
-        textContent += '\n📖 ' + book.title + '\n';
-        textContent += '🔗 ' + book.drive_url + '\n';
-      });
+
+    if (!textContent) {
+        resultDiv.innerHTML = `❌ ${t.pleaseProvideContent}`;
+        return;
     }
-  } else if (contentSource === 'manual') {
-    textContent = document.getElementById('manualContent').value.trim();
-  } else if (contentSource === 'images') {
-    const imageInput = document.getElementById('imageInput');
-    if (imageInput.files.length > 0) {
-      textContent = '[Uploaded Images]\n';
-      for (const file of imageInput.files) {
-        textContent += '\n📷 ' + file.name + '\n';
-      }
+
+    try {
+        const response = await fetch("https://backend.canpaniongroup.com/aigc/generate-flashcard", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ textContent, currentMode, cardCount, topic, difficulty, grade, duration, fromLanguage, toLanguage, lang })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `Request failed with status ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data && data.flashcards && Array.isArray(data.flashcards)) {
+            flashcards = data.flashcards;
+            totalCards = flashcards.length;
+            console.log(`Successfully received ${totalCards} structured flashcards.`);
+            displayGeneratedFlashcards();
+        } else {
+             throw new Error(t.noCardsGenerated);
+        }
+
+    } catch (error) {
+        resultDiv.innerHTML = `❌ ${t.errorGenerating} ${error.message}`;
+        console.error('Error generating flashcards:', error);
     }
-  }
-
-  if (!textContent) {
-    resultDiv.innerHTML = '❌ ' + translations[currentPageLanguage].pleaseProvideContent;
-    return;
-  }
-
-  // Get selected languages for translation mode
-  const fromLanguage = document.getElementById('fromLanguage').value;
-  const toLanguage = document.getElementById('toLanguage').value;
-  
-  const modePrompts = {
-    definition: 'Create ' + cardCount + ' definition flashcards. Format: "Front: [term] | Back: [definition]",',
-    translation: 'Create ' + cardCount + ' translation flashcards. Format: "Front: [' + fromLanguage + '] | Back: [' + toLanguage + ']",',
-    'multiple-choice': 'Create ' + cardCount + ' multiple choice questions. IMPORTANT: Put the question on the first line of Front, then put each option (A, B, C, D) on separate lines. Format: "Front: [question]\\nA) [option1]\\nB) [option2]\\nC) [option3]\\nD) [option4] | Back: [correct answer letter and option]",',
-    'fill-blank': 'Create ' + cardCount + ' fill-in-the-blank questions. Format: "Front: [sentence with ___] | Back: [missing word]",',
-    'image-based': 'Create ' + cardCount + ' image-based flashcards. Format: "Front: [image URL or description] | Back: [name/term for the image]"}'
-  };
-
-  // Get language-specific prompt
-  const languagePrompts = {
-    'zh-CN': '你是一位小学老师，请根据以下材料生成' + cardCount + '张' + getModeDisplayName(currentMode) + '。\n\n• 主题：' + topic + '\n• 难度：' + difficulty + '\n• 年级：' + grade + '\n• 时长：' + duration + '\n• 模式：' + getModeDisplayName(currentMode),
-    'zh-TW': '你是一位小學老師，請根據以下材料生成' + cardCount + '張' + getModeDisplayName(currentMode) + '。\n\n• 主題：' + topic + '\n• 難度：' + difficulty + '\n• 年級：' + grade + '\n• 時長：' + duration + '\n• 模式：' + getModeDisplayName(currentMode),
-    'en': 'You are an elementary school teacher. Please generate ' + cardCount + ' ' + getModeDisplayName(currentMode) + ' based on the following materials.\n\n• Topic: ' + topic + '\n• Difficulty: ' + difficulty + '\n• Grade: ' + grade + '\n• Duration: ' + duration + '\n• Mode: ' + getModeDisplayName(currentMode)
-  };
-  
-  let prompt = languagePrompts[currentPageLanguage];
-  
-  // Add language information for translation mode
-  if (currentMode === 'translation') {
-    const translationInfo = {
-      'zh-CN': '\n• 起始语言：' + fromLanguage + '\n• 目标语言：' + toLanguage,
-      'zh-TW': '\n• 起始語言：' + fromLanguage + '\n• 目標語言：' + toLanguage,
-      'en': '\n• From Language: ' + fromLanguage + '\n• To Language: ' + toLanguage
-    };
-    prompt += translationInfo[currentPageLanguage];
-  }
-  
-  prompt += '\n\n' + modePrompts[currentMode] + '\n\n请严格按照格式输出，每张卡片用换行分隔。对于多选题模式，请确保问题在第一行，每个选项（A、B、C、D）在单独的行上，只有正确答案在背面。\n\n材料：\n' + textContent;
-
-  try {
-    const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer sk-816d9a802e5f4c8ab73459a40791d7db",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "deepseek-chat",
-        messages: [
-          { 
-            role: "system", 
-            content: currentPageLanguage === 'en' 
-              ? "You are a professional teaching assistant, skilled at creating flash cards suitable for elementary school students"
-              : currentPageLanguage === 'zh-TW'
-              ? "你是專業的教師助理，善於製作適合小學生的flash cards"
-              : "你是专业的教师助理，善于制作适合小学生的flash cards"
-          },
-          { role: "user", content: prompt }
-        ]
-      })
-    });
-
-    const data = await response.json();
-    const t = translations[currentPageLanguage];
-    const md = data.choices[0]?.message?.content || '❌ ' + t.noCardsGenerated;
-    resultDiv.dataset.raw = md;
-    
-    // Parse flashcards
-    parseFlashcards(md);
-    
-    // Display flashcards in interactive format
-    displayGeneratedFlashcards();
-  } catch (error) {
-    const t = translations[currentPageLanguage];
-    resultDiv.innerHTML = '❌ ' + t.errorGenerating + ' ' + error.message;
-  }
-}
-
-function getModeDisplayName(mode) {
-  const names = {
-    'zh-CN': {
-      definition: '定义模式',
-      translation: '翻译模式',
-      'multiple-choice': '多选题模式',
-      'fill-blank': '填空题模式',
-      'image-based': '图片模式'
-    },
-    'zh-TW': {
-      definition: '定義模式',
-      translation: '翻譯模式',
-      'multiple-choice': '多選題模式',
-      'fill-blank': '填空題模式',
-      'image-based': '圖片模式'
-    },
-    'en': {
-      definition: 'Definition Mode',
-      translation: 'Translation Mode',
-      'multiple-choice': 'Multiple Choice Mode',
-      'fill-blank': 'Fill in the Blank Mode',
-      'image-based': 'Image-Based Mode'
-    }
-  };
-  return names[currentPageLanguage][mode] || mode;
-}
-
-function parseFlashcards(content) {
-  flashcards = [];
-  const lines = content.split('\n');
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-    // 优先处理 Front: ... | Back: ... 格式
-    if (line.includes('Front:') && line.includes('Back:')) {
-      const frontMatch = line.match(/Front:\s*(.*?)\s*\|\s*Back:/);
-      const backMatch = line.match(/Back:\s*(.*)$/);
-      if (frontMatch && backMatch) {
-        const front = frontMatch[1].trim();
-        const back = backMatch[1].trim();
-        flashcards.push({ front, back });
-        continue;
-      }
-    }
-    // 其它格式保留原有逻辑
-    if (line.includes('Front:')) {
-      const firstLine = line.replace('Front:', '').trim();
-      const frontLines = [firstLine];
-      while (i + 1 < lines.length && !lines[i + 1].includes('| Back:')) {
-        i++;
-        frontLines.push(lines[i].trim());
-      }
-      const backLine = lines[i + 1] || '';
-      const backText = backLine.split('Back:')[1]?.trim() || '';
-      const back = currentMode === 'multiple-choice' ? '✅ ' + backText : backText;
-      const front = frontLines.join('\n');
-      flashcards.push({ front, back });
-    }
-  }
-  totalCards = flashcards.length;
-  if (totalCards > 0) {
-    console.log('Parsed ' + totalCards + ' flashcards');
-  } else {
-    console.log('No flashcards parsed. Content might not match expected format.');
-    console.log('Content was:', content);
-  }
 }
 
 function displayGeneratedFlashcards() {
-  const resultDiv = document.getElementById('result');
-  if (flashcards.length === 0) {
-    const t = translations[currentPageLanguage];
-    resultDiv.innerHTML = '<div class="loading">' + t.noCardsGenerated + '</div>';
-    return;
-  }
-  const t = translations[currentPageLanguage];
-  let html = '<div class="generated-flashcards-container">' +
-    '<h3>' + t.generatedCards + ' (' + flashcards.length + ' cards)</h3>';
-  // Add language info for translation mode
-  if (currentMode === 'translation') {
-    const fromLanguage = document.getElementById('fromLanguage').value;
-    const toLanguage = document.getElementById('toLanguage').value;
-    html += '<div> - ' + fromLanguage + ' → ' + toLanguage + '</div>';
-  }
-  html += '<div class="generated-flashcards-grid">';
-  flashcards.forEach((card, index) => {
-    const isImageUrl = isImageLink(card.front);
-    let frontContent = isImageUrl ?
-      '<img src="' + card.front + '" alt="Image" style="max-width: 100%; max-height: 200px; object-fit: contain;">' :
-      escapeHtml(card.front);
-    if (currentMode === 'multiple-choice') {
-      // 统一处理：先尝试用换行分割，再用正则提取
-      let question = '';
-      let options = [];
-      const lines = card.front.split('\n');
-      question = lines[0].trim();
-      options = lines.slice(1).filter(line => line.trim());
-      // 如果没有分割出选项，再用正则提取
-      if (options.length === 0) {
-        const optionMatch = card.front.match(/A\)[^A-D]*B\)[^A-D]*C\)[^A-D]*D\)[^A-D]*/);
-        if (optionMatch) {
-          const optionsText = optionMatch[0];
-          options = optionsText.match(/[A-D]\)[^A-D]*/g) || [];
-        }
-      }
-      // 直接用 <div> 列出所有选项，不加 .mc-option
-      frontContent = '<div class="mc-question">' + escapeHtml(question) + '</div>' +
-        '<div class="mc-options-no-border">' +
-        options.map(option => '<div>' + escapeHtml(option) + '</div>').join('') +
-        '</div>';
+    const resultDiv = document.getElementById('result');
+    const lang = getLanguage();
+    const t = translations[lang];
+
+    if (flashcards.length === 0) {
+        resultDiv.innerHTML = `<div class="loading">${t.noCardsGenerated}</div>`;
+        return;
     }
-    html += '<div class="generated-flashcard" onclick="flipGeneratedCard(this)">' +
-      '<div class="generated-flashcard-inner">' +
-      '<div class="generated-front">' +
-      '<div class="card-number">#' + (index + 1) + '</div>' +
-      '<div class="card-content">' + frontContent + '</div>' +
-      '</div>' +
-      '<div class="generated-back">' +
-      '<div class="card-number">#' + (index + 1) + '</div>' +
-      '<div class="card-content">' + escapeHtml(card.back) + '</div>' +
-      '</div>' +
-      '</div>' +
-      '</div>';
-  });
-  html += '</div>' +
-    '<div class="generated-instructions">' +
-    '<p>' + t.clickToFlip + '</p>' +
-    '<div class="generated-controls">' +
-    '<button class="btn btn-secondary" onclick="flipAllGeneratedCards()">🔄 ' + t.flipAll + '</button>' +
-    '<button class="btn btn-primary" onclick="resetAllGeneratedCards()">🔄 ' + t.resetAll + '</button>' +
-    '</div>' +
-    '</div>' +
-    '</div>';
-  resultDiv.innerHTML = html;
+
+    let html = `<div class="generated-flashcards-container">
+        <h3>${t.generatedCards} (${flashcards.length} cards)</h3>`;
+
+    if (currentMode === 'translation') {
+        html += `<div> - ${document.getElementById('fromLanguage').value} → ${document.getElementById('toLanguage').value}</div>`;
+    }
+
+    html += '<div class="generated-flashcards-grid">';
+    flashcards.forEach((card, index) => {
+        let frontContent;
+        if (currentMode === 'multiple-choice' && typeof card.front === 'object' && card.front !== null) {
+            frontContent = `<div class="mc-question">${escapeHtml(card.front.question)}</div>
+                <div class="mc-options-no-border">
+                    ${(card.front.options || []).map((option, i) => `<div>(${(String.fromCharCode(97 + i))}) ${escapeHtml(option)}</div>`).join('')}
+                </div>`;
+        } else {
+            const isImageUrl = isImageLink(card.front);
+            frontContent = isImageUrl ? `<img src="${card.front}" alt="Image" style="max-width: 100%; max-height: 200px; object-fit: contain;">` : escapeHtml(card.front);
+        }
+
+        // UPDATED: Add prefix to the back of the card for multiple choice
+        let backContent = escapeHtml(card.back);
+        if (currentMode === 'multiple-choice' && typeof card.front === 'object' && card.front.options) {
+            const correctIndex = card.front.options.indexOf(card.back);
+            if (correctIndex !== -1) {
+                backContent = `(${(String.fromCharCode(97 + correctIndex))}) ${escapeHtml(card.back)}`;
+            }
+        }
+
+        html += `<div class="generated-flashcard" onclick="flipGeneratedCard(this)">
+            <div class="generated-flashcard-inner">
+                <div class="generated-front">
+                    <div class="card-number">#${index + 1}</div>
+                    <div class="card-content">${frontContent}</div>
+                </div>
+                <div class="generated-back">
+                    <div class="card-number">#${index + 1}</div>
+                    <div class="card-content">${backContent}</div>
+                </div>
+            </div>
+        </div>`;
+    });
+
+    html += `</div>
+        <div class="generated-instructions">
+            <p>${t.clickToFlip}</p>
+            <div class="generated-controls">
+                <button class="btn btn-secondary" onclick="flipAllGeneratedCards()">🔄 ${t.flipAll}</button>
+                <button class="btn btn-primary" onclick="resetAllGeneratedCards()">🔄 ${t.resetAll}</button>
+            </div>
+        </div>
+    </div>`;
+    resultDiv.innerHTML = html;
 }
 
-function flipGeneratedCard(card) {
-  card.classList.toggle('flipped');
-}
+function flipGeneratedCard(card) { card.classList.toggle('flipped'); }
 
 function escapeHtml(text) {
+  if (typeof text !== 'string') return '';
   const div = document.createElement('div');
   div.textContent = text;
-  // Convert newlines to <br> tags for proper HTML display
   return div.innerHTML.replace(/\n/g, '<br>');
 }
 
 function isImageLink(text) {
-  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'];
+  if (typeof text !== 'string') return false;
   const urlPattern = /^https?:\/\/.+/i;
-  
-  // Check if it's a URL and has image extension
-  if (urlPattern.test(text)) {
-    const lowerText = text.toLowerCase();
-    return imageExtensions.some(ext => lowerText.includes(ext));
-  }
-  
-  return false;
+  return urlPattern.test(text) && ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'].some(ext => text.toLowerCase().includes(ext));
 }
 
 function validateLanguageSelection() {
-  const fromLanguage = document.getElementById('fromLanguage').value;
-  const toLanguage = document.getElementById('toLanguage').value;
-  
-  if (fromLanguage === toLanguage) {
-    const t = translations[currentPageLanguage];
-    alert(t.languageWarning);
-    // Reset to different languages
-    if (fromLanguage === 'English') {
-      document.getElementById('toLanguage').value = 'Simplified Chinese';
-    } else if (fromLanguage === 'Simplified Chinese') {
-      document.getElementById('toLanguage').value = 'Traditional Chinese';
-    } else if (fromLanguage === 'Traditional Chinese') {
-      document.getElementById('toLanguage').value = 'Simplified Chinese';
-    } else {
-      document.getElementById('toLanguage').value = 'English';
-    }
+  const fromLanguage = document.getElementById('fromLanguage');
+  const toLanguage = document.getElementById('toLanguage');
+  if (fromLanguage.value === toLanguage.value) {
+    alert(translations[getLanguage()].languageWarning);
+    // Simple logic to ensure they are different
+    toLanguage.selectedIndex = (fromLanguage.selectedIndex + 1) % toLanguage.options.length;
   }
 }
 
-function flipAllGeneratedCards() {
-  const cards = document.querySelectorAll('.generated-flashcard');
-  cards.forEach(card => {
-    card.classList.add('flipped');
-  });
-}
-
-function resetAllGeneratedCards() {
-  const cards = document.querySelectorAll('.generated-flashcard');
-  cards.forEach(card => {
-    card.classList.remove('flipped');
-  });
-}
+function flipAllGeneratedCards() { document.querySelectorAll('.generated-flashcard').forEach(card => card.classList.add('flipped')); }
+function resetAllGeneratedCards() { document.querySelectorAll('.generated-flashcard').forEach(card => card.classList.remove('flipped')); }
 
 function startFlashcardMode() {
+  const lang = getLanguage();
+  const t = translations[lang];
   if (flashcards.length === 0) {
-    const t = translations[currentPageLanguage];
     alert(t.noCardsAvailable);
     return;
   }
@@ -1035,30 +666,17 @@ function startFlashcardMode() {
   correctAnswers = 0;
   document.getElementById('flashcardContainer').style.display = 'block';
   document.getElementById('resultSection').style.display = 'none';
-  // 进入全屏
-  if (document.documentElement.requestFullscreen) {
-    document.documentElement.requestFullscreen();
-  } else if (document.documentElement.webkitRequestFullscreen) {
-    document.documentElement.webkitRequestFullscreen();
-  }
-  // 添加返回按钮（如果不存在）
+  document.documentElement.requestFullscreen?.();
+  
   let backBtn = document.getElementById('flashcardBackButton');
   if (!backBtn) {
     backBtn = document.createElement('button');
     backBtn.id = 'flashcardBackButton';
     backBtn.className = 'btn btn-secondary';
-    backBtn.style.position = 'absolute';
-    backBtn.style.top = '24px';
-    backBtn.style.left = '24px';
-    backBtn.style.zIndex = '1000';
-    backBtn.textContent = '← 返回';
+    backBtn.style.cssText = 'position: absolute; top: 24px; left: 24px; z-index: 1000;';
+    backBtn.textContent = `← ${lang === 'en' ? 'Back' : '返回'}`;
     backBtn.onclick = function() {
-      // 退出全屏
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      } else if (document.webkitExitFullscreen) {
-        document.webkitExitFullscreen();
-      }
+      document.exitFullscreen?.();
       document.getElementById('flashcardContainer').style.display = 'none';
       document.getElementById('resultSection').style.display = 'block';
     };
@@ -1069,74 +687,38 @@ function startFlashcardMode() {
 
 function showCurrentCard() {
   if (flashcards.length === 0) return;
-  
   const card = flashcards[currentCardIndex];
+  const cardFrontElement = document.getElementById('cardFront');
   
-  // Handle image display for image-based mode
-  if (currentMode === 'image-based' && isImageLink(card.front)) {
-    document.getElementById('cardFront').innerHTML = '<img src="' + card.front + '" alt="Image" style="max-width: 100%; max-height: 300px; object-fit: contain;">';
-  } else if (currentMode === 'multiple-choice') {
-    // 统一处理：先尝试用换行分割，再用正则提取
-    let question = '';
-    let options = [];
-    const lines = card.front.split('\n');
-    question = lines[0].trim();
-    options = lines.slice(1).filter(line => line.trim());
-    // 如果没有分割出选项，再用正则提取
-    if (options.length === 0) {
-      const optionMatch = card.front.match(/A\)[^A-D]*B\)[^A-D]*C\)[^A-D]*D\)[^A-D]*/);
-      if (optionMatch) {
-        const optionsText = optionMatch[0];
-        options = optionsText.match(/[A-D]\)[^A-D]*/g) || [];
-      }
-    }
-    // 直接用 <div> 列出所有选项，不加 .mc-option
-    const frontContent =
-      '<div class="mc-question">' + escapeHtml(question) + '</div>' +
-      '<div class="mc-options-no-border">' +
-      options.map(option => '<div>' + escapeHtml(option) + '</div>').join('') +
-      '</div>';
-    document.getElementById('cardFront').innerHTML = frontContent;
+  if (currentMode === 'multiple-choice' && typeof card.front === 'object' && card.front !== null) {
+    cardFrontElement.innerHTML = `<div class="mc-question">${escapeHtml(card.front.question)}</div>
+        <div class="mc-options-no-border">${(card.front.options || []).map((o, i) => `<div>(${(String.fromCharCode(97 + i))}) ${escapeHtml(o)}</div>`).join('')}</div>`;
+  } else if (currentMode === 'image-based' && isImageLink(card.front)) {
+    cardFrontElement.innerHTML = `<img src="${card.front}" alt="Image" style="max-width: 100%; max-height: 300px; object-fit: contain;">`;
   } else {
-    document.getElementById('cardFront').textContent = card.front;
+    cardFrontElement.textContent = card.front;
   }
   
-  document.getElementById('cardBack').textContent = card.back;
-  document.getElementById('cardCounter').textContent = (currentCardIndex + 1) + ' / ' + totalCards;
-  
-  const progress = ((currentCardIndex + 1) / totalCards) * 100;
-  document.getElementById('progressFill').style.width = progress + '%';
-  
-  // Reset card flip
+  // UPDATED: Add prefix to the back of the card in study mode
+  let backContent = card.back;
+  if (currentMode === 'multiple-choice' && typeof card.front === 'object' && card.front.options) {
+      const correctIndex = card.front.options.indexOf(card.back);
+      if (correctIndex !== -1) {
+          backContent = `(${(String.fromCharCode(97 + correctIndex))}) ${card.back}`;
+      }
+  }
+  document.getElementById('cardBack').textContent = backContent;
+
+  document.getElementById('cardCounter').textContent = `${currentCardIndex + 1} / ${totalCards}`;
+  document.getElementById('progressFill').style.width = `${((currentCardIndex + 1) / totalCards) * 100}%`;
   document.getElementById('flashcard').classList.remove('flipped');
 }
 
-function flipCard() {
-  document.getElementById('flashcard').classList.toggle('flipped');
-}
-
-function nextCard() {
-  if (currentCardIndex < totalCards - 1) {
-    currentCardIndex++;
-    showCurrentCard();
-  }
-}
-
-function previousCard() {
-  if (currentCardIndex > 0) {
-    currentCardIndex--;
-    showCurrentCard();
-  }
-}
-
-function markAsCorrect() {
-  correctAnswers++;
-  nextCard();
-}
-
-function markAsIncorrect() {
-  nextCard();
-}
+function flipCard() { document.getElementById('flashcard').classList.toggle('flipped'); }
+function nextCard() { if (currentCardIndex < totalCards - 1) { currentCardIndex++; showCurrentCard(); } }
+function previousCard() { if (currentCardIndex > 0) { currentCardIndex--; showCurrentCard(); } }
+function markAsCorrect() { correctAnswers++; nextCard(); }
+function markAsIncorrect() { nextCard(); }
 
 function shuffleCards() {
   for (let i = flashcards.length - 1; i > 0; i--) {
@@ -1148,663 +730,263 @@ function shuffleCards() {
 }
 
 function amendContent() {
-  const generatedContainer = document.querySelector('.generated-flashcards-container');
-  if (!generatedContainer) return;
-  
-  // Toggle edit mode
-  const isEditMode = generatedContainer.classList.contains('edit-mode');
-  
-  if (!isEditMode) {
-    // Enter edit mode
-    generatedContainer.classList.add('edit-mode');
-    document.getElementById('amendButton').textContent = '💾 Save Changes';
-    
-    // Make all flashcard content editable
-    const flashcards = generatedContainer.querySelectorAll('.generated-flashcard');
-    flashcards.forEach((card, index) => {
-      const frontContent = card.querySelector('.generated-front .card-content');
-      const backContent = card.querySelector('.generated-back .card-content');
-      
-      if (frontContent) {
-        const originalText = frontContent.textContent;
-        frontContent.innerHTML = '<textarea class="edit-textarea front-edit" data-index="' + index + '" data-side="front">' + originalText + '</textarea>';
-      }
-      
-      if (backContent) {
-        const originalText = backContent.textContent;
-        backContent.innerHTML = '<textarea class="edit-textarea back-edit" data-index="' + index + '" data-side="back">' + originalText + '</textarea>';
-      }
-    });
-  } else {
-    // Save changes and exit edit mode
-    generatedContainer.classList.remove('edit-mode');
-    document.getElementById('amendButton').textContent = '📝 Amend';
-    
-    // Collect all edited content
-    const editedFlashcards = [];
-    const flashcards = generatedContainer.querySelectorAll('.generated-flashcard');
-    
-    flashcards.forEach((card, index) => {
-      const frontTextarea = card.querySelector('.front-edit');
-      const backTextarea = card.querySelector('.back-edit');
-      
-      const frontContent = frontTextarea ? frontTextarea.value : '';
-      const backContent = backTextarea ? backTextarea.value : '';
-      
-      editedFlashcards.push({
-        front: frontContent,
-        back: backContent
-      });
-      
-      // Restore normal display
-      if (frontTextarea) {
-        frontTextarea.parentElement.innerHTML = escapeHtml(frontContent);
-      }
-      if (backTextarea) {
-        backTextarea.parentElement.innerHTML = escapeHtml(backContent);
-      }
-    });
-    
-    // Update the global flashcards array
-    window.flashcards = editedFlashcards;
-    
-    // Update the raw content for export
-    const rawContent = editedFlashcards.map(card => {
-      return 'Front: ' + card.front + '\nBack: ' + card.back + '\n---';
-    }).join('\n');
-    document.getElementById('result').dataset.raw = rawContent;
-    
-    // Show success message
-    const t = translations[currentPageLanguage];
-    alert(t.changesSaved || 'Changes saved successfully!');
-  }
+    const container = document.querySelector('.generated-flashcards-container');
+    if (!container) return;
+
+    const lang = getLanguage();
+    const t = translations[lang];
+    const isEditMode = container.classList.toggle('edit-mode');
+    document.getElementById('amendButton').textContent = isEditMode ? `💾 ${t.changesSaved || 'Save Changes'}` : t.amendContent;
+
+    if (isEditMode) {
+        container.querySelectorAll('.generated-flashcard').forEach((cardEl, index) => {
+            const cardData = flashcards[index];
+            const frontEl = cardEl.querySelector('.generated-front .card-content');
+            const backEl = cardEl.querySelector('.generated-back .card-content');
+            
+            let frontText;
+            if (currentMode === 'multiple-choice' && typeof cardData.front === 'object' && cardData.front !== null) {
+                frontText = `${cardData.front.question || ''}\n${(cardData.front.options || []).join('\n')}`;
+            } else {
+                frontText = cardData.front;
+            }
+            
+            frontEl.innerHTML = `<textarea class="edit-textarea">${frontText}</textarea>`;
+            backEl.innerHTML = `<textarea class="edit-textarea">${cardData.back || ''}</textarea>`;
+        });
+    } else { // Saving changes
+        const editedFlashcards = [];
+        container.querySelectorAll('.generated-flashcard').forEach((cardEl) => {
+            const frontTextarea = cardEl.querySelector('.generated-front textarea');
+            const backTextarea = cardEl.querySelector('.generated-back textarea');
+            const newBackContent = backTextarea.value;
+            let newFrontContent;
+
+            if (currentMode === 'multiple-choice') {
+                const lines = frontTextarea.value.split('\n').filter(line => line.trim() !== '');
+                newFrontContent = {
+                    question: lines[0] || '',
+                    options: lines.slice(1)
+                };
+            } else {
+                newFrontContent = frontTextarea.value;
+            }
+            
+            editedFlashcards.push({ front: newFrontContent, back: newBackContent });
+        });
+        flashcards = editedFlashcards;
+        displayGeneratedFlashcards(); // Re-render the cards with the saved content
+        alert(t.changesSaved);
+    }
 }
 
-function downloadFile(type) {
-  if (type === 'ppt') {
-    generatePPT();
-  } else {
-    const content = document.getElementById('result').dataset.raw;
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+function getModeDisplayName(mode) {
+    const lang = getLanguage();
+    const names = {
+        'zh': { definition: '定义模式', translation: '翻译模式', 'multiple-choice': '多选题模式', 'fill-blank': '填空题模式', 'image-based': '图片模式' },
+        'zh-HK': { definition: '定義模式', translation: '翻譯模式', 'multiple-choice': '多選題模式', 'fill-blank': '填空題模式', 'image-based': '圖片模式' },
+        'en': { definition: 'Definition Mode', translation: 'Translation Mode', 'multiple-choice': 'Multiple Choice Mode', 'fill-blank': 'Fill in the Blank Mode', 'image-based': 'Image-Based Mode' }
+    };
+    return (names[lang] && names[lang][mode]) || mode;
+}
+
+function downloadFile(content, fileName, contentType) {
+    const blob = new Blob([content], { type: contentType });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'flashcards.docx.md';
+    a.download = fileName;
     a.click();
-  }
+    URL.revokeObjectURL(a.href);
+}
+
+function exportToWord() {
+    if (flashcards.length === 0) return alert(translations[getLanguage()].noCardsToExport);
+    let content = flashcards.map(card => {
+        let frontText;
+        if (currentMode === 'multiple-choice' && typeof card.front === 'object') {
+            const optionsText = (card.front.options || []).map((opt, i) => `    (${(String.fromCharCode(97 + i))}) ${opt}`).join('\n');
+            frontText = `Question: ${card.front.question}\nOptions:\n${optionsText}`;
+        } else {
+            frontText = `Front: ${card.front}`;
+        }
+
+        // UPDATED: Add prefix to the back text for Word export
+        let backText = card.back;
+        if (currentMode === 'multiple-choice' && typeof card.front === 'object' && card.front.options) {
+            const correctIndex = card.front.options.indexOf(card.back);
+            if (correctIndex !== -1) {
+                backText = `(${(String.fromCharCode(97 + correctIndex))}) ${card.back}`;
+            }
+        }
+        return `${frontText}\nBack: ${backText}\n\n---\n\n`;
+    }).join('');
+    downloadFile(content, 'flashcards.doc', 'application/msword;charset=utf-8');
+}
+
+function exportToCSV() {
+    if (flashcards.length === 0) return alert(translations[getLanguage()].noCardsToExport);
+    let csv = 'Front,Back\n';
+    flashcards.forEach(card => {
+        let frontValue;
+        if (typeof card.front === 'object') {
+            const optionsText = (card.front.options || []).map((opt, i) => `(${(String.fromCharCode(97 + i))}) ${opt}`).join('; ');
+            frontValue = `${card.front.question} [${optionsText}]`;
+        } else {
+            frontValue = card.front;
+        }
+
+        // UPDATED: Add prefix to the back value for CSV export
+        let backValue = card.back;
+        if (currentMode === 'multiple-choice' && typeof card.front === 'object' && card.front.options) {
+            const correctIndex = card.front.options.indexOf(card.back);
+            if (correctIndex !== -1) {
+                backValue = `(${(String.fromCharCode(97 + correctIndex))}) ${card.back}`;
+            }
+        }
+        csv += `"${String(frontValue).replace(/"/g, '""')}","${String(backValue).replace(/"/g, '""')}"\n`;
+    });
+    downloadFile(csv, 'flashcards.csv', 'text/csv;charset=utf-8;');
+}
+
+function exportToJSON() {
+    if (flashcards.length === 0) return alert(translations[getLanguage()].noCardsToExport);
+    const data = {
+        mode: currentMode,
+        topic: document.getElementById('topic').value,
+        grade: document.getElementById('grade').value,
+        difficulty: document.querySelector('input[name="difficulty"]:checked').value,
+        flashcards: flashcards,
+        generatedAt: new Date().toISOString()
+    };
+    downloadFile(JSON.stringify(data, null, 2), 'flashcards.json', 'application/json;charset=utf-8;');
 }
 
 function generatePPT() {
-  if (flashcards.length === 0) {
-    const t = translations[currentPageLanguage];
-    alert(t.noCardsToExport);
-    return;
-  }
+    const lang = getLanguage();
+    const t = translations[lang];
+    if (flashcards.length === 0) return alert(t.noCardsToExport);
+    if (typeof PptxGenJS === 'undefined') return generateHTMLPresentation();
 
-  // Check if PptxGenJS is available
-  if (typeof PptxGenJS === 'undefined') {
-    // Fallback: Generate HTML presentation
-    generateHTMLPresentation();
-    return;
-  }
+    const resultDiv = document.getElementById('result');
+    const originalContent = resultDiv.innerHTML;
+    resultDiv.innerHTML = `<div class="loading">${t.generatingPPT}</div>`;
 
-  // Show loading message
-  const resultDiv = document.getElementById('result');
-  const originalContent = resultDiv.innerHTML;
-  const t = translations[currentPageLanguage];
-  resultDiv.innerHTML = '<div class="loading">' + t.generatingPPT + '</div>';
+    try {
+        const pptx = new PptxGenJS();
+        pptx.author = 'Flashcard Generator';
+        pptx.title = document.getElementById('topic').value || 'Flashcards';
 
-  try {
-    // Create PPTX using PptxGenJS
-    const pptx = new PptxGenJS();
-    
-    // Set presentation properties
-    pptx.author = 'Flashcard Generator';
-    pptx.company = 'Educational Tools';
-    pptx.title = document.getElementById('topic').value || 'Flashcards';
-    pptx.subject = 'Generated Flashcards';
-    
-    // Add title slide with background
-    const titleSlide = pptx.addSlide();
-    titleSlide.background = { color: 'F8F9FA' };
-    
-    // Add title
-    titleSlide.addText('🎯 Flashcards', {
-      x: 1, y: 1, w: 8, h: 2,
-      fontSize: 48,
-      bold: true,
-      color: '363636',
-      align: 'center',
-      fontFace: 'Arial'
-    });
-    
-    const topic = document.getElementById('topic').value;
-    if (topic) {
-      titleSlide.addText('📚 Topic: ' + topic, {
-        x: 1, y: 3, w: 8, h: 1,
-        fontSize: 28,
-        color: '666666',
-        align: 'center',
-        fontFace: 'Arial'
-      });
-    }
-    
-    const cardCount = flashcards.length;
-    titleSlide.addText('📊 Total Cards: ' + cardCount, {
-      x: 1, y: 4, w: 8, h: 1,
-      fontSize: 22,
-      color: '888888',
-      align: 'center',
-      fontFace: 'Arial'
-    });
-    
-    // Add language info for translation mode
-    if (currentMode === 'translation') {
-      const fromLanguage = document.getElementById('fromLanguage').value;
-      const toLanguage = document.getElementById('toLanguage').value;
-      titleSlide.addText('🌍 ' + fromLanguage + ' → ' + toLanguage, {
-        x: 1, y: 5, w: 8, h: 1,
-        fontSize: 24,
-        color: '0066cc',
-        align: 'center',
-        bold: true,
-        fontFace: 'Arial'
-      });
-    }
-    
-    // Add mode info
-    titleSlide.addText('🎮 Mode: ' + getModeDisplayName(currentMode), {
-      x: 1, y: 6, w: 8, h: 1,
-      fontSize: 20,
-      color: '009900',
-      align: 'center',
-      fontFace: 'Arial'
-    });
-    
-    // Generate slides for each flashcard
-    flashcards.forEach((card, index) => {
-      // Front slide (Question)
-      const frontSlide = pptx.addSlide();
-      frontSlide.background = { color: 'FFFFFF' };
-      
-      // Add slide number and mode
-      frontSlide.addText('Card ' + (index + 1) + ' of ' + cardCount + ' | ' + getModeDisplayName(currentMode), {
-        x: 0.5, y: 0.2, w: 9, h: 0.5,
-        fontSize: 12,
-        color: '999999',
-        align: 'center',
-        fontFace: 'Arial'
-      });
-      
-      // Add decorative line
-      frontSlide.addShape('line', {
-        x: 0.5, y: 0.8, w: 9, h: 0,
-        line: { color: 'E0E0E0', width: 2 }
-      });
-      
-      // Add front content with better styling
-      if (currentMode === 'multiple-choice') {
-        // Special formatting for multiple choice mode
-        const lines = card.front.split('\n');
-        const question = lines[0];
-        const options = lines.slice(1).filter(line => line.trim());
-        
-        // If no options found in separate lines, try to extract from the question line
-        let extractedOptions = [];
-        let questionText = question;
-        if (options.length === 0) {
-          // Try to extract options from the question line using regex
-          const optionMatch = question.match(/(.*?)(A\) .*B\) .*C\) .*D\) .*)/);
-          if (optionMatch) {
-            questionText = optionMatch[1].trim();
-            const optionsText = optionMatch[2];
-            const optionParts = optionsText.match(/[A-D]\) [^A-D]*/g);
-            if (optionParts) {
-              extractedOptions = optionParts;
+        // Title Slide
+        let titleSlide = pptx.addSlide();
+        titleSlide.addText('Flashcards', { x: 1, y: 1, w: 8, h: 2, fontSize: 48, bold: true, align: 'center' });
+        titleSlide.addText(`Topic: ${pptx.title}`, { x: 1, y: 3, w: 8, h: 1, fontSize: 28, align: 'center' });
+        titleSlide.addText(`Mode: ${getModeDisplayName(currentMode)}`, { x: 1, y: 4, w: 8, h: 1, fontSize: 24, align: 'center' });
+
+        // Card Slides
+        flashcards.forEach((card, index) => {
+            // Front slide
+            let frontSlide = pptx.addSlide();
+            frontSlide.addText(`Card ${index + 1} - Front`, { x: 0.5, y: 0.25, w: 9, h: 0.5, fontSize: 18, align: 'center' });
+            if (currentMode === 'multiple-choice' && typeof card.front === 'object') {
+                frontSlide.addText(card.front.question, { x: 1, y: 1.5, w: 8, h: 1.5, fontSize: 28, bold: true, align: 'center' });
+                (card.front.options || []).forEach((option, i) => {
+                    frontSlide.addText(`(${(String.fromCharCode(97 + i))}) ${option}`, { x: 1.5, y: 3.5 + i * 0.7, w: 7, h: 0.6, fontSize: 20 });
+                });
+            } else {
+                frontSlide.addText(card.front, { x: 1, y: 2, w: 8, h: 3, fontSize: 36, bold: true, align: 'center', valign: 'middle' });
             }
-          }
-        }
-        
-        // Add question
-        frontSlide.addText(questionText, {
-          x: 0.5, y: 1.5, w: 9, h: 1.5,
-          fontSize: 28,
-          bold: true,
-          color: '363636',
-          align: 'center',
-          valign: 'middle',
-          breakLine: true,
-          fontFace: 'Arial',
-          shadow: { type: 'outer', color: '000000', blur: 3, offset: 2, angle: 45 }
+
+            // Back slide
+            let backSlide = pptx.addSlide();
+            backSlide.addText(`Card ${index + 1} - Back`, { x: 0.5, y: 0.25, w: 9, h: 0.5, fontSize: 18, align: 'center' });
+            
+            // UPDATED: Add prefix to the back text for PPT export
+            let backText = card.back;
+            if (currentMode === 'multiple-choice' && typeof card.front === 'object' && card.front.options) {
+                const correctIndex = card.front.options.indexOf(card.back);
+                if (correctIndex !== -1) {
+                    backText = `(${(String.fromCharCode(97 + correctIndex))}) ${card.back}`;
+                }
+            }
+            backSlide.addText(backText, { x: 1, y: 2, w: 8, h: 3, fontSize: 36, bold: true, color: '0066CC', align: 'center', valign: 'middle' });
         });
-        
-        // Add options (either from separate lines or extracted from question)
-        const optionsToShow = options.length > 0 ? options : extractedOptions;
-        optionsToShow.forEach((option, optionIndex) => {
-          const yPos = 3.5 + (optionIndex * 0.8);
-          frontSlide.addText(option, {
-            x: 1, y: yPos, w: 8, h: 0.6,
-            fontSize: 20,
-            color: '666666',
-            align: 'left',
-            fontFace: 'Arial'
-          });
-        });
-      } else {
-        frontSlide.addText(card.front, {
-          x: 0.5, y: 2, w: 9, h: 3,
-          fontSize: 36,
-          bold: true,
-          color: '363636',
-          align: 'center',
-          valign: 'middle',
-          breakLine: true,
-          fontFace: 'Arial',
-          shadow: { type: 'outer', color: '000000', blur: 3, offset: 2, angle: 45 }
-        });
-      }
-      
-      // Add instruction
-      frontSlide.addText('💡 Click to reveal answer', {
-        x: 0.5, y: 6, w: 9, h: 0.5,
-        fontSize: 16,
-        color: '666666',
-        align: 'center',
-        italic: true,
-        fontFace: 'Arial'
-      });
-      
-      // Back slide (Answer)
-      const backSlide = pptx.addSlide();
-      backSlide.background = { color: 'F0F8FF' };
-      
-      // Add slide number and mode
-      backSlide.addText('Card ' + (index + 1) + ' of ' + cardCount + ' - Answer | ' + getModeDisplayName(currentMode), {
-        x: 0.5, y: 0.2, w: 9, h: 0.5,
-        fontSize: 12,
-        color: '999999',
-        align: 'center',
-        fontFace: 'Arial'
-      });
-      
-      // Add decorative line
-      backSlide.addShape('line', {
-        x: 0.5, y: 0.8, w: 9, h: 0,
-        line: { color: 'E0E0E0', width: 2 }
-      });
-      
-      // Add question (smaller, in a box)
-      backSlide.addShape('rect', {
-        x: 0.5, y: 1, w: 9, h: 1.2,
-        fill: { color: 'F5F5F5' },
-        line: { color: 'CCCCCC', width: 1 }
-      });
-      
-      backSlide.addText('❓ Question: ' + card.front, {
-        x: 0.7, y: 1.1, w: 8.6, h: 1,
-        fontSize: 18,
-        color: '666666',
-        align: 'center',
-        italic: true,
-        fontFace: 'Arial'
-      });
-      
-      // Add answer with highlight
-      backSlide.addShape('rect', {
-        x: 0.5, y: 2.5, w: 9, h: 3,
-        fill: { color: 'E8F4FD' },
-        line: { color: '0066CC', width: 2 },
-        shadow: { type: 'outer', color: '000000', blur: 5, offset: 3, angle: 45 }
-      });
-      
-      backSlide.addText('✅ Answer: ' + card.back, {
-        x: 0.7, y: 2.7, w: 8.6, h: 2.6,
-        fontSize: 32,
-        bold: true,
-        color: '0066cc',
-        align: 'center',
-        valign: 'middle',
-        breakLine: true,
-        fontFace: 'Arial'
-      });
-      
-      // Add separator line
-      backSlide.addShape('line', {
-        x: 1, y: 2.3, w: 8, h: 0,
-        line: { color: '0066CC', width: 3 }
-      });
-    });
-    
-    // Add summary slide
-    const summarySlide = pptx.addSlide();
-    summarySlide.background = { color: 'F8F9FA' };
-    
-    summarySlide.addText('📋 Summary', {
-      x: 1, y: 1, w: 8, h: 1,
-      fontSize: 40,
-      bold: true,
-      color: '363636',
-      align: 'center',
-      fontFace: 'Arial'
-    });
-    
-    summarySlide.addText('📊 Total Flashcards: ' + cardCount, {
-      x: 1, y: 2.5, w: 8, h: 0.5,
-      fontSize: 24,
-      color: '666666',
-      align: 'center',
-      fontFace: 'Arial'
-    });
-    
-    summarySlide.addText('🎮 Mode: ' + getModeDisplayName(currentMode), {
-      x: 1, y: 3.2, w: 8, h: 0.5,
-      fontSize: 20,
-      color: '009900',
-      align: 'center',
-      fontFace: 'Arial'
-    });
-    
-    if (topic) {
-      summarySlide.addText('📚 Topic: ' + topic, {
-        x: 1, y: 3.9, w: 8, h: 0.5,
-        fontSize: 20,
-        color: '666666',
-        align: 'center',
-        fontFace: 'Arial'
-      });
+
+        pptx.writeFile({ fileName: `flashcards_${pptx.title.replace(/[^a-z0-9]/gi, '_')}.pptx` })
+            .then(() => alert('✅ PowerPoint presentation generated successfully!'))
+            .catch(err => { throw err; })
+            .finally(() => resultDiv.innerHTML = originalContent);
+
+    } catch (error) {
+        console.error('Error generating PPT:', error);
+        resultDiv.innerHTML = originalContent;
+        alert(t.errorGeneratingPPT);
     }
-    
-    summarySlide.addText('Flashcard Generator', {
-      x: 1, y: 5, w: 8, h: 0.5,
-      fontSize: 16,
-      color: '999999',
-      align: 'center',
-      italic: true,
-      fontFace: 'Arial'
-    });
-    
-    // Download the PPTX file
-    const fileName = 'flashcards_' + (topic ? topic.replace(/[^a-zA-Z0-9]/g, '_') : 'presentation') + '.pptx';
-    pptx.writeFile({ fileName: fileName }).then(() => {
-      // Restore original content after successful generation
-      resultDiv.innerHTML = originalContent;
-      alert('✅ PowerPoint presentation generated successfully!');
-    }).catch(error => {
-      console.error('Error generating PPT:', error);
-      resultDiv.innerHTML = originalContent;
-      alert('❌ Error generating PowerPoint presentation. Please try again.');
-    });
-    
-  } catch (error) {
-    console.error('Error generating PPT:', error);
-    resultDiv.innerHTML = originalContent;
-    alert('❌ Error generating PowerPoint presentation. Please try again.');
-  }
 }
 
 function generateHTMLPresentation() {
-  if (flashcards.length === 0) {
-    const t = translations[currentPageLanguage];
-    alert(t.noCardsToExport);
-    return;
-  }
+    const lang = getLanguage();
+    const t = translations[lang];
+    if (flashcards.length === 0) return alert(t.noCardsToExport);
 
-  const topic = document.getElementById('topic').value || 'Flashcards';
-  const cardCount = flashcards.length;
-  
-  let html = '';
-  html += '<!DOCTYPE html>';
-  html += '<html lang="en">';
-  html += '<head>';
-  html += '<meta charset="UTF-8">';
-  html += '<title>' + topic + ' - Flashcards</title>';
-  html += '<meta name="viewport" content="width=device-width, initial-scale=1.0">';
-  html += '<style>';
-  html += 'body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }';
-  html += '.slide { background: white; border-radius: 15px; margin: 20px auto; max-width: 800px; min-height: 500px; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); text-align: center; display: none; }';
-  html += '.slide.active { display: block; }';
-  html += '.title { font-size: 48px; color: #363636; margin-bottom: 20px; }';
-  html += '.subtitle { font-size: 24px; color: #666666; margin-bottom: 15px; }';
-  html += '.content { font-size: 36px; color: #363636; margin: 40px 0; line-height: 1.4; }';
-  html += '.question { background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0; font-size: 24px; color: #666666; }';
-  html += '.answer { background: #e8f4fd; padding: 20px; border-radius: 10px; margin: 20px 0; font-size: 32px; color: #0066cc; border: 2px solid #0066cc; }';
-  html += '.controls { text-align: center; margin: 20px 0; }';
-  html += '.btn { padding: 12px 24px; margin: 0 10px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }';
-  html += '.btn-primary { background: #667eea; color: white; }';
-  html += '.btn-secondary { background: #6c757d; color: white; }';
-  html += '.slide-counter { text-align: center; font-size: 18px; color: #666666; margin: 20px 0; }';
-  html += '.mc-question { font-size: 1.3em; font-weight: bold; margin-bottom: 20px; text-align: center; line-height: 1.4; color: #363636; }';
-  html += '.mc-options { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 500px; margin: 0 auto; }';
-  html += '.mc-option { background: #f8f9fa; border: 2px solid #e9ecef; border-radius: 8px; padding: 12px 16px; font-size: 1em; text-align: left; transition: all 0.3s ease; color: #333; }';
-  html += '.mc-option:hover { background: #e9ecef; border-color: #667eea; transform: translateX(5px); }';
-  html += '</style>';
-  html += '</head>';
-  html += '<body>';
-  html += '<div class="controls">';
-  html += '<button class="btn btn-secondary" onclick="previousSlide()">← Previous</button>';
-  html += '<button class="btn btn-primary" onclick="nextSlide()">Next →</button>';
-  html += '<button class="btn btn-secondary" onclick="toggleFullscreen()">Fullscreen</button>';
-  html += '</div>';
-  html += '<div class="slide-counter">';
-  html += '<span id="slideCounter">1</span> of <span id="totalSlides">1</span>';
-  html += '</div>';
-  // Add title slide
-  html += '<div class="slide active" id="slide-0">';
-  html += '<div class="title">🎯 Flashcards</div>';
-  html += '<div class="subtitle">' + topic + '</div>';
-  html += '<div class="subtitle">📊 Total Cards: ' + cardCount + '</div>';
-  html += '<div class="subtitle">🎮 Mode: ' + getModeDisplayName(currentMode) + '</div>';
-  html += '</div>';
-  // Add language info for translation mode
-  if (currentMode === 'translation') {
-    const fromLanguage = document.getElementById('fromLanguage').value;
-    const toLanguage = document.getElementById('toLanguage').value;
-    html += '<div class="slide" id="slide-0-5">';
-    html += '<div class="title">🌍 Language Settings</div>';
-    html += '<div class="content">' + fromLanguage + ' → ' + toLanguage + '</div>';
-    html += '</div>';
-  }
-  // Add slides for each flashcard
-  flashcards.forEach((card, index) => {
-    const slideNum = index * 2 + 1;
-    // Question slide
-    if (currentMode === 'multiple-choice') {
-      const lines = card.front.split('\n');
-      const question = lines[0];
-      const options = lines.slice(1).filter(line => line.trim());
-      let extractedOptions = [];
-      let questionText = question;
-      if (options.length === 0) {
-        const optionMatch = question.match(/(.*?)(A\) .*B\) .*C\) .*D\) .*)/);
-        if (optionMatch) {
-          questionText = optionMatch[1].trim();
-          const optionsText = optionMatch[2];
-          const optionParts = optionsText.match(/[A-D]\) [^A-D]*/g);
-          if (optionParts) {
-            extractedOptions = optionParts;
-          }
+    const topic = document.getElementById('topic').value || 'Flashcards';
+    let slidesHtml = '';
+
+    // Title Slide
+    slidesHtml += `<div class="slide active"><h1>Flashcards</h1><h2>${topic}</h2><h3>Mode: ${getModeDisplayName(currentMode)}</h3></div>`;
+
+    // Card Slides
+    flashcards.forEach((card, index) => {
+        let frontContent;
+        if (currentMode === 'multiple-choice' && typeof card.front === 'object') {
+            frontContent = `<h4>${escapeHtml(card.front.question)}</h4><ul>${(card.front.options || []).map((o, i) => `<li>(${(String.fromCharCode(97 + i))}) ${escapeHtml(o)}</li>`).join('')}</ul>`;
+        } else {
+            frontContent = `<h3>${escapeHtml(card.front)}</h3>`;
         }
-      }
-      const optionsToShow = options.length > 0 ? options : extractedOptions;
-      html += '<div class="slide" id="slide-' + slideNum + '">';
-      html += '<div class="subtitle">Card ' + (index + 1) + ' of ' + cardCount + ' | ' + getModeDisplayName(currentMode) + '</div>';
-      html += '<div class="content">';
-      html += '<div class="mc-question">' + questionText + '</div>';
-      html += '<div class="mc-options">' + optionsToShow.map(option => '<div class="mc-option">' + option + '</div>').join('') + '</div>';
-      html += '</div>';
-      html += '<div class="subtitle">💡 Click Next to see the answer</div>';
-      html += '</div>';
-    } else {
-      html += '<div class="slide" id="slide-' + slideNum + '">';
-      html += '<div class="subtitle">Card ' + (index + 1) + ' of ' + cardCount + ' | ' + getModeDisplayName(currentMode) + '</div>';
-      html += '<div class="content">' + card.front + '</div>';
-      html += '<div class="subtitle">💡 Click Next to see the answer</div>';
-      html += '</div>';
-    }
-    // Answer slide
-    html += '<div class="slide" id="slide-' + (slideNum + 1) + '">';
-    html += '<div class="subtitle">Card ' + (index + 1) + ' of ' + cardCount + ' - Answer | ' + getModeDisplayName(currentMode) + '</div>';
-    html += '<div class="question">❓ Question: ' + card.front.split('\n')[0] + '</div>';
-    html += '<div class="answer">✅ Answer: ' + card.back + '</div>';
-    html += '</div>';
-  });
-  // Add summary slide
-  html += '<div class="slide" id="slide-' + (flashcards.length * 2 + 1) + '">';
-  html += '<div class="title">📋 Summary</div>';
-  html += '<div class="subtitle">📊 Total Flashcards: ' + cardCount + '</div>';
-  html += '<div class="subtitle">🎮 Mode: ' + getModeDisplayName(currentMode) + '</div>';
-  html += '<div class="subtitle">📚 Topic: ' + topic + '</div>';
-  html += '<div class="subtitle">🎯 Flashcard Generator</div>';
-  html += '</div>';
-  html += '</body>';
-  html += '<script>';
-  html += 'let currentSlide = 0;';
-  html += 'const slides = document.querySelectorAll(".slide");';
-  html += 'const totalSlides = slides.length;';
-  html += 'document.getElementById("totalSlides").textContent = totalSlides;';
-  html += 'function showSlide(n) {';
-  html += 'slides.forEach(slide => slide.classList.remove("active"));';
-  html += 'slides[n].classList.add("active");';
-  html += 'document.getElementById("slideCounter").textContent = n + 1;';
-  html += '}';
-  html += 'function nextSlide() {';
-  html += 'if (currentSlide < totalSlides - 1) { currentSlide++; showSlide(currentSlide); }';
-  html += '}';
-  html += 'function previousSlide() {';
-  html += 'if (currentSlide > 0) { currentSlide--; showSlide(currentSlide); }';
-  html += '}';
-  html += 'function toggleFullscreen() {';
-  html += 'if (!document.fullscreenElement) { document.documentElement.requestFullscreen(); } else { document.exitFullscreen(); }';
-  html += '}';
-  html += 'document.addEventListener("keydown", function(e) {';
-  html += 'if (e.key === "ArrowRight" || e.key === " ") { e.preventDefault(); nextSlide(); } else if (e.key === "ArrowLeft") { e.preventDefault(); previousSlide(); } else if (e.key === "F11") { e.preventDefault(); toggleFullscreen(); }';
-  html += '});';
-  html += '</script>';
-  html += '</html>';
-  
-  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'flashcards_' + topic.replace(/[^a-zA-Z0-9]/g, '_') + '.html';
-  a.click();
-  
-  const resultDiv = document.getElementById('result');
-  resultDiv.innerHTML = originalContent;
-  const t = translations[currentPageLanguage];
-  alert(t.htmlPresentationGenerated);
+        slidesHtml += `<div class="slide"><h4>Card ${index + 1} - Front</h4>${frontContent}</div>`;
+
+        // UPDATED: Add prefix to the back content for HTML export
+        let backContent = escapeHtml(card.back);
+        if (currentMode === 'multiple-choice' && typeof card.front === 'object' && card.front.options) {
+            const correctIndex = card.front.options.indexOf(card.back);
+            if (correctIndex !== -1) {
+                backContent = `(${(String.fromCharCode(97 + correctIndex))}) ${escapeHtml(card.back)}`;
+            }
+        }
+        slidesHtml += `<div class="slide"><h4>Card ${index + 1} - Back</h4><h3 class="answer">${backContent}</h3></div>`;
+    });
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+<title>${topic} - Flashcards</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background-color: #f0f0f0; }
+  .slide { display: none; width: 90%; max-width: 800px; min-height: 400px; padding: 20px; border: 1px solid #ccc; border-radius: 10px; background: white; text-align: center; }
+  .slide.active { display: flex; flex-direction: column; justify-content: center; align-items: center; }
+  .controls { margin-bottom: 20px; } button { padding: 10px 20px; }
+  .answer { color: #0066CC; } ul { list-style: none; padding: 0; } li { margin: 10px 0; }
+</style>
+</head>
+<body>
+<div class="controls"><button onclick="prev()">← Prev</button><button onclick="next()">Next →</button></div>
+${slidesHtml}
+<script>
+  let current = 0;
+  const slides = document.querySelectorAll('.slide');
+  const show = n => { slides.forEach((s, i) => s.classList.toggle('active', i === n)); };
+  const next = () => { current = (current + 1) % slides.length; show(current); };
+  const prev = () => { current = (current - 1 + slides.length) % slides.length; show(current); };
+  document.addEventListener('keydown', e => { if(e.key==='ArrowRight') next(); if(e.key==='ArrowLeft') prev(); });
+  show(current);
+<\/script>
+</body>
+</html>`;
+    downloadFile(html, `flashcards_${topic.replace(/[^a-z0-9]/gi, '_')}.html`, 'text/html;charset=utf-8');
+    alert(t.htmlPresentationGenerated);
 }
 
-function createSampleFlashcards() {
-  const samples = {
-    definition: [
-      { front: "Photosynthesis", back: "The process by which green plants use sunlight to synthesize nutrients from carbon dioxide and water." },
-      { front: "Mitochondria", back: "The powerhouse of the cell, responsible for producing energy through cellular respiration." },
-      { front: "Ecosystem", back: "A community of living organisms and their physical environment interacting as a system." }
-    ],
-    translation: [
-      { front: "Hello", back: "你好" },
-      { front: "Good morning", back: "早上好" },
-      { front: "Thank you", back: "谢谢" }
-    ],
-    'multiple-choice': [
-      { front: "What is the capital of France?\nA) Florida\nB) Paris\nC) Texas\nD) Narnia", back: "✅ B) Paris" },
-      { front: "Which planet is closest to the Sun?\nA) Earth\nB) Venus\nC) Mercury\nD) Mars", back: "✅ C) Mercury" }
-    ],
-    'fill-blank': [
-      { front: "The powerhouse of the cell is the _____.", back: "Mitochondrion" },
-      { front: "Water is made up of hydrogen and _____.", back: "Oxygen" }
-    ],
-    'image-based': [
-      { front: "https://images.unsplash.com/photo-1557050543-4d8f8e07c3b2?w=400", back: "Elephant" },
-      { front: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400", back: "Mountain" },
-      { front: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400", back: "Sun" },
-      { front: "A bright yellow star in the sky during the day", back: "Sun" }
-    ]
-  };
-  
-  // For translation mode, create samples based on selected languages
-  if (currentMode === 'translation') {
-    const fromLanguage = document.getElementById('fromLanguage').value;
-    const toLanguage = document.getElementById('toLanguage').value;
-    
-    // Create language-specific samples
-    const languageSamples = {
-      'English-Simplified Chinese': [
-        { front: "Hello", back: "你好" },
-        { front: "Good morning", back: "早上好" },
-        { front: "Thank you", back: "谢谢" }
-      ],
-      'Simplified Chinese-English': [
-        { front: "你好", back: "Hello" },
-        { front: "早上好", back: "Good morning" },
-        { front: "谢谢", back: "Thank you" }
-      ],
-      'English-Traditional Chinese': [
-        { front: "Hello", back: "你好" },
-        { front: "Good morning", back: "早上好" },
-        { front: "Thank you", back: "謝謝" }
-      ],
-      'Traditional Chinese-English': [
-        { front: "你好", back: "Hello" },
-        { front: "早上好", back: "Good morning" },
-        { front: "謝謝", back: "Thank you" }
-      ],
-      'Simplified Chinese-Traditional Chinese': [
-        { front: "你好", back: "你好" },
-        { front: "早上好", back: "早上好" },
-        { front: "谢谢", back: "謝謝" },
-        { front: "学习", back: "學習" },
-        { front: "计算机", back: "計算機" }
-      ],
-      'Traditional Chinese-Simplified Chinese': [
-        { front: "你好", back: "你好" },
-        { front: "早上好", back: "早上好" },
-        { front: "謝謝", back: "谢谢" },
-        { front: "學習", back: "学习" },
-        { front: "計算機", back: "计算机" }
-      ],
-      'English-Spanish': [
-        { front: "Hello", back: "Hola" },
-        { front: "Good morning", back: "Buenos días" },
-        { front: "Thank you", back: "Gracias" }
-      ],
-      'Spanish-English': [
-        { front: "Hola", back: "Hello" },
-        { front: "Buenos días", back: "Good morning" },
-        { front: "Gracias", back: "Thank you" }
-      ],
-      'English-French': [
-        { front: "Hello", back: "Bonjour" },
-        { front: "Good morning", back: "Bonjour" },
-        { front: "Thank you", back: "Merci" }
-      ],
-      'French-English': [
-        { front: "Bonjour", back: "Hello" },
-        { front: "Merci", back: "Thank you" },
-        { front: "Au revoir", back: "Goodbye" }
-      ]
-    };
-    
-    const languageKey = fromLanguage + '-' + toLanguage;
-    if (languageSamples[languageKey]) {
-      return languageSamples[languageKey];
-    }
-  }
-  
-  return samples[currentMode] || samples.definition;
-}
-
-function loadSampleFlashcards() {
-  flashcards = createSampleFlashcards();
-  totalCards = flashcards.length;
-  currentCardIndex = 0;
-  correctAnswers = 0;
-  
-  document.getElementById('flashcardContainer').style.display = 'block';
-  document.getElementById('resultSection').style.display = 'none';
-  showCurrentCard();
-}
-
-// Keyboard navigation
+// Keyboard navigation for flashcard mode
 document.addEventListener('keydown', function(e) {
   if (document.getElementById('flashcardContainer').style.display === 'block') {
     switch(e.key) {
@@ -1818,52 +1000,11 @@ document.addEventListener('keydown', function(e) {
         previousCard();
         break;
       case 'Enter':
+      case 'ArrowUp':
+      case 'ArrowDown':
         e.preventDefault();
         flipCard();
         break;
     }
   }
 });
-
-// Export functions for different formats
-function exportToCSV() {
-  if (flashcards.length === 0) {
-    const t = translations[currentPageLanguage];
-    alert(t.noCardsToExport);
-    return;
-  }
-  
-  let csv = 'Front,Back\n';
-  flashcards.forEach(card => {
-    csv += '"' + card.front.replace(/"/g, '""') + '","' + card.back.replace(/"/g, '""') + '"\n';
-  });
-  
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'flashcards.csv';
-  a.click();
-}
-
-function exportToJSON() {
-  if (flashcards.length === 0) {
-    const t = translations[currentPageLanguage];
-    alert(t.noCardsToExport);
-    return;
-  }
-  
-  const data = {
-    mode: currentMode,
-    topic: document.getElementById('topic').value,
-    grade: document.getElementById('grade').value,
-    difficulty: document.querySelector('input[name="difficulty"]:checked').value,
-    flashcards: flashcards,
-    generatedAt: new Date().toISOString()
-  };
-  
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8;' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'flashcards.json';
-  a.click();
-}  

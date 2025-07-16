@@ -1,6 +1,6 @@
 let selectedBooks = [];
 let currentMode = 'definition';
-let flashcards = []; // This will now store the structured JSON flashcards
+let flashcards = []; // This will now store the structured JSON flashcards from AIGC
 let currentCardIndex = 0;
 let correctAnswers = 0;
 let totalCards = 0;
@@ -81,7 +81,11 @@ const translations = {
     exportToPPT: '📊 导出为PPT',
     startStudyMode: '🧑‍🏫 开始教学模式',
     generatedContent: '📄 生成的內容',
-    changesSaved: '修改已保存'
+    changesSaved: '修改已保存',
+    saveSet: '💾 保存卡片集',
+    savingSet: '正在保存...',
+    saveSetSuccess: '✅ 卡片集已成功保存到历史记录！',
+    saveSetError: '❌ 保存失败:',
   },
   'zh-HK': {
     pageTitle: '閃卡生成器',
@@ -153,11 +157,15 @@ const translations = {
     csvExported: 'CSV文件已導出',
     jsonExported: 'JSON文件已導出',
     amendContent: '📝 修改內容',
-    exportToWord: '� 導出為Word',
+    exportToWord: '📄 導出為Word',
     exportToPPT: '📊 導出為PPT',
     startStudyMode: '🧑‍🏫 開始敎學模式',
     generatedContent: '📄 生成的內容',
-    changesSaved: '修改已保存'
+    changesSaved: '修改已保存',
+    saveSet: '💾 儲存卡片集',
+    savingSet: '正在儲存...',
+    saveSetSuccess: '✅ 卡片集已成功儲存到歷史記錄！',
+    saveSetError: '❌ 儲存失敗:',
   },
   'en': {
     pageTitle: 'Flash Card Generator',
@@ -233,7 +241,11 @@ const translations = {
     exportToPPT: '📊 Export to PPT',
     startStudyMode: '🧑‍🏫 Start Teaching Mode',
     generatedContent: '📄 Generated Content',
-    changesSaved: 'Changes saved'
+    changesSaved: 'Changes saved',
+    saveSet: '💾 Save Set',
+    savingSet: 'Saving...',
+    saveSetSuccess: '✅ Set saved successfully to History!',
+    saveSetError: '❌ Save failed:',
   }
 };
 
@@ -314,9 +326,10 @@ function updatePageLanguage() {
   document.getElementById('amendButton').textContent = t.amendContent;
   document.getElementById('exportWordButton').textContent = t.exportToWord;
   document.getElementById('exportPPTButton').textContent = t.exportToPPT;
-  document.getElementById('exportCSVButton').textContent = t.exportCSV;
-  document.getElementById('exportJSONButton').textContent = t.exportJSON;
+  // document.getElementById('exportCSVButton').textContent = t.exportCSV;
+  // document.getElementById('exportJSONButton').textContent = t.exportJSON;
   document.getElementById('startStudyButton').textContent = t.startStudyMode;
+  document.getElementById('saveSetButton').textContent = t.saveSet; // New translation
 }
 
 function setupEventListeners() {
@@ -373,7 +386,7 @@ function setupFileUpload() {
   });
   fileInput.addEventListener('change', updateFileList);
   
-  const imageUploadArea = document.getElementById('imageUploadArea');
+  const imageUploadArea = document.querySelector('#imageUploadArea .file-upload-area');
   const imageInput = document.getElementById('imageInput');
   
   if (imageUploadArea && imageInput) {
@@ -534,9 +547,11 @@ async function generateFlashCards() {
     }
 
     try {
-        const response = await fetch("https://backend.canpaniongroup.com/aigc/generate-flashcard", {
+        // NOTE: In a real app, send a JWT token for authorization.
+        // const headers = { "Content-Type": "application/json", "Authorization": "Bearer YOUR_JWT_TOKEN" };
+        const response = await fetch("https://backend.canpaniongroup.com/aigc/generate-flashcard", { // UPDATED to use new endpoint
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", "platform": "dashboard" },
             body: JSON.stringify({ textContent, currentMode, cardCount, topic, difficulty, grade, duration, fromLanguage, toLanguage, lang })
         });
 
@@ -548,9 +563,9 @@ async function generateFlashCards() {
         const data = await response.json();
         
         if (data && data.flashcards && Array.isArray(data.flashcards)) {
-            flashcards = data.flashcards;
+            flashcards = data.flashcards; // Store the raw generated cards
             totalCards = flashcards.length;
-            console.log(`Successfully received ${totalCards} structured flashcards.`);
+            console.log(`Successfully received ${totalCards} structured flashcards from AIGC.`);
             displayGeneratedFlashcards();
         } else {
              throw new Error(t.noCardsGenerated);
@@ -561,6 +576,90 @@ async function generateFlashCards() {
         console.error('Error generating flashcards:', error);
     }
 }
+
+/**
+ * NEW FUNCTION
+ * Saves the generated flashcard set to the database via the backend API.
+ */
+async function saveFlashcardSet() {
+    const lang = getLanguage();
+    const t = translations[lang];
+    const saveButton = document.getElementById('saveSetButton');
+
+    if (flashcards.length === 0) {
+        alert(t.noCardsAvailable);
+        return;
+    }
+
+    const topic = document.getElementById('topic').value.trim() || 'Untitled AIGC Set';
+
+    saveButton.disabled = true;
+    saveButton.textContent = t.savingSet;
+
+    try {
+        // The backend schema for FlashCard expects `question` and `answer` to be strings.
+        // We must format the card data here on the frontend before sending.
+        const cardsToSave = flashcards.map(card => {
+            let questionText;
+            let answerText = card.back;
+
+            // Format the 'front' part into a single string if it's an object (for multiple-choice)
+            if (currentMode === 'multiple-choice' && typeof card.front === 'object' && card.front !== null) {
+                const q = card.front.question || '';
+                // Find the correct option to prefix the answer
+                const correctIndex = (card.front.options || []).indexOf(card.back);
+                if (correctIndex !== -1) {
+                    answerText = `(${(String.fromCharCode(97 + correctIndex))}) ${card.back}`;
+                }
+                // Combine question and options into one string
+                const opts = (card.front.options || []).map((opt, i) => `(${(String.fromCharCode(97 + i))}) ${opt}`).join('\n');
+                questionText = `${q}\n${opts}`;
+            } else {
+                questionText = card.front;
+            }
+
+            return { question: questionText, answer: answerText };
+        });
+
+        const payload = {
+            title: topic,
+            description: `An AI-generated flashcard set on the topic of "${topic}". Mode: ${currentMode}.`,
+            category: 'AIGC Generated',
+            cards: cardsToSave,
+        };
+        
+        // NOTE: In a real app, send a JWT token for authorization.
+        // const headers = { "Content-Type": "application/json", "Authorization": "Bearer YOUR_JWT_TOKEN" };
+        const response = await fetch('https://backend.canpaniongroup.com/aigc/save-flashcard', { // Use the new single-operation endpoint
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'platform': 'dashboard' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            // Handle specific error for card limit
+            if (errorData.error === 'CARD_LIMIT_EXCEEDED') {
+                 throw new Error(`Card limit exceeded. You tried to save ${errorData.cardsToAdd} cards, but the maximum is ${errorData.maxLimit}.`);
+            }
+            throw new Error(errorData.message || `Server responded with status ${response.status}`);
+        }
+
+        await response.json();
+        alert(t.saveSetSuccess);
+
+        // Dispatch a custom event to notify the React history component to refresh
+        window.dispatchEvent(new CustomEvent('flashcardSetSaved'));
+
+    } catch (error) {
+        console.error('Error saving flashcard set:', error);
+        alert(`${t.saveSetError} ${error.message}`);
+    } finally {
+        saveButton.disabled = false;
+        saveButton.textContent = t.saveSet;
+    }
+}
+
 
 function displayGeneratedFlashcards() {
     const resultDiv = document.getElementById('result');
@@ -592,7 +691,6 @@ function displayGeneratedFlashcards() {
             frontContent = isImageUrl ? `<img src="${card.front}" alt="Image" style="max-width: 100%; max-height: 200px; object-fit: contain;">` : escapeHtml(card.front);
         }
 
-        // UPDATED: Add prefix to the back of the card for multiple choice
         let backContent = escapeHtml(card.back);
         if (currentMode === 'multiple-choice' && typeof card.front === 'object' && card.front.options) {
             const correctIndex = card.front.options.indexOf(card.back);
@@ -699,7 +797,6 @@ function showCurrentCard() {
     cardFrontElement.textContent = card.front;
   }
   
-  // UPDATED: Add prefix to the back of the card in study mode
   let backContent = card.back;
   if (currentMode === 'multiple-choice' && typeof card.front === 'object' && card.front.options) {
       const correctIndex = card.front.options.indexOf(card.back);
@@ -804,13 +901,12 @@ function exportToWord() {
     let content = flashcards.map(card => {
         let frontText;
         if (currentMode === 'multiple-choice' && typeof card.front === 'object') {
-            const optionsText = (card.front.options || []).map((opt, i) => `    (${(String.fromCharCode(97 + i))}) ${opt}`).join('\n');
+            const optionsText = (card.front.options || []).map((opt, i) => `      (${(String.fromCharCode(97 + i))}) ${opt}`).join('\n');
             frontText = `Question: ${card.front.question}\nOptions:\n${optionsText}`;
         } else {
             frontText = `Front: ${card.front}`;
         }
 
-        // UPDATED: Add prefix to the back text for Word export
         let backText = card.back;
         if (currentMode === 'multiple-choice' && typeof card.front === 'object' && card.front.options) {
             const correctIndex = card.front.options.indexOf(card.back);
@@ -821,44 +917,6 @@ function exportToWord() {
         return `${frontText}\nBack: ${backText}\n\n---\n\n`;
     }).join('');
     downloadFile(content, 'flashcards.doc', 'application/msword;charset=utf-8');
-}
-
-function exportToCSV() {
-    if (flashcards.length === 0) return alert(translations[getLanguage()].noCardsToExport);
-    let csv = 'Front,Back\n';
-    flashcards.forEach(card => {
-        let frontValue;
-        if (typeof card.front === 'object') {
-            const optionsText = (card.front.options || []).map((opt, i) => `(${(String.fromCharCode(97 + i))}) ${opt}`).join('; ');
-            frontValue = `${card.front.question} [${optionsText}]`;
-        } else {
-            frontValue = card.front;
-        }
-
-        // UPDATED: Add prefix to the back value for CSV export
-        let backValue = card.back;
-        if (currentMode === 'multiple-choice' && typeof card.front === 'object' && card.front.options) {
-            const correctIndex = card.front.options.indexOf(card.back);
-            if (correctIndex !== -1) {
-                backValue = `(${(String.fromCharCode(97 + correctIndex))}) ${card.back}`;
-            }
-        }
-        csv += `"${String(frontValue).replace(/"/g, '""')}","${String(backValue).replace(/"/g, '""')}"\n`;
-    });
-    downloadFile(csv, 'flashcards.csv', 'text/csv;charset=utf-8;');
-}
-
-function exportToJSON() {
-    if (flashcards.length === 0) return alert(translations[getLanguage()].noCardsToExport);
-    const data = {
-        mode: currentMode,
-        topic: document.getElementById('topic').value,
-        grade: document.getElementById('grade').value,
-        difficulty: document.querySelector('input[name="difficulty"]:checked').value,
-        flashcards: flashcards,
-        generatedAt: new Date().toISOString()
-    };
-    downloadFile(JSON.stringify(data, null, 2), 'flashcards.json', 'application/json;charset=utf-8;');
 }
 
 function generatePPT() {
@@ -900,7 +958,6 @@ function generatePPT() {
             let backSlide = pptx.addSlide();
             backSlide.addText(`Card ${index + 1} - Back`, { x: 0.5, y: 0.25, w: 9, h: 0.5, fontSize: 18, align: 'center' });
             
-            // UPDATED: Add prefix to the back text for PPT export
             let backText = card.back;
             if (currentMode === 'multiple-choice' && typeof card.front === 'object' && card.front.options) {
                 const correctIndex = card.front.options.indexOf(card.back);
@@ -944,7 +1001,6 @@ function generateHTMLPresentation() {
         }
         slidesHtml += `<div class="slide"><h4>Card ${index + 1} - Front</h4>${frontContent}</div>`;
 
-        // UPDATED: Add prefix to the back content for HTML export
         let backContent = escapeHtml(card.back);
         if (currentMode === 'multiple-choice' && typeof card.front === 'object' && card.front.options) {
             const correctIndex = card.front.options.indexOf(card.back);

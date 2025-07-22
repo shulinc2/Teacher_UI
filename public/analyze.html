@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>学生活动多重智能分析</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    .result {
+      font-family: "Courier New", monospace;
+      white-space: pre;
+      background: #f8f8f8;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 20px;
+      overflow-x: auto;
+    }
+    .error { color: red; }
+    .loading { color: #888; }
+    .upload-box {
+      border: 2px dashed #aaa;
+      padding: 40px;
+      text-align: center;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    input[type=file] { margin: 10px 0; }
+    button { padding: 8px 24px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h1>学生活动多重智能分析</h1>
+  <form id="uploadForm" enctype="multipart/form-data">
+    <div class="upload-box">
+      <input type="file" name="file" id="fileInput" accept=".pdf,.doc,.docx" required />
+      <br>
+      <button type="submit">上传并分析</button>
+    </div>
+  </form>
+  <div id="status"></div>
+  <div id="result" class="result"></div>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    const statusDiv = document.getElementById('status');
+    const resultDiv = document.getElementById('result');
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      statusDiv.textContent = '';
+      statusDiv.className = '';
+      resultDiv.textContent = '';
+
+      const file = document.getElementById('fileInput').files[0];
+      if (!file) return;
+
+      statusDiv.textContent = '正在上传和分析，请稍候...';
+      statusDiv.className = 'loading';
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const res = await fetch('/api/analyze', {
+          method: 'POST',
+          body: formData
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+
+        if (data.raw) {
+          const jsonString = data.raw
+            .replace(/^```json\s*/, '')
+            .replace(/\s*```$/, '');
+
+          try {
+            const parsed = JSON.parse(jsonString);
+            resultDiv.textContent = JSON.stringify(parsed, null, 2);
+          } catch (parseErr) {
+            resultDiv.textContent = jsonString;
+          }
+        } else {
+          resultDiv.textContent = JSON.stringify(data, null, 2);
+        }
+
+        statusDiv.textContent = '分析完成';
+        statusDiv.className = '';
+      } catch (err) {
+        statusDiv.textContent = '分析失败: ' + err.message;
+        statusDiv.className = 'error';
+      }
+    };
+  </script>
+</body>
+</html>
